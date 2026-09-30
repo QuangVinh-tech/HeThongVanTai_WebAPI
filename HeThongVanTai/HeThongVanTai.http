@@ -1,0 +1,6 @@
+@HeThongVanTai_HostAddress = http://localhost:5039
+
+GET {{HeThongVanTai_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
