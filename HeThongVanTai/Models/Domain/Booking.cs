@@ -15,4 +15,7 @@ public class Booking
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public List<Ticket> Tickets { get; set; } = new();
     public List<Payment> Payments { get; set; } = new();
+    [Column(TypeName = "decimal(12,0)")] public decimal DiscountAmount { get; set; }
+    public int? PromotionId { get; set; }
+    public Promotion? Promotion { get; set; }
 }
