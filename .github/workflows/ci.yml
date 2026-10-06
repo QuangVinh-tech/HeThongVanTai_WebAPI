@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lay code
+        uses: actions/checkout@v4
+
+      - name: Cai .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore HeThongVanTai.sln
+
+      - name: Build
+        run: dotnet build HeThongVanTai.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test HeThongVanTai.sln --configuration Release --no-build --verbosity normal
+
+      - name: Kiem tra khong lo mat khau trong file json
+        run: |
+          if git grep -n -i "password=" -- '*.json'; then
+            echo "Co mat khau trong file json, hay chuyen vao user-secrets"
+            exit 1
+          fi
