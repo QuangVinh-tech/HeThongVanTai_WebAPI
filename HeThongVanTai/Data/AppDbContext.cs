@@ -11,15 +11,19 @@ namespace HeThongVanTai.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-           
             modelBuilder.Entity<BusRoute>().HasOne(r => r.FromStation).WithMany()
                 .HasForeignKey(r => r.FromStationId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<BusRoute>().HasOne(r => r.ToStation).WithMany()
                 .HasForeignKey(r => r.ToStationId).OnDelete(DeleteBehavior.Restrict);
 
-            
             modelBuilder.Entity<Ticket>().HasIndex(t => new { t.TripId, t.SeatCode })
                 .IsUnique().HasFilter("[Status] <> 'Cancelled'");
+
+         
+            modelBuilder.Entity<Ticket>().HasIndex(t => t.TicketCode)
+                .IsUnique().HasFilter("[TicketCode] <> ''");
+            modelBuilder.Entity<Promotion>().HasIndex(p => p.Code).IsUnique();
+           
         }
 
         public DbSet<Station> Stations { get; set; }
@@ -33,5 +37,6 @@ namespace HeThongVanTai.Data
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<Ticket> Tickets { get; set; }
         public DbSet<Payment> Payments { get; set; }
+        public DbSet<Promotion> Promotions { get; set; }   
     }
 }

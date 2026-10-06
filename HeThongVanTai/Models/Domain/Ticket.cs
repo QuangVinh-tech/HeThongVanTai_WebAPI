@@ -11,6 +11,11 @@ namespace HeThongVanTai.Models.Domain
         public int TripId { get; set; }
         public Trip Trip { get; set; } = null!;
         [Required] public string SeatCode { get; set; } = "";
+
+       
+        [MaxLength(20)] public string TicketCode { get; set; } = "";
+      
+
         public string? PassengerName { get; set; }
         [Column(TypeName = "decimal(12,0)")] public decimal Price { get; set; }
         public string Status { get; set; } = "Active";
