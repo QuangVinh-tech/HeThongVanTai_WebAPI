@@ -1,8 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace HeThongVanTai.Models.DTO
 {
-  
     public class StationDto
     {
         [Required(ErrorMessage = "Tên bến xe/điểm đón trả không được để trống")]
@@ -24,11 +26,10 @@ namespace HeThongVanTai.Models.DTO
         public int DurationMin { get; set; }
     }
 
-
     public class SeatTemplateItemDto
     {
         [Required]
-        public string SeatCode { get; set; } = ""; 
+        public string SeatCode { get; set; } = "";
         public int Floor { get; set; } = 1;
     }
 
@@ -41,7 +42,6 @@ namespace HeThongVanTai.Models.DTO
         public List<SeatTemplateItemDto>? CustomSeats { get; set; }
     }
 
-
     public class VehicleDto
     {
         [Required(ErrorMessage = "Biển số xe không được để trống")]
@@ -50,6 +50,7 @@ namespace HeThongVanTai.Models.DTO
         public DateTime? RegistrationExpiry { get; set; }
         public DateTime? InsuranceExpiry { get; set; }
         public string Status { get; set; } = "Active";
+        public string? ImageUrl { get; set; }
     }
 
     public class DriverDto
@@ -61,9 +62,9 @@ namespace HeThongVanTai.Models.DTO
         public string? LicenseClass { get; set; }
         public DateTime? LicenseExpiry { get; set; }
         public string Status { get; set; } = "Active";
+        public string? AvatarUrl { get; set; }
     }
 
-    
     public class CreateTripDto
     {
         public int BusRouteId { get; set; }
@@ -74,7 +75,6 @@ namespace HeThongVanTai.Models.DTO
         public decimal Price { get; set; }
     }
 
-    
     public class GenerateScheduleDto
     {
         public int BusRouteId { get; set; }
@@ -98,5 +98,34 @@ namespace HeThongVanTai.Models.DTO
         [Required]
         public string Status { get; set; } = "Open";
         public DateTime? NewDepartAt { get; set; }
+    }
+
+    public class ImageUploadRequestDto
+    {
+        [Required(ErrorMessage = "Vui lòng chọn file ảnh")]
+        public IFormFile File { get; set; } = null!;
+        public string? FileName { get; set; }
+        public string? FileDescription { get; set; }
+    }
+
+    public class UpdateVehicleImageDto
+    {
+        [Required(ErrorMessage = "Đường dẫn ảnh không được để trống")]
+        public string ImageUrl { get; set; } = "";
+    }
+
+    public class UpdateDriverAvatarDto
+    {
+        [Required(ErrorMessage = "Đường dẫn ảnh không được để trống")]
+        public string AvatarUrl { get; set; } = "";
+    }
+
+    public class PagedResultDto<T>
+    {
+        public int TotalItems { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalItems / PageSize) : 0;
+        public List<T> Items { get; set; } = new();
     }
 }

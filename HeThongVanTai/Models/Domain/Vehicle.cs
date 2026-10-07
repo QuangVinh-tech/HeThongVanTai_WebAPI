@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace HeThongVanTai.Models.Domain
 {
@@ -11,5 +12,6 @@ namespace HeThongVanTai.Models.Domain
         public DateTime? RegistrationExpiry { get; set; }
         public DateTime? InsuranceExpiry { get; set; }
         public string Status { get; set; } = "Active";
+        public string? ImageUrl { get; set; }
     }
 }

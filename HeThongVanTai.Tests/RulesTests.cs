@@ -1,4 +1,5 @@
-﻿using HeThongVanTai.Models.Domain;
+﻿using Xunit;
+using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Services;
 
 namespace HeThongVanTai.Tests;

@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HeThongVanTai.Data;
 using HeThongVanTai.Models.Domain;
@@ -18,11 +21,25 @@ namespace HeThongVanTai.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] int? vehicleTypeId)
+        public async Task<IActionResult> GetAll(
+            [FromQuery] string? filterOn,
+            [FromQuery] string? filterQuery,
+            [FromQuery] string? status,
+            [FromQuery] int? vehicleTypeId,
+            [FromQuery] string? sortBy,
+            [FromQuery] bool isAscending = true,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
         {
-            var query = _context.Vehicles
-                .Include(v => v.VehicleType)
-                .AsQueryable();
+            var query = _context.Vehicles.Include(v => v.VehicleType).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(filterOn) && !string.IsNullOrWhiteSpace(filterQuery))
+            {
+                if (filterOn.Equals("Plate", StringComparison.OrdinalIgnoreCase))
+                    query = query.Where(v => v.Plate.Contains(filterQuery));
+                else if (filterOn.Equals("Status", StringComparison.OrdinalIgnoreCase))
+                    query = query.Where(v => v.Status.Contains(filterQuery));
+            }
 
             if (!string.IsNullOrWhiteSpace(status))
                 query = query.Where(v => v.Status == status);
@@ -30,19 +47,49 @@ namespace HeThongVanTai.Controllers
             if (vehicleTypeId.HasValue)
                 query = query.Where(v => v.VehicleTypeId == vehicleTypeId.Value);
 
-            var result = await query.Select(v => new
+            if (!string.IsNullOrWhiteSpace(sortBy))
             {
-                v.Id,
-                v.Plate,
-                v.VehicleTypeId,
-                VehicleTypeName = v.VehicleType.Name,
-                SeatCount = v.VehicleType.SeatCount,
-                v.RegistrationExpiry,
-                v.InsuranceExpiry,
-                v.Status
-            }).ToListAsync();
+                if (sortBy.Equals("Plate", StringComparison.OrdinalIgnoreCase))
+                    query = isAscending ? query.OrderBy(v => v.Plate) : query.OrderByDescending(v => v.Plate);
+                else if (sortBy.Equals("RegistrationExpiry", StringComparison.OrdinalIgnoreCase))
+                    query = isAscending ? query.OrderBy(v => v.RegistrationExpiry) : query.OrderByDescending(v => v.RegistrationExpiry);
+                else if (sortBy.Equals("InsuranceExpiry", StringComparison.OrdinalIgnoreCase))
+                    query = isAscending ? query.OrderBy(v => v.InsuranceExpiry) : query.OrderByDescending(v => v.InsuranceExpiry);
+            }
+            else
+            {
+                query = query.OrderBy(v => v.Id);
+            }
 
-            return Ok(result);
+            int totalItems = await query.CountAsync();
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+
+            var items = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(v => new
+                {
+                    v.Id,
+                    v.Plate,
+                    v.VehicleTypeId,
+                    VehicleTypeName = v.VehicleType.Name,
+                    SeatCount = v.VehicleType.SeatCount,
+                    v.RegistrationExpiry,
+                    v.InsuranceExpiry,
+                    v.Status,
+                    v.ImageUrl
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                TotalItems = totalItems,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling((double)totalItems / pageSize),
+                Items = items
+            });
         }
 
         [HttpGet("{id}")]
@@ -59,7 +106,12 @@ namespace HeThongVanTai.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] VehicleDto dto)
         {
-            if (await _context.Vehicles.AnyAsync(v => v.Plate == dto.Plate))
+            if (string.IsNullOrWhiteSpace(dto.Plate))
+                return BadRequest(new { message = "Biển số xe không được để trống." });
+
+            string normalizedPlate = dto.Plate.Trim().ToUpper();
+
+            if (await _context.Vehicles.AnyAsync(v => v.Plate.ToUpper() == normalizedPlate))
                 return BadRequest(new { message = "Biển số xe đã tồn tại trong hệ thống." });
 
             if (!await _context.VehicleTypes.AnyAsync(vt => vt.Id == dto.VehicleTypeId))
@@ -67,11 +119,12 @@ namespace HeThongVanTai.Controllers
 
             var vehicle = new Vehicle
             {
-                Plate = dto.Plate,
+                Plate = normalizedPlate,
                 VehicleTypeId = dto.VehicleTypeId,
                 RegistrationExpiry = dto.RegistrationExpiry,
                 InsuranceExpiry = dto.InsuranceExpiry,
-                Status = dto.Status
+                Status = dto.Status,
+                ImageUrl = dto.ImageUrl
             };
 
             _context.Vehicles.Add(vehicle);
@@ -85,14 +138,18 @@ namespace HeThongVanTai.Controllers
             var vehicle = await _context.Vehicles.FindAsync(id);
             if (vehicle == null) return NotFound(new { message = "Không tìm thấy xe." });
 
-            if (await _context.Vehicles.AnyAsync(v => v.Plate == dto.Plate && v.Id != id))
+            string normalizedPlate = dto.Plate.Trim().ToUpper();
+
+            if (await _context.Vehicles.AnyAsync(v => v.Plate.ToUpper() == normalizedPlate && v.Id != id))
                 return BadRequest(new { message = "Biển số xe đã bị trùng với xe khác." });
 
-            vehicle.Plate = dto.Plate;
+            vehicle.Plate = normalizedPlate;
             vehicle.VehicleTypeId = dto.VehicleTypeId;
             vehicle.RegistrationExpiry = dto.RegistrationExpiry;
             vehicle.InsuranceExpiry = dto.InsuranceExpiry;
             vehicle.Status = dto.Status;
+            if (!string.IsNullOrWhiteSpace(dto.ImageUrl))
+                vehicle.ImageUrl = dto.ImageUrl;
 
             await _context.SaveChangesAsync();
             return Ok(vehicle);
@@ -111,6 +168,18 @@ namespace HeThongVanTai.Controllers
             _context.Vehicles.Remove(vehicle);
             await _context.SaveChangesAsync();
             return Ok(new { message = "Đã xóa xe thành công." });
+        }
+
+        [HttpPatch("{id}/image")]
+        public async Task<IActionResult> UpdateImage(int id, [FromBody] UpdateVehicleImageDto dto)
+        {
+            var vehicle = await _context.Vehicles.FindAsync(id);
+            if (vehicle == null) return NotFound(new { message = "Không tìm thấy xe." });
+
+            vehicle.ImageUrl = dto.ImageUrl;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Cập nhật ảnh xe thành công.", vehicle.Id, vehicle.ImageUrl });
         }
 
         [HttpGet("alerts")]
@@ -137,6 +206,7 @@ namespace HeThongVanTai.Controllers
                     v.Plate,
                     VehicleType = v.VehicleType.Name,
                     v.Status,
+                    v.ImageUrl,
                     v.RegistrationExpiry,
                     RegistrationDaysLeft = regDaysLeft,
                     IsRegistrationExpired = regDaysLeft.HasValue && regDaysLeft.Value < 0,
