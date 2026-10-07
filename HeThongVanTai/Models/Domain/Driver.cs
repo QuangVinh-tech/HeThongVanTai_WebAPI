@@ -1,5 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace HeThongVanTai.Models.Domain
 {
@@ -12,5 +12,6 @@ namespace HeThongVanTai.Models.Domain
         public string? LicenseClass { get; set; }
         public DateTime? LicenseExpiry { get; set; }
         public string Status { get; set; } = "Active";
+        public string? AvatarUrl { get; set; }
     }
 }

@@ -83,6 +83,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ClockSkew = TimeSpan.Zero,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
     });
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IImageRepository, LocalImageRepository>();
 
 var app = builder.Build();
 
@@ -104,6 +106,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseAuthentication();   // ph?i ??ng tr??c UseAuthorization
 app.UseAuthorization();
 app.MapControllers();
