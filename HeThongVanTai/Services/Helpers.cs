@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Security.Claims;
+using System.Security.Cryptography;
 using HeThongVanTai.Models.Domain;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -49,11 +50,24 @@ public static class Rules
         return Math.Min(d, subtotal);
     }
 
-    private const string Chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";   
+    private const string Chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";   // bỏ I, O, 0, 1 cho khỏi nhầm
     public static string NewTicketCode() => "VT" + RandomNumberGenerator.GetString(Chars, 8);
     public static string NewBookingCode() => "BK" + DateTime.Now.ToString("yyMMdd") + RandomNumberGenerator.GetString(Chars, 5);
 
-    
+    // Lỗi vi phạm unique index (SQL Server báo mã 2601 hoặc 2627)
     public static bool IsDuplicate(DbUpdateException ex) =>
         ex.InnerException is SqlException { Number: 2601 or 2627 };
+}
+
+// Đọc thông tin người dùng từ token đăng nhập
+public static class UserClaims
+{
+    public static string? UserId(ClaimsPrincipal u) =>
+        u.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? u.FindFirst("sub")?.Value;
+
+    public static string? Email(ClaimsPrincipal u) =>
+        u.FindFirst(ClaimTypes.Email)?.Value
+        ?? u.FindFirst("email")?.Value
+        ?? u.FindFirst(ClaimTypes.Name)?.Value
+        ?? u.FindFirst("unique_name")?.Value;
 }

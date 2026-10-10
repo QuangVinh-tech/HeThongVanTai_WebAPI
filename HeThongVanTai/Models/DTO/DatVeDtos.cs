@@ -18,7 +18,8 @@ public class SeatDto
 
 public class CreateBookingDto
 {
-    [Range(1, int.MaxValue)] public int CustomerId { get; set; }
+   
+    public int CustomerId { get; set; }
     [Range(1, int.MaxValue)] public int TripId { get; set; }
     [Required, MinLength(1)] public List<SeatDto> Seats { get; set; } = new();
     public string? PromoCode { get; set; }
@@ -52,4 +53,10 @@ public class ValidatePromoDto
 {
     [Required] public string Code { get; set; } = "";
     public decimal Amount { get; set; }
+}
+public class CreateReviewDto
+{
+    [Range(1, int.MaxValue)] public int TicketId { get; set; }
+    [Range(1, 5, ErrorMessage = "Số sao từ 1 đến 5")] public int Rating { get; set; }
+    [MaxLength(500)] public string? Comment { get; set; }
 }

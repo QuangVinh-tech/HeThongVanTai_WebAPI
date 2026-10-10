@@ -1,11 +1,13 @@
 ﻿using HeThongVanTai.Data;
 using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Models.DTO;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeThongVanTai.Controllers;
 
+[Authorize(Roles = "Admin,Seller")]
 [ApiController]
 [Route("api/[controller]")]
 public class CustomersController : ControllerBase
