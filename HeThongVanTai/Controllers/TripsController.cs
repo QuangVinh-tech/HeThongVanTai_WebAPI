@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ namespace HeThongVanTai.Controllers
 {
     [Route("api/trips")]
     [ApiController]
+    [Authorize(Roles = AppRoles.AdminOperator)]
     public class TripsController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -21,6 +23,7 @@ namespace HeThongVanTai.Controllers
             _context = context;
         }
 
+        [AllowAnonymous]
         [HttpGet("{id}/seats")]
         public async Task<IActionResult> GetTripSeats(int id)
         {
@@ -128,6 +131,7 @@ namespace HeThongVanTai.Controllers
             });
         }
 
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetTrips(
             [FromQuery] int? busRouteId,

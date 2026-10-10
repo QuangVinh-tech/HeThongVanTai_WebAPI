@@ -61,6 +61,7 @@ public class ReviewsController : ControllerBase
     }
 
     // Công khai: điểm trung bình và các nhận xét mới nhất của chuyến
+    [AllowAnonymous]
     [HttpGet("api/trips/{tripId:int}/reviews")]
     public async Task<IActionResult> ByTrip(int tripId)
     {
