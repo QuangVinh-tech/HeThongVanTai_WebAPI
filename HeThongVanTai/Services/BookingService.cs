@@ -26,10 +26,10 @@ public class BookingService
         b.TotalAmount,
         b.DiscountAmount,
         b.HoldExpiresAt,
-        Tickets = b.Tickets.Select(t => new { t.Id, t.TicketCode, t.SeatCode, t.PassengerName, t.Price, t.Status })
+        Tickets = b.Tickets.Select(t => new { t.Id, t.TicketCode, t.TripId, t.SeatCode, t.PassengerName, t.Price, t.Status })
     };
 
-    // ===================== #22 Tìm chuyến =====================
+    // ===================== Tìm chuyến =====================
     public async Task<object> SearchAsync(int fromId, int toId, DateTime date)
     {
         await ReleaseExpiredAsync();
@@ -50,13 +50,14 @@ public class BookingService
                 t.ArriveAt,
                 t.Price,
                 Plate = t.Vehicle.Plate,
+                VehicleType = t.Vehicle.VehicleType.Name,
                 TotalSeats = t.Vehicle.VehicleType.SeatCount,
                 AvailableSeats = t.Vehicle.VehicleType.SeatCount - t.Tickets.Count(k => k.Status != "Cancelled")
             })
             .ToListAsync();
     }
 
-    // ============== #22 + #23 + #26 Đặt vé, giữ ghế, áp mã ==============
+    // ============== Đặt vé, giữ ghế, áp mã ==============
     public async Task<(int Id, object Body)> CreateAsync(CreateBookingDto dto)
     {
         var now = DateTime.Now;
@@ -78,7 +79,7 @@ public class BookingService
         var valid = await _db.SeatTemplates
             .CountAsync(s => s.VehicleTypeId == trip.Vehicle.VehicleTypeId && codes.Contains(s.SeatCode));
         if (valid != codes.Count)
-            throw new ServiceException(400, "Có mã ghế không thuộc loại xe của chuyến.");
+            throw new ServiceException(400, "Có mã ghế không thuộc loại xe của chuyến này.");
 
         // Nhả các giữ chỗ đã quá hạn của chuyến này trước khi kiểm tra ghế
         await ReleaseExpiredAsync(trip.Id);
@@ -155,7 +156,7 @@ public class BookingService
         return Shape(b);
     }
 
-    // ============ #23 Nhả giữ chỗ quá hạn ============
+    // ============ Nhả giữ chỗ quá hạn ============
     // Phải đổi vé sang Cancelled thì unique index mới cho người khác đặt lại ghế đó.
     public async Task<int> ReleaseExpiredAsync(int? tripId = null)
     {
@@ -182,7 +183,7 @@ public class BookingService
         return ids.Count;
     }
 
-    // ============ #24 Hủy booking + hoàn tiền ============
+    // ============ Hủy booking + hoàn tiền ============
     public async Task<object> CancelAsync(int id)
     {
         var b = await _db.Bookings
@@ -202,11 +203,11 @@ public class BookingService
         if (b.Status == "Paid")
         {
             if (depart <= now) throw new ServiceException(400, "Chuyến đã khởi hành, không thể hủy.");
-            var paidPayment = b.Payments.First(p => p.Status == "Paid");
+            var paidPayment = b.Payments.FirstOrDefault(p => p.Status == "Paid");
             var paid = b.Payments.Where(p => p.Status == "Paid").Sum(p => p.Amount);
             rate = Rules.RefundRate(depart, now);
             refund = Math.Round(paid * rate, 0);
-            if (refund > 0)
+            if (refund > 0 && paidPayment != null)
             {
                 _db.Payments.Add(new Payment
                 {
@@ -235,7 +236,7 @@ public class BookingService
         return new { BookingId = b.Id, b.Status, RefundRate = rate, RefundAmount = refund };
     }
 
-    // ============ #24 Đổi vé: đổi ghế, hoặc đổi sang chuyến khác cùng tuyến ============
+    // ============ Đổi vé: đổi ghế, hoặc đổi sang chuyến khác cùng tuyến ============
     public async Task<object> ChangeTicketAsync(int ticketId, ChangeTicketDto dto)
     {
         var t = await _db.Tickets.Include(x => x.Booking).Include(x => x.Trip)
@@ -297,7 +298,7 @@ public class BookingService
         return new { t.Id, t.TicketCode, t.TripId, t.SeatCode, t.Price, t.Status };
     }
 
-    // ============ #27 Tra cứu vé theo mã ============
+    // ============ Tra cứu vé theo mã ============
     public async Task<object> GetTicketInfoAsync(string ticketCode)
     {
         var code = ticketCode.Trim().ToUpperInvariant();
@@ -319,5 +320,191 @@ public class BookingService
                    })
                    .FirstOrDefaultAsync()
                ?? throw new ServiceException(404, "Không tìm thấy vé.");
+    }
+
+        
+    public async Task<object> GetByCodeAsync(string code)
+    {
+        var c = code.Trim().ToUpperInvariant();
+        return await _db.Bookings.AsNoTracking()
+                   .Where(b => b.Code == c)
+                   .Select(b => new
+                   {
+                       b.Id,
+                       b.Code,
+                       b.Status,
+                       b.TotalAmount,
+                       b.DiscountAmount,
+                       b.HoldExpiresAt,
+                       b.CreatedAt,
+                       Customer = b.Customer.FullName,
+                       Tickets = b.Tickets.Select(t => new
+                       {
+                           t.Id,
+                           t.TicketCode,
+                           t.SeatCode,
+                           t.PassengerName,
+                           t.Price,
+                           t.Status,
+                           Route = t.Trip.BusRoute.Name,
+                           FromStation = t.Trip.BusRoute.FromStation.Name,
+                           ToStation = t.Trip.BusRoute.ToStation.Name,
+                           t.Trip.DepartAt,
+                           Plate = t.Trip.Vehicle.Plate
+                       })
+                   })
+                   .FirstOrDefaultAsync()
+               ?? throw new ServiceException(404, "Không tìm thấy mã đặt vé.");
+    }
+
+    // Xem trước số tiền hoàn trước khi khách bấm hủy
+    public async Task<object> RefundPreviewAsync(int id)
+    {
+        var b = await _db.Bookings.AsNoTracking()
+                    .Include(x => x.Tickets).ThenInclude(t => t.Trip)
+                    .Include(x => x.Payments)
+                    .FirstOrDefaultAsync(x => x.Id == id)
+                ?? throw new ServiceException(404, "Không tìm thấy booking.");
+
+        var now = DateTime.Now;
+        var active = b.Tickets.Where(t => t.Status == "Active").ToList();
+        if (b.Status is not ("Holding" or "Paid") || active.Count == 0)
+            return new { CanCancel = false, Reason = "Booking không thể hủy ở trạng thái này.", RefundRate = 0m, RefundAmount = 0m };
+
+        var depart = active.Min(t => t.Trip.DepartAt);
+        if (b.Status == "Paid" && depart <= now)
+            return new { CanCancel = false, Reason = "Chuyến đã khởi hành.", RefundRate = 0m, RefundAmount = 0m };
+
+        decimal rate = 0, refund = 0;
+        if (b.Status == "Paid")
+        {
+            var paid = b.Payments.Where(p => p.Status == "Paid").Sum(p => p.Amount);
+            rate = Rules.RefundRate(depart, now);
+            refund = Math.Round(paid * rate, 0);
+        }
+        return new { CanCancel = true, Reason = (string?)null, RefundRate = rate, RefundAmount = refund };
+    }
+
+    // Danh sách đặt vé cho quản trị: lọc, sắp xếp, phân trang
+    public async Task<object> ListAsync(string? status, string? keyword, DateTime? fromDate, DateTime? toDate,
+                                        string? sortBy, bool desc, int page, int pageSize)
+    {
+        await ReleaseExpiredAsync();   // để trạng thái hết hạn hiển thị đúng
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var q = _db.Bookings.AsNoTracking().AsQueryable();
+        if (!string.IsNullOrWhiteSpace(status)) q = q.Where(b => b.Status == status);
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var k = keyword.Trim();
+            q = q.Where(b => b.Code.Contains(k) || b.Customer.FullName.Contains(k)
+                          || (b.Customer.Phone != null && b.Customer.Phone.Contains(k)));
+        }
+        if (fromDate.HasValue)
+        {
+            var f = fromDate.Value.Date;
+            q = q.Where(b => b.CreatedAt >= f);
+        }
+        if (toDate.HasValue)
+        {
+            var t = toDate.Value.Date.AddDays(1);
+            q = q.Where(b => b.CreatedAt < t);
+        }
+
+        IQueryable<Booking> ordered = (sortBy?.ToLowerInvariant(), desc) switch
+        {
+            ("total", false) => q.OrderBy(b => b.TotalAmount),
+            ("total", true) => q.OrderByDescending(b => b.TotalAmount),
+            ("status", false) => q.OrderBy(b => b.Status),
+            ("status", true) => q.OrderByDescending(b => b.Status),
+            (_, false) => q.OrderBy(b => b.CreatedAt),
+            _ => q.OrderByDescending(b => b.CreatedAt)
+        };
+
+        var total = await ordered.CountAsync();
+        var items = await ordered.Skip((page - 1) * pageSize).Take(pageSize)
+            .Select(b => new
+            {
+                b.Id,
+                b.Code,
+                b.Status,
+                b.TotalAmount,
+                b.DiscountAmount,
+                b.CreatedAt,
+                b.HoldExpiresAt,
+                Customer = b.Customer.FullName,
+                Phone = b.Customer.Phone,
+                Seats = b.Tickets.Count(t => t.Status != "Cancelled")
+            })
+            .ToListAsync();
+        return new { total, page, pageSize, items };
+    }
+
+    // Lấy hoặc tạo hồ sơ Customer cho tài khoản đang đăng nhập
+    public async Task<int> GetOrCreateCustomerIdAsync(string userId, string? email)
+    {
+        var c = await _db.Customers.FirstOrDefaultAsync(x => x.UserId == userId);
+        if (c != null) return c.Id;
+
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            c = await _db.Customers.FirstOrDefaultAsync(x => x.UserId == null && x.Email == email);
+            if (c != null)
+            {
+                c.UserId = userId;
+                await _db.SaveChangesAsync();
+                return c.Id;
+            }
+        }
+        c = new Customer { UserId = userId, FullName = email ?? "Khách hàng", Email = email };
+        _db.Customers.Add(c);
+        await _db.SaveChangesAsync();
+        return c.Id;
+    }
+
+    public Task<bool> IsOwnerAsync(int bookingId, string userId) =>
+        _db.Bookings.AnyAsync(b => b.Id == bookingId && b.Customer.UserId == userId);
+
+    public Task<bool> IsTicketOwnerAsync(int ticketId, string userId) =>
+        _db.Tickets.AnyAsync(t => t.Id == ticketId && t.Booking.Customer.UserId == userId);
+
+    // "Vé của tôi"
+    public async Task<object> MineAsync(string userId, int page, int pageSize)
+    {
+        await ReleaseExpiredAsync();
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 50);
+
+        var q = _db.Bookings.AsNoTracking()
+            .Where(b => b.Customer.UserId == userId)
+            .OrderByDescending(b => b.CreatedAt);
+        var total = await q.CountAsync();
+        var items = await q.Skip((page - 1) * pageSize).Take(pageSize)
+            .Select(b => new
+            {
+                b.Id,
+                b.Code,
+                b.Status,
+                b.TotalAmount,
+                b.DiscountAmount,
+                b.CreatedAt,
+                b.HoldExpiresAt,
+                Tickets = b.Tickets.Select(t => new
+                {
+                    t.Id,
+                    t.TicketCode,
+                    t.SeatCode,
+                    t.PassengerName,
+                    t.Price,
+                    t.Status,
+                    t.TripId,
+                    t.Trip.BusRouteId,
+                    Route = t.Trip.BusRoute.Name,
+                    t.Trip.DepartAt
+                })
+            })
+            .ToListAsync();
+        return new { total, page, pageSize, items };
     }
 }

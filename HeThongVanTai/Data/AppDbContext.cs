@@ -22,6 +22,10 @@ namespace HeThongVanTai.Data
             modelBuilder.Entity<Ticket>().HasIndex(t => t.TicketCode)
                 .IsUnique().HasFilter("[TicketCode] <> ''");
             modelBuilder.Entity<Promotion>().HasIndex(p => p.Code).IsUnique();
+
+            // Mỗi vé chỉ được đánh giá 1 lần
+            modelBuilder.Entity<Review>().HasIndex(r => r.TicketId).IsUnique();
+            modelBuilder.Entity<Review>().HasIndex(r => r.TripId);
         }
 
         public DbSet<Station> Stations { get; set; }
@@ -37,5 +41,6 @@ namespace HeThongVanTai.Data
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Promotion> Promotions { get; set; }
         public DbSet<Image> Images { get; set; }
+        public DbSet<Review> Reviews { get; set; }
     }
 }
