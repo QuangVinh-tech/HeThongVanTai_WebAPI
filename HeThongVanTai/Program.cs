@@ -1,6 +1,7 @@
-using System.Text;
+﻿using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -17,7 +18,7 @@ builder.Services.AddControllers(o => o.Filters.Add<ServiceExceptionFilter>())
 
 builder.Services.AddEndpointsApiExplorer();
 
-// Swagger c� n�t Authorize ?? d�n token
+// Swagger có nút Authorize để dán token
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -27,7 +28,7 @@ builder.Services.AddSwaggerGen(options =>
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
-        Description = "D�n chu?i token JWT v�o ?�y (kh�ng c?n g� ch? Bearer)"
+        Description = "Dán chuỗi token JWT vào đây (không cần gõ chữ Bearer)"
     });
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -41,7 +42,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// 2 database: nghi?p v? v� t�i kho?n
+// 2 database: nghiệp vụ và tài khoản
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<VanTaiAuthDbContext>(options =>
@@ -83,6 +84,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ClockSkew = TimeSpan.Zero,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
     });
+// Mọi API mặc định phải đăng nhập; API công khai thì ghi [AllowAnonymous] rõ ràng
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+});
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IImageRepository, LocalImageRepository>();
 
@@ -107,7 +114,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-app.UseAuthentication();   // ph?i ??ng tr??c UseAuthorization
+app.UseAuthentication();   // phải đứng trước UseAuthorization
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

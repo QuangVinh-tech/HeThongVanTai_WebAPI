@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,6 +13,8 @@ using HeThongVanTai.Models.Domain;
 namespace HeThongVanTai.Controllers
 {
     [Route("QuanLyTaiXe")]
+    // TẠM THỜI: trang này sẽ chuyển sang project HeThongVanTai.Web và gọi API có đăng nhập, khi đó gỡ [AllowAnonymous]
+    [AllowAnonymous]
     public class QuanLyTaiXeController : Controller
     {
         private readonly AppDbContext _context;

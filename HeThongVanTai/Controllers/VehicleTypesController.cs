@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HeThongVanTai.Data;
 using HeThongVanTai.Models.Domain;
@@ -8,6 +9,7 @@ namespace HeThongVanTai.Controllers
 {
     [Route("api/vehicle-types")]
     [ApiController]
+    [Authorize(Roles = AppRoles.AdminOperator)]
     public class VehicleTypesController : ControllerBase
     {
         private readonly AppDbContext _context;

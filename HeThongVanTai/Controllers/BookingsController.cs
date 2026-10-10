@@ -24,6 +24,7 @@ public class BookingsController : ControllerBase
     }
 
     // Công khai: tìm chuyến
+    [AllowAnonymous]
     [HttpGet("api/trips/search")]
     public async Task<IActionResult> Search(
         [FromQuery] int fromStationId, [FromQuery] int toStationId, [FromQuery] DateTime date)
@@ -53,6 +54,7 @@ public class BookingsController : ControllerBase
     }
 
     // Công khai: tra cứu theo mã đặt vé
+    [AllowAnonymous]
     [HttpGet("api/bookings/by-code/{code}")]
     public async Task<IActionResult> GetByCode(string code) => Ok(await _svc.GetByCodeAsync(code));
 
