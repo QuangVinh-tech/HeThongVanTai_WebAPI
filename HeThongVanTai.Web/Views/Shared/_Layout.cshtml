@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - VậnTải HK</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark navbar-vt">
+            <div class="container">
+                <a class="navbar-brand fw-bold" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-bus-front-fill me-1"></i>VậnTải HK
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                        aria-controls="mainNav" aria-expanded="false" aria-label="Mở menu">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">Trang chủ</a>
+                        </li>
+                        @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Operator))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Admin" asp-action="Dashboard">Quản trị</a>
+                            </li>
+                        }
+                    </ul>
+                    <ul class="navbar-nav align-items-lg-center">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle me-1"></i>@User.Identity.Name
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post">
+                                            <button type="submit" class="dropdown-item">Đăng xuất</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                            </li>
+                            <li class="nav-item ms-lg-2">
+                                <a class="btn btn-light btn-sm fw-semibold btn-register" asp-controller="Account" asp-action="Register">Đăng ký</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    @if (TempData["Success"] is string successMessage)
+    {
+        <div class="container mt-3">
+            <div class="alert alert-success mb-0">@successMessage</div>
+        </div>
+    }
+
+    @if (TempData["Error"] is string errorMessage)
+    {
+        <div class="container mt-3">
+            <div class="alert alert-danger mb-0">@errorMessage</div>
+        </div>
+    }
+
+    <main role="main" class="pb-4">
+        @RenderBody()
+    </main>
+
+    <footer class="footer-vt py-3">
+        <div class="container small">&copy; 2026 VậnTải HK - Hệ thống quản lý dịch vụ vận tải hành khách</div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

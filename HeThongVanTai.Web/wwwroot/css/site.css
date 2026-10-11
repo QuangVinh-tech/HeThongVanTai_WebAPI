@@ -1,0 +1,121 @@
+/* ===== Theme chung của nhóm (bảng màu hồng, KHÔNG dùng màu đen) =====
+   Chỉ Vinh sửa file này. Mỗi người thêm CSS riêng vào wwwroot/css/<module>.css */
+:root {
+    --vt-primary: #B03060;
+    --vt-primary-dark: #962A52;
+    --vt-secondary: #DB7093;
+    --vt-accent: #FF82AB;
+    --vt-pink: #FFC0CB;
+    --vt-tint: #FDE7EC;
+    --vt-soft: #FFF5F7;
+    --vt-text: #8B475D;
+    --vt-muted: #8B636C;
+    --vt-line: #F8D4DC;
+    --vt-sold: #CD919E;
+    --vt-ok: #0B8A5F;
+    --vt-warn: #C77800;
+    --vt-bad: #C81E3A;
+
+    --bs-primary: #B03060;
+    --bs-primary-rgb: 176, 48, 96;
+    --bs-body-color: #8B475D;
+    --bs-body-color-rgb: 139, 71, 93;
+    --bs-body-bg: #FFFFFF;
+    --bs-heading-color: #8B475D;
+    --bs-secondary-color: #8B636C;
+    --bs-border-color: #F8D4DC;
+    --bs-link-color: #B03060;
+    --bs-link-color-rgb: 176, 48, 96;
+    --bs-link-hover-color: #DB7093;
+    --bs-link-hover-color-rgb: 219, 112, 147;
+}
+
+body { color: var(--vt-text); background: #FFFFFF; }
+.text-muted { color: var(--vt-muted) !important; }
+
+/* Nút */
+.btn-primary {
+    --bs-btn-bg: #B03060;
+    --bs-btn-border-color: #B03060;
+    --bs-btn-hover-bg: #962A52;
+    --bs-btn-hover-border-color: #962A52;
+    --bs-btn-active-bg: #862548;
+    --bs-btn-active-border-color: #862548;
+    --bs-btn-disabled-bg: #CD919E;
+    --bs-btn-disabled-border-color: #CD919E;
+    --bs-btn-focus-shadow-rgb: 176, 48, 96;
+}
+.btn-outline-primary {
+    --bs-btn-color: #B03060;
+    --bs-btn-border-color: #B03060;
+    --bs-btn-hover-bg: #B03060;
+    --bs-btn-hover-border-color: #B03060;
+    --bs-btn-active-bg: #B03060;
+    --bs-btn-active-border-color: #B03060;
+    --bs-btn-focus-shadow-rgb: 176, 48, 96;
+}
+.btn-register { color: var(--vt-primary); }
+
+/* Form */
+.form-control:focus, .form-select:focus {
+    border-color: var(--vt-secondary);
+    box-shadow: 0 0 0 .25rem rgba(176, 48, 96, .15);
+}
+.validation-summary-valid { display: none; }
+
+/* Thanh điều hướng, chân trang */
+.navbar-vt { background: linear-gradient(120deg, #B03060, #DB7093); }
+.navbar-vt .nav-link, .navbar-vt .navbar-brand { color: #FFFFFF; }
+.navbar-vt .nav-link:hover { color: #FFE4EA; }
+.footer-vt { background: var(--vt-soft); border-top: 1px solid var(--vt-line); color: var(--vt-muted); }
+
+/* Thẻ, banner */
+.card-vt {
+    background: #FFFFFF;
+    border: 1px solid var(--vt-line);
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(176, 48, 96, .08);
+}
+.hero-vt {
+    background: linear-gradient(120deg, #B03060, #DB7093 60%, #FF82AB);
+    color: #FFFFFF;
+    padding: 3rem 0 5rem;
+    border-radius: 0 0 28px 28px;
+}
+.hero-vt h1 { color: #FFFFFF; }
+.search-card { margin-top: -3.5rem; }
+.feature-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: var(--vt-tint); color: var(--vt-primary);
+    display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+}
+.auth-wrap { max-width: 440px; margin: 3rem auto; }
+
+/* Khu quản trị */
+.sidebar-vt { background: var(--vt-soft); border-right: 1px solid var(--vt-line); min-height: calc(100vh - 56px); }
+.sidebar-vt .nav-link { color: var(--vt-text); border-radius: 10px; padding: .55rem .85rem; font-weight: 500; }
+.sidebar-vt .nav-link:hover { background: var(--vt-tint); }
+.sidebar-vt .nav-link.active { background: var(--vt-primary); color: #FFFFFF; }
+
+/* Bảng dữ liệu: dùng class "table table-vt" */
+.table-vt thead th {
+    background: var(--vt-soft); color: var(--vt-muted);
+    font-size: .8rem; font-weight: 600; border-bottom: 1px solid var(--vt-line);
+}
+
+/* Nhãn trạng thái: <span class="pill pill-ok">Đang chạy</span> */
+.pill { display: inline-block; padding: .15rem .65rem; border-radius: 999px; font-size: .8rem; font-weight: 600; }
+.pill-ok { background: #D3F3E4; color: var(--vt-ok); }
+.pill-warn { background: #FFF0CF; color: var(--vt-warn); }
+.pill-bad { background: #FDE3E7; color: var(--vt-bad); }
+.pill-info { background: var(--vt-tint); color: var(--vt-primary); }
+
+/* Sơ đồ ghế: <button class="seat">A1</button>, thêm "selected" hoặc "sold" */
+.seat {
+    width: 42px; height: 40px; border-radius: 9px;
+    border: 1.5px solid #FFB5C5; background: #FFE3EA; color: var(--vt-muted);
+    font-size: .75rem; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.seat.selected { background: var(--vt-primary); border-color: var(--vt-primary); color: #FFFFFF; }
+.seat.sold { background: var(--vt-sold); border-color: var(--vt-sold); color: transparent; cursor: not-allowed; }

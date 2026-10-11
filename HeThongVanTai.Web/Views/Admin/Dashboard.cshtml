@@ -1,0 +1,41 @@
+@model DashboardPlaceholderViewModel
+@{
+    ViewData["Title"] = "Tổng quan";
+    Layout = "_AdminLayout";
+}
+
+<h1 class="h4 mb-3">Tổng quan</h1>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card card-vt p-3 h-100">
+            <div class="small text-muted">Đăng nhập với</div>
+            <div class="fw-semibold mb-2">@Model.Email</div>
+            <div>
+                @foreach (var role in Model.Roles)
+                {
+                    <span class="pill pill-info me-1">@role</span>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card card-vt p-3 h-100">
+            <div class="small text-muted">Kết nối API</div>
+            @if (Model.ApiOk)
+            {
+                <div><span class="pill pill-ok">Thành công</span></div>
+                <div class="small mt-2">Token đã được gắn tự động vào lời gọi API.</div>
+            }
+            else
+            {
+                <div><span class="pill pill-bad">Thất bại</span></div>
+                <div class="small mt-2">@Model.Error</div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="card card-vt p-4 text-center">
+    <p class="mb-0">Các chỉ số và biểu đồ sẽ được thêm ở bước Dashboard.</p>
+</div>
