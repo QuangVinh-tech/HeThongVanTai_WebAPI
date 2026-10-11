@@ -1,0 +1,29 @@
+@{
+    Layout = "_Layout";
+}
+
+@section Styles {
+    @await RenderSectionAsync("Styles", required: false)
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <aside class="col-lg-2 sidebar-vt py-3">
+            <nav class="nav flex-column gap-1">
+                <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")"
+                   asp-controller="Admin" asp-action="Dashboard">
+                    <i class="bi bi-speedometer2 me-2"></i>Tổng quan
+                </a>
+                @* Mỗi người thêm mục menu của mình vào đây khi trang đã xong, ví dụ:
+                   <a class="nav-link" href="/Admin/Vehicles"><i class="bi bi-bus-front me-2"></i>Xe</a> *@
+            </nav>
+        </aside>
+        <section class="col-lg-10 py-4 px-lg-4">
+            @RenderBody()
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    @await RenderSectionAsync("Scripts", required: false)
+}

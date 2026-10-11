@@ -1,0 +1,58 @@
+@{
+    ViewData["Title"] = "Trang chủ";
+}
+
+<section class="hero-vt">
+    <div class="container text-center">
+        <h1 class="display-6 fw-bold">Đặt vé xe khách trực tuyến</h1>
+        <p class="lead mb-0">Chọn chuyến, chọn ghế và thanh toán chỉ trong vài bước.</p>
+    </div>
+</section>
+
+<div class="container">
+    @* TODO (Tấn): gắn form này vào trang Tìm chuyến (/Trips/Search). Các ô điểm đi và điểm đến lấy từ
+       GET api/stations (công khai). Giữ nguyên bố cục card để thống nhất giao diện. *@
+    <form method="get" action="/Trips/Search" class="card card-vt search-card p-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small" for="fromStationId">Điểm đi</label>
+                <select class="form-select" id="fromStationId" name="fromStationId"><option value="">Chọn điểm đi</option></select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small" for="toStationId">Điểm đến</label>
+                <select class="form-select" id="toStationId" name="toStationId"><option value="">Chọn điểm đến</option></select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small" for="date">Ngày đi</label>
+                <input type="date" class="form-control" id="date" name="date" />
+            </div>
+            <div class="col-md-3 d-grid">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i>Tìm chuyến xe</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="row g-3 mt-4">
+        <div class="col-md-4">
+            <div class="card card-vt h-100 p-4">
+                <div class="feature-icon mb-2"><i class="bi bi-ticket-perforated"></i></div>
+                <h2 class="h6">Đặt vé nhanh</h2>
+                <p class="small mb-0">Tìm chuyến theo điểm đi, điểm đến và ngày, chọn ghế trực quan.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-vt h-100 p-4">
+                <div class="feature-icon mb-2"><i class="bi bi-hourglass-split"></i></div>
+                <h2 class="h6">Giữ chỗ tạm thời</h2>
+                <p class="small mb-0">Ghế được giữ trong thời gian ngắn để bạn hoàn tất thanh toán.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-vt h-100 p-4">
+                <div class="feature-icon mb-2"><i class="bi bi-qr-code"></i></div>
+                <h2 class="h6">Vé điện tử có mã QR</h2>
+                <p class="small mb-0">Nhận vé có mã QR, tra cứu lại bằng mã đặt vé bất kỳ lúc nào.</p>
+            </div>
+        </div>
+    </div>
+</div>
