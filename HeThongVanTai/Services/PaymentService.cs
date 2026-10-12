@@ -8,7 +8,13 @@ namespace HeThongVanTai.Services;
 public class PaymentService
 {
     private readonly AppDbContext _db;
-    public PaymentService(AppDbContext db) => _db = db;
+    private readonly ILogger<PaymentService> _logger;
+
+    public PaymentService(AppDbContext db, ILogger<PaymentService> logger)
+    {
+        _db = db;
+        _logger = logger;
+    }
 
     private static object Shape(Payment p, string bookingCode) => new
     {
@@ -58,6 +64,8 @@ public class PaymentService
 
         _db.Payments.Add(payment);
         await _db.SaveChangesAsync();
+        _logger.LogInformation("Thanh toán: booking {BookingCode}, {Method}, {Amount}, trạng thái {Status}",
+            b.Code, method, payment.Amount, payment.Status);
         return Shape(payment, b.Code);
     }
 
@@ -74,6 +82,7 @@ public class PaymentService
 
         Complete(p.Booking, p);
         await _db.SaveChangesAsync();
+        _logger.LogInformation("Xác nhận chuyển khoản: booking {BookingCode}, {Amount}", p.Booking.Code, p.Amount);
         return Shape(p, p.Booking.Code);
     }
 

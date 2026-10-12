@@ -9,11 +9,13 @@ public class BookingService
 {
     private readonly AppDbContext _db;
     private readonly IConfiguration _cfg;
+    private readonly ILogger<BookingService> _logger;
 
-    public BookingService(AppDbContext db, IConfiguration cfg)
+    public BookingService(AppDbContext db, IConfiguration cfg, ILogger<BookingService> logger)
     {
         _db = db;
         _cfg = cfg;
+        _logger = logger;
     }
 
     private int HoldMinutes => _cfg.GetValue<int?>("Booking:HoldMinutes") ?? 15;
@@ -146,6 +148,8 @@ public class BookingService
         }
 
         await tx.CommitAsync();
+        _logger.LogInformation("Đặt vé: booking {BookingCode}, chuyến {TripId}, ghế {Seats}, tổng {Total}, khuyến mãi {PromoCode}",
+            booking.Code, trip.Id, string.Join(",", codes), booking.TotalAmount, promo?.Code ?? "-");
         return (booking.Id, Shape(booking));
     }
 
@@ -180,6 +184,7 @@ public class BookingService
             await _db.Promotions.Where(p => p.Id == pid && p.UsedCount > 0)
                 .ExecuteUpdateAsync(s => s.SetProperty(p => p.UsedCount, p => p.UsedCount - 1));
         }
+        _logger.LogInformation("Nhả {Count} booking hết hạn giữ chỗ", ids.Count);
         return ids.Count;
     }
 
@@ -233,6 +238,7 @@ public class BookingService
                 .ExecuteUpdateAsync(s => s.SetProperty(p => p.UsedCount, p => p.UsedCount - 1));
         }
 
+        _logger.LogInformation("Hủy booking {BookingCode}: hoàn {RefundRate:P0} = {RefundAmount}", b.Code, rate, refund);
         return new { BookingId = b.Id, b.Status, RefundRate = rate, RefundAmount = refund };
     }
 
@@ -295,6 +301,7 @@ public class BookingService
         {
             throw new ServiceException(409, "Ghế mới vừa có người khác giữ.");
         }
+        _logger.LogInformation("Đổi vé {TicketCode}: chuyến {TripId}, ghế {SeatCode}", t.TicketCode, t.TripId, t.SeatCode);
         return new { t.Id, t.TicketCode, t.TripId, t.SeatCode, t.Price, t.Status };
     }
 

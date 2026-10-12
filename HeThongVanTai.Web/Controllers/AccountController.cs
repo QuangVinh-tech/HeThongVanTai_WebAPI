@@ -10,10 +10,19 @@ namespace HeThongVanTai.Web.Controllers;
 public class AccountController : Controller
 {
     private readonly ApiClient _api;
+    private readonly ILogger<AccountController> _logger;
 
-    public AccountController(ApiClient api)
+    public AccountController(ApiClient api, ILogger<AccountController> logger)
     {
         _api = api;
+        _logger = logger;
+    }
+
+    // Email do người dùng nhập: bỏ xuống dòng, cắt ngắn trước khi ghi log
+    private static string Safe(string? value)
+    {
+        var s = (value ?? "").Replace('\r', ' ').Replace('\n', ' ').Trim();
+        return s.Length > 100 ? s[..100] : s;
     }
 
     [AllowAnonymous]
@@ -46,6 +55,8 @@ public class AccountController : Controller
             var message = result.Status == 400
                 ? "Email hoặc mật khẩu không đúng."
                 : result.Error ?? "Đăng nhập thất bại. Vui lòng thử lại.";
+            // Chỉ ghi email, tuyệt đối không ghi mật khẩu hay token
+            _logger.LogWarning("Đăng nhập Web thất bại: {Email} (API trả {Status})", Safe(model.Email), result.Status);
             ModelState.AddModelError(string.Empty, message);
             return View(model);
         }
@@ -54,6 +65,7 @@ public class AccountController : Controller
         var properties = new AuthenticationProperties { IsPersistent = false, ExpiresUtc = info.ExpiresAt };
         properties.StoreTokens(new[] { new AuthenticationToken { Name = "access_token", Value = jwt! } });
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, info.Principal, properties);
+        _logger.LogInformation("Đăng nhập Web thành công: {Email}", Safe(model.Email));
 
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)) return Redirect(returnUrl);
         if (info.Principal.IsInRole(AppRoles.Admin) || info.Principal.IsInRole(AppRoles.Operator))
@@ -84,10 +96,12 @@ public class AccountController : Controller
 
         if (!result.Ok)
         {
+            _logger.LogWarning("Đăng ký Web thất bại: {Email}", Safe(model.Email));
             ModelState.AddModelError(string.Empty, result.Error ?? "Đăng ký thất bại. Vui lòng thử lại.");
             return View(model);
         }
 
+        _logger.LogInformation("Đăng ký Web thành công: {Email}", Safe(model.Email));
         TempData["Success"] = "Đăng ký thành công. Hãy đăng nhập.";
         return RedirectToAction(nameof(Login));
     }
@@ -97,6 +111,7 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
+        _logger.LogInformation("Đăng xuất Web: {Email}", Safe(User.Identity?.Name));
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return RedirectToAction("Index", "Home");
     }

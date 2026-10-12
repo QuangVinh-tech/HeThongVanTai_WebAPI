@@ -16,3 +16,12 @@
 - Xóa dữ liệu dùng POST kèm `[ValidateAntiForgeryToken]`, không dùng link GET.
 - Màu và thành phần dùng chung (nút, thẻ, bảng, nhãn trạng thái, ghế) nằm trong `wwwroot/css/site.css`, chỉ Vinh sửa.
   CSS riêng của mỗi module đặt ở `wwwroot/css/<module>.css`.
+
+## Ghi log (Serilog)
+
+- API và Web đều ghi log ra console và file theo ngày: `Logs/api-<ngày>.log`, `Logs/web-<ngày>.log` (giữ 30 ngày), nằm trong thư mục của từng project.
+- Mức log, đường dẫn file chỉnh ở mục `Serilog` trong `appsettings.json`, không sửa trong code.
+- Đã ghi: đăng nhập/đăng ký/đăng xuất, đặt vé, hủy vé, đổi vé, thanh toán, xác nhận chuyển khoản, nhả giữ chỗ hết hạn, lỗi nghiệp vụ và lỗi gọi API.
+- **Không** ghi mật khẩu, token, nội dung form. Chỉ ghi email và mã đặt vé. Khi thêm log mới, đừng đưa cả DTO/model vào log.
+- Thư mục `Logs/` đã nằm trong `.gitignore`.
+- Cách ghi log trong code: inject `ILogger<TênLớp>` rồi gọi `_logger.LogInformation("Nội dung {ThamSo}", giaTri)`; lỗi bắt được thì `_logger.LogError(ex, "...")`.

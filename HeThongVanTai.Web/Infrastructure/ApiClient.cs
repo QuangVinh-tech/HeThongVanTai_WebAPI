@@ -19,10 +19,12 @@ public class ApiClient
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private readonly HttpClient _http;
+    private readonly ILogger<ApiClient> _logger;
 
-    public ApiClient(HttpClient http)
+    public ApiClient(HttpClient http, ILogger<ApiClient> logger)
     {
         _http = http;
+        _logger = logger;
     }
 
     public Task<ApiResult<T>> GetAsync<T>(string url) => SendAsync<T>(HttpMethod.Get, url, null);
@@ -47,20 +49,26 @@ public class ApiClient
 
             if (!response.IsSuccessStatusCode)
             {
+                // Chỉ ghi phương thức, địa chỉ và mã lỗi; không ghi nội dung gửi đi (có thể chứa mật khẩu)
+                if (status >= 500) _logger.LogError("API lỗi {Status}: {Method} {Url}", status, method, url);
+                else _logger.LogWarning("API từ chối {Status}: {Method} {Url}", status, method, url);
                 return new ApiResult<T> { Ok = false, Status = status, Error = ExtractError(text, status) };
             }
             return new ApiResult<T> { Ok = true, Status = status, Data = Parse<T>(text) };
         }
-        catch (HttpRequestException)
+        catch (HttpRequestException ex)
         {
+            _logger.LogError(ex, "Không kết nối được tới API: {Method} {Url}", method, url);
             return Fail<T>("Không kết nối được tới API. Hãy kiểm tra API đã chạy chưa.");
         }
-        catch (TaskCanceledException)
+        catch (TaskCanceledException ex)
         {
+            _logger.LogError(ex, "API phản hồi quá lâu: {Method} {Url}", method, url);
             return Fail<T>("API phản hồi quá lâu. Vui lòng thử lại.");
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
+            _logger.LogError(ex, "API trả về dữ liệu sai định dạng: {Method} {Url}", method, url);
             return Fail<T>("API trả về dữ liệu không đúng định dạng.");
         }
     }

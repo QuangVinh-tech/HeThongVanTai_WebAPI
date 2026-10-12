@@ -3,7 +3,13 @@
 public class HoldExpiryService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopes;
-    public HoldExpiryService(IServiceScopeFactory scopes) => _scopes = scopes;
+    private readonly ILogger<HoldExpiryService> _logger;
+
+    public HoldExpiryService(IServiceScopeFactory scopes, ILogger<HoldExpiryService> logger)
+    {
+        _scopes = scopes;
+        _logger = logger;
+    }
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -17,7 +23,7 @@ public class HoldExpiryService : BackgroundService
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                Console.WriteLine("HoldExpiryService lỗi: " + ex.Message);
+                _logger.LogError(ex, "HoldExpiryService lỗi khi nhả giữ chỗ quá hạn");
             }
 
             try { await Task.Delay(TimeSpan.FromMinutes(1), ct); }
