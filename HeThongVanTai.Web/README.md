@@ -25,3 +25,15 @@
 - **Không** ghi mật khẩu, token, nội dung form. Chỉ ghi email và mã đặt vé. Khi thêm log mới, đừng đưa cả DTO/model vào log.
 - Thư mục `Logs/` đã nằm trong `.gitignore`.
 - Cách ghi log trong code: inject `ILogger<TênLớp>` rồi gọi `_logger.LogInformation("Nội dung {ThamSo}", giaTri)`; lỗi bắt được thì `_logger.LogError(ex, "...")`.
+
+## Trang Danh mục (Admin, Operator)
+
+| Trang | Đường dẫn | API |
+|---|---|---|
+| Bến xe | `/Admin/Stations` | `/api/stations` |
+| Tuyến đường | `/Admin/Routes` | `/api/routes` |
+| Loại xe và sơ đồ ghế | `/Admin/VehicleTypes` | `/api/vehicle-types` |
+
+- Mã nằm ở `Controllers/{Stations,Routes,VehicleTypes}Controller.cs`, `Services/DanhMucApiService.cs`, `Models/ViewModels/DanhMuc/`.
+- Xóa bến, tuyến, loại xe đang được dùng: API từ chối và trang hiện thông báo lỗi của API.
+- Loại xe: thêm mới (API tự sinh ghế) và chỉnh sơ đồ ghế; API hiện chưa có chức năng đổi tên loại xe.

@@ -1,0 +1,49 @@
+@using HeThongVanTai.Web.Models.ViewModels.DanhMuc
+@model VehicleTypeForm
+@{
+    ViewData["Title"] = "Thêm loại xe";
+    Layout = "_AdminLayout";
+}
+
+<h1 class="h4 mb-3">Thêm loại xe</h1>
+
+<div class="card card-vt p-4 form-narrow">
+    <form method="post" asp-action="Create">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" maxlength="100" placeholder="Ví dụ: Giường nằm 40 chỗ" />
+            <span asp-validation-for="Name" class="text-danger small"></span>
+        </div>
+        <div class="row g-3 mb-2">
+            <div class="col-12 col-md-6">
+                <label asp-for="SeatCount" class="form-label"></label>
+                <input asp-for="SeatCount" type="number" min="1" max="100" class="form-control" />
+                <span asp-validation-for="SeatCount" class="text-danger small"></span>
+            </div>
+            <div class="col-12 col-md-6">
+                <label asp-for="Floors" class="form-label"></label>
+                <select asp-for="Floors" class="form-select">
+                    <option value="1">1 tầng</option>
+                    <option value="2">2 tầng</option>
+                </select>
+                <span asp-validation-for="Floors" class="text-danger small"></span>
+            </div>
+        </div>
+        <p class="small text-muted mb-4">
+            Hệ thống tự tạo sơ đồ ghế (tầng 1: A01, A02…; tầng 2: B01, B02…). Sau khi thêm, bấm "Sơ đồ ghế" để chỉnh từng ghế.
+        </p>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Thêm loại xe</button>
+            <a class="btn btn-outline-primary" asp-action="Index">Hủy</a>
+        </div>
+    </form>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/danh-muc.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
