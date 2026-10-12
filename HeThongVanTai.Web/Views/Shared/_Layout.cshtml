@@ -31,6 +31,12 @@
                                 <a class="nav-link" asp-controller="Admin" asp-action="Dashboard">Quản trị</a>
                             </li>
                         }
+                        else if (User.IsInRole(AppRoles.Accountant))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Reports" asp-action="Index">Báo cáo</a>
+                            </li>
+                        }
                     </ul>
                     <ul class="navbar-nav align-items-lg-center">
                         @if (User.Identity?.IsAuthenticated == true)

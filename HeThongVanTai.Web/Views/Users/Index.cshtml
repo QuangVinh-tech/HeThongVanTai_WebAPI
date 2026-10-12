@@ -1,0 +1,152 @@
+@using HeThongVanTai.Web.Models.ViewModels.Users
+@model UserPage
+@{
+    ViewData["Title"] = "Người dùng";
+    Layout = "_AdminLayout";
+    var keyword = ViewData["Keyword"] as string;
+    var role = ViewData["Role"] as string;
+    var loadError = ViewData["LoadError"] as string;
+    var me = ViewData["CurrentUserEmail"] as string;
+    var filtering = !string.IsNullOrWhiteSpace(keyword) || !string.IsNullOrWhiteSpace(role);
+    var totalPages = Model.TotalPages;
+    var current = Math.Min(Math.Max(Model.Page, 1), totalPages);
+    var pageFrom = Math.Max(1, current - 2);
+    var pageTo = Math.Min(totalPages, current + 2);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/users.css" asp-append-version="true" />
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h4 mb-0">Người dùng</h1>
+    <span class="small text-muted">@Model.Total tài khoản</span>
+</div>
+
+<form method="get" class="filter-vt row g-2 align-items-end mb-3">
+    <div class="col-12 col-md-5">
+        <label class="form-label small mb-1" for="keyword">Tìm theo email</label>
+        <input id="keyword" name="keyword" value="@keyword" class="form-control" />
+    </div>
+    <div class="col-12 col-md-4">
+        <label class="form-label small mb-1" for="role">Vai trò</label>
+        <select id="role" name="role" class="form-select">
+            <option value="">Tất cả vai trò</option>
+            @foreach (var r in RoleLabels.All)
+            {
+                <option value="@r" selected="@(r == role)">@RoleLabels.Of(r)</option>
+            }
+        </select>
+    </div>
+    <div class="col-12 col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-grow-1">Tìm</button>
+        @if (filtering)
+        {
+            <a class="btn btn-outline-primary" asp-action="Index">Bỏ lọc</a>
+        }
+    </div>
+</form>
+
+@if (!string.IsNullOrEmpty(loadError))
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+
+<div class="card card-vt">
+    @if (Model.Items.Count == 0)
+    {
+        <div class="p-4 text-center text-muted">
+            @(filtering ? "Không có tài khoản nào khớp với điều kiện tìm." : "Chưa có tài khoản nào.")
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-vt table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in Model.Items)
+                    {
+                        var isSelf = string.Equals(u.Email, me, StringComparison.OrdinalIgnoreCase);
+                        <tr>
+                            <td class="fw-semibold">
+                                @u.Email
+                                @if (isSelf)
+                                {
+                                    <span class="small text-muted">(bạn)</span>
+                                }
+                            </td>
+                            <td>
+                                @foreach (var r in u.Roles)
+                                {
+                                    <span class="pill pill-info me-1">@RoleLabels.Of(r)</span>
+                                }
+                            </td>
+                            <td>
+                                @if (u.IsLocked)
+                                {
+                                    <span class="pill pill-bad">Đã khóa</span>
+                                }
+                                else
+                                {
+                                    <span class="pill pill-ok">Hoạt động</span>
+                                }
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a class="btn btn-sm btn-outline-primary" asp-action="Roles" asp-route-id="@u.Id">Vai trò</a>
+                                @if (!isSelf)
+                                {
+                                    if (u.IsLocked)
+                                    {
+                                        <form asp-action="Unlock" asp-route-id="@u.Id" method="post" class="d-inline"
+                                              data-confirm="@("Mở khóa tài khoản " + u.Email + "?")">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Mở khóa</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="Lock" asp-route-id="@u.Id" method="post" class="d-inline"
+                                              data-confirm="@("Khóa tài khoản " + u.Email + "? Người này sẽ không đăng nhập được.")">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Khóa</button>
+                                        </form>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@if (totalPages > 1)
+{
+    <nav class="mt-3" aria-label="Phân trang">
+        <ul class="pagination pagination-vt justify-content-center flex-wrap mb-0">
+            <li class="page-item @(current == 1 ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-keyword="@keyword" asp-route-role="@role" asp-route-page="@(current - 1)">Trước</a>
+            </li>
+            @for (var p = pageFrom; p <= pageTo; p++)
+            {
+                <li class="page-item @(p == current ? "active" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-keyword="@keyword" asp-route-role="@role" asp-route-page="@p">@p</a>
+                </li>
+            }
+            <li class="page-item @(current == totalPages ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-keyword="@keyword" asp-route-role="@role" asp-route-page="@(current + 1)">Sau</a>
+            </li>
+        </ul>
+    </nav>
+}
+
+@section Scripts {
+    <partial name="_ConfirmDeleteScript" />
+}

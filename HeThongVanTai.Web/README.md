@@ -37,3 +37,26 @@
 - Mã nằm ở `Controllers/{Stations,Routes,VehicleTypes}Controller.cs`, `Services/DanhMucApiService.cs`, `Models/ViewModels/DanhMuc/`.
 - Xóa bến, tuyến, loại xe đang được dùng: API từ chối và trang hiện thông báo lỗi của API.
 - Loại xe: thêm mới (API tự sinh ghế) và chỉnh sơ đồ ghế; API hiện chưa có chức năng đổi tên loại xe.
+
+## Trang Tổng quan (Admin, Operator)
+
+- Đường dẫn `/Admin/Dashboard`, gọi `GET /api/Dashboard/get-summary` và `GET /api/Dashboard/get-alerts`.
+- **Doanh thu** = tiền đã thu (Paid) trừ tiền đã hoàn (Refunded), tính theo ngày thu. Biểu đồ 7 ngày vẽ bằng Chart.js (CDN).
+- **Chuyến đang chạy**: đã khởi hành, chưa đến nơi, chưa hủy/hoàn thành. **Lấp đầy**: ghế đã đặt / tổng ghế của các chuyến khởi hành hôm nay.
+- **Cảnh báo**: đăng kiểm, bảo hiểm xe và GPLX đã hết hạn hoặc còn dưới 30 ngày; chuyến có trạng thái `Delayed`.
+- Một API lỗi thì phần còn lại vẫn hiển thị; chưa có doanh thu thì biểu đồ báo "chưa có dữ liệu".
+
+## Quản lý người dùng (chỉ Admin)
+
+- Đường dẫn `/Admin/Users`; API `GET /api/Users` (tìm theo email, lọc vai trò, phân trang), `GET /api/Users/roles`, `GET /api/Users/{id}`, `PUT /api/Users/{id}/roles`, `PATCH /api/Users/{id}/lock`.
+- Gán vai trò: chọn ít nhất một trong 5 vai trò. Vai trò nằm trong token nên **có hiệu lực ở lần đăng nhập sau** (token sống 60 phút).
+- Khóa tài khoản: tài khoản bị khóa không đăng nhập được (API trả 403). Token đã cấp vẫn dùng được đến khi hết hạn.
+- Bảo vệ: không tự khóa mình, không tự bỏ vai trò Admin của mình, không khóa hoặc bỏ vai trò Admin cuối cùng.
+
+## Trang Báo cáo doanh thu (Admin, Accountant)
+
+- Đường dẫn `/Admin/Reports`, gọi `GET /api/Reports/get-revenue-by-route`.
+- Lọc theo khoảng ngày (mặc định 30 ngày gần nhất, tối đa 366 ngày) và theo tuyến; bấm tiêu đề cột để sắp xếp; phân trang 10 dòng.
+- Doanh thu = tiền đã thu trừ tiền đã hoàn, tính theo ngày thu, gom theo tuyến của chuyến trong booking. Tổng ở các thẻ tính trên toàn bộ kết quả lọc, không chỉ trang hiện tại.
+- **Xuất Excel**: nút "Xuất Excel" tải file `.xlsx` (ClosedXML) với đúng điều kiện lọc hiện tại, gồm toàn bộ dòng và dòng tổng cộng. Sau khi pull cần `dotnet restore` để tải ClosedXML.
+- Kế toán đăng nhập xong vào thẳng trang này.

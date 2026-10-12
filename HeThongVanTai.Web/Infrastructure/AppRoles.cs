@@ -10,4 +10,5 @@ public static class AppRoles
     public const string Customer = "Customer";
 
     public const string AdminOperator = Admin + "," + Operator;
+    public const string AdminAccountant = Admin + "," + Accountant;
 }

@@ -1,41 +1,180 @@
-@model DashboardPlaceholderViewModel
+@using System.Globalization
+@using System.Text.Json
+@using HeThongVanTai.Web.Models.ViewModels.Dashboard
+@model DashboardViewModel
 @{
     ViewData["Title"] = "Tổng quan";
     Layout = "_AdminLayout";
+    var vi = CultureInfo.GetCultureInfo("vi-VN");
+    var summary = Model.Summary;
+
+    string Money(decimal value) => string.Format(vi, "{0:N0} đ", value);
+
+    // Dữ liệu biểu đồ: tên ngày dd/MM và doanh thu; đưa qua thuộc tính data-* (đã được mã hóa HTML)
+    var chartJson = "{}";
+    if (summary != null)
+    {
+        var labels = summary.RevenueByDay
+            .Select(p => DateTime.TryParse(p.Date, CultureInfo.InvariantCulture, DateTimeStyles.None, out var d)
+                ? d.ToString("dd/MM", CultureInfo.InvariantCulture)
+                : p.Date)
+            .ToList();
+        var values = summary.RevenueByDay.Select(p => p.Revenue).ToList();
+        chartJson = JsonSerializer.Serialize(new { labels, values });
+    }
 }
 
-<h1 class="h4 mb-3">Tổng quan</h1>
+@section Styles {
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+}
 
-<div class="row g-3 mb-4">
-    <div class="col-md-6">
-        <div class="card card-vt p-3 h-100">
-            <div class="small text-muted">Đăng nhập với</div>
-            <div class="fw-semibold mb-2">@Model.Email</div>
-            <div>
-                @foreach (var role in Model.Roles)
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h4 mb-0">Tổng quan</h1>
+    <a class="btn btn-sm btn-outline-primary" asp-action="Dashboard"><i class="bi bi-arrow-clockwise me-1"></i>Làm mới</a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.SummaryError))
+{
+    <div class="alert alert-danger">Không tải được số liệu tổng quan: @Model.SummaryError</div>
+}
+
+@if (summary != null)
+{
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card card-vt stat-card p-3 h-100">
+                <div class="stat-icon"><i class="bi bi-cash-coin"></i></div>
+                <div class="small text-muted">Doanh thu hôm nay</div>
+                <div class="stat-value">@Money(summary.RevenueToday)</div>
+                <div class="small text-muted">@summary.Days ngày gần nhất: @Money(summary.RevenuePeriod)</div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card card-vt stat-card p-3 h-100">
+                <div class="stat-icon"><i class="bi bi-bus-front"></i></div>
+                <div class="small text-muted">Chuyến đang chạy</div>
+                <div class="stat-value">@summary.RunningTrips</div>
+                <div class="small text-muted">@summary.TripsToday chuyến khởi hành hôm nay</div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card card-vt stat-card p-3 h-100">
+                <div class="stat-icon"><i class="bi bi-ticket-perforated"></i></div>
+                <div class="small text-muted">Vé bán hôm nay</div>
+                <div class="stat-value">@summary.TicketsSoldToday</div>
+                <div class="small text-muted">Vé đã thanh toán, đặt trong ngày</div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card card-vt stat-card p-3 h-100">
+                <div class="stat-icon"><i class="bi bi-grid-3x3-gap"></i></div>
+                <div class="small text-muted">Tỉ lệ lấp đầy hôm nay</div>
+                @if (summary.OccupancyPercent is double occupancy)
                 {
-                    <span class="pill pill-info me-1">@role</span>
+                    <div class="stat-value">@occupancy.ToString("0.#", vi)%</div>
+                    <div class="progress progress-vt mt-1" role="progressbar" aria-valuenow="@((int)occupancy)" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar" style="width: @(Math.Min(100, occupancy).ToString("0.#", CultureInfo.InvariantCulture))%"></div>
+                    </div>
+                }
+                else
+                {
+                    <div class="stat-value">--</div>
+                    <div class="small text-muted">Hôm nay chưa có chuyến</div>
                 }
             </div>
         </div>
     </div>
-    <div class="col-md-6">
+}
+
+<div class="row g-3">
+    <div class="col-12 col-xl-7">
         <div class="card card-vt p-3 h-100">
-            <div class="small text-muted">Kết nối API</div>
-            @if (Model.ApiOk)
+            <h2 class="h6 mb-3">Doanh thu 7 ngày gần nhất</h2>
+            @if (summary == null)
             {
-                <div><span class="pill pill-ok">Thành công</span></div>
-                <div class="small mt-2">Token đã được gắn tự động vào lời gọi API.</div>
+                <div class="empty-vt">Chưa có dữ liệu để hiển thị.</div>
+            }
+            else if (!Model.HasRevenue)
+            {
+                <div class="empty-vt">Chưa có doanh thu trong 7 ngày gần nhất.</div>
             }
             else
             {
-                <div><span class="pill pill-bad">Thất bại</span></div>
-                <div class="small mt-2">@Model.Error</div>
+                <div class="chart-box">
+                    <canvas id="revenueChart" data-chart="@chartJson" aria-label="Biểu đồ doanh thu 7 ngày" role="img"></canvas>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-12 col-xl-5">
+        <div class="card card-vt p-3 h-100">
+            <h2 class="h6 mb-3">Cảnh báo</h2>
+            @if (!string.IsNullOrEmpty(Model.AlertsError))
+            {
+                <div class="alert alert-danger py-2 mb-0">Không tải được cảnh báo: @Model.AlertsError</div>
+            }
+            else if (Model.Alerts.Count == 0)
+            {
+                <div class="empty-vt">Không có cảnh báo nào. Mọi giấy tờ còn hạn trên 30 ngày và không có chuyến trễ.</div>
+            }
+            else
+            {
+                <ul class="alert-list list-unstyled mb-0">
+                    @foreach (var a in Model.Alerts)
+                    {
+                        <li class="d-flex gap-2 align-items-start">
+                            <span class="pill @(a.Severity == "bad" ? "pill-bad" : "pill-warn") flex-shrink-0">
+                                @(a.Severity == "bad" ? "Khẩn" : "Sắp hạn")
+                            </span>
+                            <span>@a.Message</span>
+                        </li>
+                    }
+                </ul>
             }
         </div>
     </div>
 </div>
 
-<div class="card card-vt p-4 text-center">
-    <p class="mb-0">Các chỉ số và biểu đồ sẽ được thêm ở bước Dashboard.</p>
-</div>
+@section Scripts {
+    @if (summary != null && Model.HasRevenue)
+    {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+        <script>
+            (function () {
+                var canvas = document.getElementById('revenueChart');
+                if (!canvas || typeof Chart === 'undefined') return;
+                var data = JSON.parse(canvas.dataset.chart);
+                var fmt = function (v) { return Number(v).toLocaleString('vi-VN') + ' đ'; };
+                new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Doanh thu',
+                            data: data.values,
+                            backgroundColor: '#FF82AB',
+                            hoverBackgroundColor: '#B03060',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: function (ctx) { return fmt(ctx.parsed.y); } } }
+                        },
+                        scales: {
+                            x: { ticks: { color: '#8B636C' }, grid: { display: false } },
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#8B636C', callback: function (v) { return Number(v).toLocaleString('vi-VN'); } },
+                                grid: { color: '#F8D4DC' }
+                            }
+                        }
+                    }
+                });
+            })();
+        </script>
+    }
+}

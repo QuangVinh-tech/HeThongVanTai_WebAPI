@@ -1,0 +1,43 @@
+@using HeThongVanTai.Web.Models.ViewModels.Users
+@model UserRolesForm
+@{
+    ViewData["Title"] = "Vai trò - " + Model.Email;
+    Layout = "_AdminLayout";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/users.css" asp-append-version="true" />
+}
+
+<div class="mb-3">
+    <a asp-action="Index" class="small"><i class="bi bi-arrow-left me-1"></i>Người dùng</a>
+    <h1 class="h4 mb-0">Vai trò của @Model.Email</h1>
+</div>
+
+<div class="card card-vt p-4 form-narrow">
+    <form method="post" asp-action="Roles" asp-route-id="@Model.Id">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+        @foreach (var r in RoleLabels.All)
+        {
+            var checkedNow = Model.SelectedRoles.Contains(r);
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="SelectedRoles" value="@r" id="role-@r" checked="@checkedNow" />
+                <label class="form-check-label" for="role-@r">
+                    @RoleLabels.Of(r) <span class="small text-muted">(@r)</span>
+                </label>
+            </div>
+        }
+
+        @if (Model.IsSelf)
+        {
+            <p class="small text-muted mt-3 mb-0">Đây là tài khoản của bạn: không thể tự bỏ vai trò Quản trị viên.</p>
+        }
+        <p class="small text-muted mt-3">Vai trò mới có hiệu lực ở lần đăng nhập sau của người dùng.</p>
+
+        <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-primary">Lưu vai trò</button>
+            <a class="btn btn-outline-primary" asp-action="Index">Hủy</a>
+        </div>
+    </form>
+</div>
