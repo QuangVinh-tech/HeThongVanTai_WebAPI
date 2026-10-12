@@ -1,5 +1,6 @@
 @{
     Layout = "_Layout";
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
 }
 
 @section Styles {
@@ -10,9 +11,21 @@
     <div class="row">
         <aside class="col-lg-2 sidebar-vt py-3">
             <nav class="nav flex-column gap-1">
-                <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")"
+                <a class="nav-link @(currentController == "Admin" ? "active" : "")"
                    asp-controller="Admin" asp-action="Dashboard">
                     <i class="bi bi-speedometer2 me-2"></i>Tổng quan
+                </a>
+                <a class="nav-link @(currentController == "Stations" ? "active" : "")"
+                   asp-controller="Stations" asp-action="Index">
+                    <i class="bi bi-geo-alt me-2"></i>Bến xe
+                </a>
+                <a class="nav-link @(currentController == "Routes" ? "active" : "")"
+                   asp-controller="Routes" asp-action="Index">
+                    <i class="bi bi-signpost-split me-2"></i>Tuyến đường
+                </a>
+                <a class="nav-link @(currentController == "VehicleTypes" ? "active" : "")"
+                   asp-controller="VehicleTypes" asp-action="Index">
+                    <i class="bi bi-grid-3x3-gap me-2"></i>Loại xe và ghế
                 </a>
                 @* Mỗi người thêm mục menu của mình vào đây khi trang đã xong, ví dụ:
                    <a class="nav-link" href="/Admin/Vehicles"><i class="bi bi-bus-front me-2"></i>Xe</a> *@

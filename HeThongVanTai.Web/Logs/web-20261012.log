@@ -5,3 +5,35 @@
 2026-10-12 08:32:47.792 [INF] Microsoft.Hosting.Lifetime: Content root path: C:\Users\ASUS\source\repos\HeThongVanTai\HeThongVanTai.Web
 2026-10-12 08:32:49.892 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET / responded 200 in 165.6387 ms
 2026-10-12 08:32:56.852 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Account/Login responded 200 in 86.0199 ms
+2026-10-12 08:36:25.411 [INF] Microsoft.Hosting.Lifetime: Now listening on: https://localhost:7300
+2026-10-12 08:36:25.439 [INF] Microsoft.Hosting.Lifetime: Now listening on: http://localhost:5300
+2026-10-12 08:36:25.465 [INF] Microsoft.Hosting.Lifetime: Application started. Press Ctrl+C to shut down.
+2026-10-12 08:36:25.466 [INF] Microsoft.Hosting.Lifetime: Hosting environment: Development
+2026-10-12 08:36:25.467 [INF] Microsoft.Hosting.Lifetime: Content root path: C:\Users\ASUS\source\repos\HeThongVanTai\HeThongVanTai.Web
+2026-10-12 08:36:30.739 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET / responded 200 in 151.3932 ms
+2026-10-12 08:36:59.929 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Account/Login responded 200 in 78.6148 ms
+2026-10-12 08:37:07.476 [INF] HeThongVanTai.Web.Controllers.AccountController: Đăng nhập Web thành công: admin@vantai.com
+2026-10-12 08:37:07.483 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP POST /Account/Login responded 302 in 571.6845 ms
+2026-10-12 08:37:07.622 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Admin/Dashboard responded 200 in 129.2395 ms
+2026-10-12 08:37:11.574 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Admin/Dashboard responded 200 in 15.7649 ms
+2026-10-12 08:37:12.401 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET / responded 200 in 4.0422 ms
+2026-10-12 08:37:15.888 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Admin/Dashboard responded 200 in 12.3927 ms
+2026-10-12 08:42:06.013 [INF] Microsoft.Hosting.Lifetime: Now listening on: https://localhost:7300
+2026-10-12 08:42:06.041 [INF] Microsoft.Hosting.Lifetime: Now listening on: http://localhost:5300
+2026-10-12 08:42:06.066 [INF] Microsoft.Hosting.Lifetime: Application started. Press Ctrl+C to shut down.
+2026-10-12 08:42:06.067 [INF] Microsoft.Hosting.Lifetime: Hosting environment: Development
+2026-10-12 08:42:06.068 [INF] Microsoft.Hosting.Lifetime: Content root path: C:\Users\ASUS\source\repos\HeThongVanTai\HeThongVanTai.Web
+2026-10-12 08:42:07.713 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET / responded 200 in 191.6546 ms
+2026-10-12 08:42:16.429 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Trips/Search responded 404 in 4.4366 ms
+2026-10-12 08:42:17.889 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET / responded 200 in 8.5883 ms
+2026-10-12 08:42:19.733 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Admin/Dashboard responded 200 in 295.3053 ms
+2026-10-12 08:42:21.135 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Admin/Stations responded 200 in 143.9773 ms
+2026-10-12 08:42:21.174 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /css/danh-muc.css responded 200 in 18.1879 ms
+2026-10-12 08:42:24.767 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Admin/Routes responded 200 in 118.2717 ms
+2026-10-12 08:42:26.941 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Admin/VehicleTypes responded 200 in 88.3964 ms
+2026-10-12 08:42:27.911 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Admin/Stations responded 200 in 13.2807 ms
+2026-10-12 08:42:29.598 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Admin/Dashboard responded 200 in 19.5767 ms
+2026-10-12 08:42:30.404 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Admin/Stations responded 200 in 13.5664 ms
+2026-10-12 08:42:30.720 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Admin/Routes responded 200 in 15.6938 ms
+2026-10-12 08:42:31.401 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Admin/VehicleTypes responded 200 in 13.2030 ms
+2026-10-12 08:42:32.066 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Admin/Dashboard responded 200 in 9.3963 ms

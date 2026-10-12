@@ -1,0 +1,74 @@
+@using HeThongVanTai.Web.Models.ViewModels.DanhMuc
+@model RouteForm
+@{
+    var isNew = Model.Id == 0;
+    ViewData["Title"] = isNew ? "Thêm tuyến đường" : "Sửa tuyến đường";
+    Layout = "_AdminLayout";
+}
+
+<h1 class="h4 mb-3">@ViewData["Title"]</h1>
+
+<div class="card card-vt p-4 form-narrow">
+    @if (Model.Stations.Count == 0)
+    {
+        <div class="alert alert-warning py-2">
+            Chưa có bến xe nào. Hãy <a asp-controller="Stations" asp-action="Create">thêm bến xe</a> trước khi tạo tuyến đường.
+        </div>
+    }
+    <form method="post" asp-action="@(isNew ? "Create" : "Edit")" asp-route-id="@(isNew ? (int?)null : Model.Id)">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" maxlength="200" placeholder="Ví dụ: Hà Nội - Hải Phòng" />
+            <span asp-validation-for="Name" class="text-danger small"></span>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+                <label asp-for="FromStationId" class="form-label"></label>
+                <select asp-for="FromStationId" class="form-select">
+                    <option value="0">-- Chọn bến đi --</option>
+                    @foreach (var s in Model.Stations)
+                    {
+                        <option value="@s.Id">@s.Name@(string.IsNullOrEmpty(s.City) ? "" : " (" + s.City + ")")</option>
+                    }
+                </select>
+                <span asp-validation-for="FromStationId" class="text-danger small"></span>
+            </div>
+            <div class="col-12 col-md-6">
+                <label asp-for="ToStationId" class="form-label"></label>
+                <select asp-for="ToStationId" class="form-select">
+                    <option value="0">-- Chọn bến đến --</option>
+                    @foreach (var s in Model.Stations)
+                    {
+                        <option value="@s.Id">@s.Name@(string.IsNullOrEmpty(s.City) ? "" : " (" + s.City + ")")</option>
+                    }
+                </select>
+                <span asp-validation-for="ToStationId" class="text-danger small"></span>
+            </div>
+        </div>
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-md-6">
+                <label asp-for="DistanceKm" class="form-label"></label>
+                <input asp-for="DistanceKm" type="number" min="1" max="10000" class="form-control" />
+                <span asp-validation-for="DistanceKm" class="text-danger small"></span>
+            </div>
+            <div class="col-12 col-md-6">
+                <label asp-for="DurationMin" class="form-label"></label>
+                <input asp-for="DurationMin" type="number" min="1" max="10080" class="form-control" />
+                <span asp-validation-for="DurationMin" class="text-danger small"></span>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Lưu</button>
+            <a class="btn btn-outline-primary" asp-action="Index">Hủy</a>
+        </div>
+    </form>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/danh-muc.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

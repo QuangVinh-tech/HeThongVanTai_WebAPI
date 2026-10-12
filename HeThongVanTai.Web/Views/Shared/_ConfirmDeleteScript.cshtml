@@ -1,0 +1,8 @@
+@* Hỏi xác nhận trước khi gửi form xóa: <form data-confirm="Xóa ...?"> (không nhúng tên vào JS để tránh chèn mã) *@
+<script>
+    document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            if (!window.confirm(form.dataset.confirm)) e.preventDefault();
+        });
+    });
+</script>

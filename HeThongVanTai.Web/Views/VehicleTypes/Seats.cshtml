@@ -1,0 +1,120 @@
+@using HeThongVanTai.Web.Models.ViewModels.DanhMuc
+@model SeatMapForm
+@{
+    ViewData["Title"] = "Sơ đồ ghế - " + Model.Name;
+    Layout = "_AdminLayout";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/danh-muc.css" asp-append-version="true" />
+}
+
+<div class="mb-3">
+    <a asp-action="Index" class="small"><i class="bi bi-arrow-left me-1"></i>Loại xe</a>
+    <h1 class="h4 mb-0">Sơ đồ ghế: @Model.Name</h1>
+</div>
+
+<form method="post" asp-action="Seats" asp-route-id="@Model.Id" id="seatForm">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+    <input type="hidden" asp-for="SeatsJson" id="seatsJson" />
+
+    <div class="card card-vt p-3 p-md-4 mb-3" id="seatEditor">
+        <p class="small text-muted mb-3">
+            Bấm vào một ghế để xóa. Nhập mã ghế rồi bấm "Thêm" để thêm ghế vào tầng.
+            Đổi sơ đồ có thể làm lệch với vé đã bán của loại xe này, nên chỉ sửa khi loại xe chưa có chuyến.
+        </p>
+
+        <div class="row g-4">
+            <div class="col-12 col-lg-6">
+                <h2 class="h6">Tầng 1</h2>
+                <div class="seat-grid" id="floor1" aria-live="polite"></div>
+                <div class="input-group input-group-sm mt-3 add-seat" data-floor="1">
+                    <input type="text" class="form-control" maxlength="10" placeholder="Mã ghế, ví dụ A21" aria-label="Mã ghế tầng 1" />
+                    <button type="button" class="btn btn-outline-primary">Thêm</button>
+                </div>
+            </div>
+            <div class="col-12 col-lg-6">
+                <h2 class="h6">Tầng 2</h2>
+                <div class="seat-grid" id="floor2" aria-live="polite"></div>
+                <div class="input-group input-group-sm mt-3 add-seat" data-floor="2">
+                    <input type="text" class="form-control" maxlength="10" placeholder="Mã ghế, ví dụ B21" aria-label="Mã ghế tầng 2" />
+                    <button type="button" class="btn btn-outline-primary">Thêm</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="seatMsg" class="small text-danger mt-3" role="alert"></div>
+        <div class="mt-2 fw-semibold">Tổng: <span id="seatTotal">0</span> ghế</div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Lưu sơ đồ ghế</button>
+        <a class="btn btn-outline-primary" asp-action="Index">Hủy</a>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        (function () {
+            var MAX = 100;
+            var hidden = document.getElementById('seatsJson');
+            var msg = document.getElementById('seatMsg');
+            var seats = [];
+            try { seats = JSON.parse(hidden.value) || []; } catch (e) { seats = []; }
+
+            function show(text) { msg.textContent = text || ''; }
+
+            function render() {
+                [1, 2].forEach(function (floor) {
+                    var box = document.getElementById('floor' + floor);
+                    box.textContent = '';
+                    var list = seats.filter(function (s) { return s.floor === floor; });
+                    if (list.length === 0) {
+                        var empty = document.createElement('span');
+                        empty.className = 'small text-muted';
+                        empty.textContent = 'Chưa có ghế';
+                        box.appendChild(empty);
+                    }
+                    list.forEach(function (s) {
+                        var b = document.createElement('button');
+                        b.type = 'button';
+                        b.className = 'seat';
+                        b.textContent = s.code;           // textContent: không chèn HTML
+                        b.title = 'Bấm để xóa ghế ' + s.code;
+                        b.addEventListener('click', function () {
+                            seats = seats.filter(function (x) { return x !== s; });
+                            show('');
+                            render();
+                        });
+                        box.appendChild(b);
+                    });
+                });
+                document.getElementById('seatTotal').textContent = seats.length;
+                hidden.value = JSON.stringify(seats);
+            }
+
+            document.querySelectorAll('.add-seat').forEach(function (row) {
+                var input = row.querySelector('input');
+                var floor = parseInt(row.dataset.floor, 10);
+                function add() {
+                    var code = input.value.trim().toUpperCase();
+                    if (!/^[A-Z0-9-]{1,10}$/.test(code)) { show('Mã ghế chỉ gồm chữ, số, dấu gạch ngang, tối đa 10 ký tự.'); return; }
+                    if (seats.some(function (s) { return s.code === code; })) { show('Mã ghế ' + code + ' đã có.'); return; }
+                    if (seats.length >= MAX) { show('Mỗi loại xe tối đa ' + MAX + ' ghế.'); return; }
+                    seats.push({ code: code, floor: floor });
+                    input.value = '';
+                    show('');
+                    render();
+                }
+                row.querySelector('button').addEventListener('click', add);
+                input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); add(); } });
+            });
+
+            document.getElementById('seatForm').addEventListener('submit', function (e) {
+                if (seats.length === 0) { e.preventDefault(); show('Sơ đồ ghế phải có ít nhất 1 ghế.'); }
+            });
+
+            render();
+        })();
+    </script>
+}

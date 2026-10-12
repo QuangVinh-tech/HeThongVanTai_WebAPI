@@ -1,0 +1,64 @@
+@using HeThongVanTai.Web.Models.ViewModels.DanhMuc
+@model List<VehicleTypeItem>
+@{
+    ViewData["Title"] = "Loại xe và sơ đồ ghế";
+    Layout = "_AdminLayout";
+    var loadError = ViewData["LoadError"] as string;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h4 mb-0">Loại xe và sơ đồ ghế</h1>
+    <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg me-1"></i>Thêm loại xe</a>
+</div>
+
+@if (!string.IsNullOrEmpty(loadError))
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+
+<div class="card card-vt">
+    @if (Model.Count == 0)
+    {
+        <div class="p-4 text-center text-muted">Chưa có loại xe nào. Hãy thêm loại xe đầu tiên.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-vt table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Tên loại xe</th>
+                        <th class="text-end">Số ghế</th>
+                        <th class="text-end">Số tầng</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@t.Name</td>
+                            <td class="text-end">@t.SeatCount</td>
+                            <td class="text-end">@t.Floors</td>
+                            <td class="text-end text-nowrap">
+                                <a class="btn btn-sm btn-outline-primary" asp-action="Seats" asp-route-id="@t.Id">Sơ đồ ghế</a>
+                                <form asp-action="Delete" asp-route-id="@t.Id" method="post" class="d-inline"
+                                      data-confirm="@("Xóa loại xe " + t.Name + " và toàn bộ sơ đồ ghế?")">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">Xóa</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/danh-muc.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <partial name="_ConfirmDeleteScript" />
+}

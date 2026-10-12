@@ -1,4 +1,5 @@
 using HeThongVanTai.Web.Infrastructure;
+using HeThongVanTai.Web.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Serilog;
 
@@ -27,6 +28,9 @@ builder.Services.AddHttpClient<ApiClient>(client =>
     client.BaseAddress = new Uri(apiBaseUrl.TrimEnd('/') + "/");
     client.Timeout = TimeSpan.FromSeconds(30);
 }).AddHttpMessageHandler<BearerTokenHandler>();
+
+// Service gọi API theo từng module
+builder.Services.AddScoped<DanhMucApiService>();
 
 // Web đăng nhập bằng cookie; token JWT của API được cất trong cookie (HttpOnly)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

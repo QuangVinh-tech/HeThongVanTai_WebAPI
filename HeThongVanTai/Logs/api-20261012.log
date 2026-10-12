@@ -4,3 +4,30 @@
 2026-10-12 08:32:50.415 [INF] Microsoft.Hosting.Lifetime: Application started. Press Ctrl+C to shut down.
 2026-10-12 08:32:50.416 [INF] Microsoft.Hosting.Lifetime: Hosting environment: Development
 2026-10-12 08:32:50.417 [INF] Microsoft.Hosting.Lifetime: Content root path: C:\Users\ASUS\source\repos\HeThongVanTai\HeThongVanTai
+2026-10-12 08:36:27.156 [WRN] Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware: The WebRootPath was not found: C:\Users\ASUS\source\repos\HeThongVanTai\HeThongVanTai\wwwroot. Static files may be unavailable.
+2026-10-12 08:36:27.404 [INF] Microsoft.Hosting.Lifetime: Now listening on: https://localhost:7200
+2026-10-12 08:36:27.406 [INF] Microsoft.Hosting.Lifetime: Now listening on: http://localhost:5039
+2026-10-12 08:36:27.607 [INF] Microsoft.Hosting.Lifetime: Application started. Press Ctrl+C to shut down.
+2026-10-12 08:36:27.609 [INF] Microsoft.Hosting.Lifetime: Hosting environment: Development
+2026-10-12 08:36:27.613 [INF] Microsoft.Hosting.Lifetime: Content root path: C:\Users\ASUS\source\repos\HeThongVanTai\HeThongVanTai
+2026-10-12 08:37:07.440 [INF] HeThongVanTai.Controllers.AuthController: Đăng nhập thành công: admin@vantai.com
+2026-10-12 08:37:07.458 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP POST /api/Auth/Login responded 200 in 445.9734 ms
+2026-10-12 08:37:07.600 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /api/Auth/me responded 200 in 88.1132 ms
+2026-10-12 08:37:11.567 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /api/Auth/me responded 200 in 5.6827 ms
+2026-10-12 08:37:15.880 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /api/Auth/me responded 200 in 1.3125 ms
+2026-10-12 08:42:07.288 [WRN] Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware: The WebRootPath was not found: C:\Users\ASUS\source\repos\HeThongVanTai\HeThongVanTai\wwwroot. Static files may be unavailable.
+2026-10-12 08:42:07.473 [INF] Microsoft.Hosting.Lifetime: Now listening on: https://localhost:7200
+2026-10-12 08:42:07.475 [INF] Microsoft.Hosting.Lifetime: Now listening on: http://localhost:5039
+2026-10-12 08:42:07.719 [INF] Microsoft.Hosting.Lifetime: Application started. Press Ctrl+C to shut down.
+2026-10-12 08:42:07.721 [INF] Microsoft.Hosting.Lifetime: Hosting environment: Development
+2026-10-12 08:42:07.722 [INF] Microsoft.Hosting.Lifetime: Content root path: C:\Users\ASUS\source\repos\HeThongVanTai\HeThongVanTai
+2026-10-12 08:42:19.688 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /api/Auth/me responded 200 in 189.6268 ms
+2026-10-12 08:42:21.106 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /api/stations responded 200 in 89.9993 ms
+2026-10-12 08:42:24.744 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /api/routes responded 200 in 88.0024 ms
+2026-10-12 08:42:26.927 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /api/vehicle-types responded 200 in 66.1186 ms
+2026-10-12 08:42:27.904 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /api/stations responded 200 in 4.9404 ms
+2026-10-12 08:42:29.592 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /api/Auth/me responded 200 in 11.0930 ms
+2026-10-12 08:42:30.396 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /api/stations responded 200 in 4.1747 ms
+2026-10-12 08:42:30.714 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /api/routes responded 200 in 8.4871 ms
+2026-10-12 08:42:31.394 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /api/vehicle-types responded 200 in 4.4055 ms
+2026-10-12 08:42:32.060 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /api/Auth/me responded 200 in 1.6888 ms
