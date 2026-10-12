@@ -32,18 +32,38 @@ public class BookingService
     };
 
     // ===================== Tìm chuyến =====================
-    public async Task<object> SearchAsync(int fromId, int toId, DateTime date)
+    public async Task<object> SearchAsync(int fromId, int toId, DateTime date,
+    int? fromHour, int? toHour, int? vehicleTypeId,
+    decimal? minPrice, decimal? maxPrice, string? sort, int page, int pageSize)
     {
         await ReleaseExpiredAsync();
         var now = DateTime.Now;
         var start = date.Date;
         var end = start.AddDays(1);
 
-        return await _db.Trips.AsNoTracking()
+        var q = _db.Trips.AsNoTracking()
             .Where(t => t.Status == "Open" && t.DepartAt > now
                      && t.BusRoute.FromStationId == fromId && t.BusRoute.ToStationId == toId
-                     && t.DepartAt >= start && t.DepartAt < end)
-            .OrderBy(t => t.DepartAt)
+                     && t.DepartAt >= start && t.DepartAt < end);
+
+        if (fromHour != null) q = q.Where(t => t.DepartAt.Hour >= fromHour);
+        if (toHour != null) q = q.Where(t => t.DepartAt.Hour <= toHour);
+        if (vehicleTypeId != null) q = q.Where(t => t.Vehicle.VehicleType.Id == vehicleTypeId);
+        if (minPrice != null) q = q.Where(t => t.Price >= minPrice);
+        if (maxPrice != null) q = q.Where(t => t.Price <= maxPrice);
+
+        q = sort switch
+        {
+            "price_asc" => q.OrderBy(t => t.Price),
+            "price_desc" => q.OrderByDescending(t => t.Price),
+            _ => q.OrderBy(t => t.DepartAt)
+        };
+
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 50);
+        var total = await q.CountAsync();
+
+        var items = await q.Skip((page - 1) * pageSize).Take(pageSize)
             .Select(t => new
             {
                 TripId = t.Id,
@@ -57,6 +77,8 @@ public class BookingService
                 AvailableSeats = t.Vehicle.VehicleType.SeatCount - t.Tickets.Count(k => k.Status != "Cancelled")
             })
             .ToListAsync();
+
+        return new { total, page, pageSize, items };
     }
 
     // ============== Đặt vé, giữ ghế, áp mã ==============
