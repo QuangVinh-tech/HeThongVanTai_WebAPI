@@ -72,6 +72,10 @@ public class AccountController : Controller
         {
             return RedirectToAction("Dashboard", "Admin");
         }
+        if (info.Principal.IsInRole(AppRoles.Accountant))
+        {
+            return RedirectToAction("Index", "Reports");
+        }
         return RedirectToAction("Index", "Home");
     }
 

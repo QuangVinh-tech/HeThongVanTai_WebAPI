@@ -31,6 +31,9 @@ builder.Services.AddHttpClient<ApiClient>(client =>
 
 // Service gọi API theo từng module
 builder.Services.AddScoped<DanhMucApiService>();
+builder.Services.AddScoped<DashboardApiService>();
+builder.Services.AddScoped<UsersApiService>();
+builder.Services.AddScoped<ReportsApiService>();
 
 // Web đăng nhập bằng cookie; token JWT của API được cất trong cookie (HttpOnly)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

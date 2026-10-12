@@ -1,5 +1,6 @@
 using HeThongVanTai.Web.Infrastructure;
-using HeThongVanTai.Web.Models;
+using HeThongVanTai.Web.Models.ViewModels.Dashboard;
+using HeThongVanTai.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,11 +12,11 @@ namespace HeThongVanTai.Web.Controllers;
 [Route("Admin")]
 public class AdminController : Controller
 {
-    private readonly ApiClient _api;
+    private readonly DashboardApiService _dashboard;
 
-    public AdminController(ApiClient api)
+    public AdminController(DashboardApiService dashboard)
     {
-        _api = api;
+        _dashboard = dashboard;
     }
 
     [HttpGet("")]
@@ -24,14 +25,19 @@ public class AdminController : Controller
     [HttpGet("Dashboard")]
     public async Task<IActionResult> Dashboard()
     {
-        // Trang giữ chỗ: gọi thử API có đăng nhập để kiểm tra token được gắn đúng
-        var me = await _api.GetAsync<MeResponse>("api/Auth/me");
-        return View(new DashboardPlaceholderViewModel
+        // Gọi song song; một API lỗi thì phần còn lại vẫn hiển thị
+        var summaryTask = _dashboard.GetSummaryAsync(7);
+        var alertsTask = _dashboard.GetAlertsAsync(30);
+        await Task.WhenAll(summaryTask, alertsTask);
+        var summary = summaryTask.Result;
+        var alerts = alertsTask.Result;
+
+        return View(new DashboardViewModel
         {
-            ApiOk = me.Ok,
-            Email = me.Data?.Email ?? User.Identity?.Name,
-            Roles = me.Data?.Roles ?? new List<string>(),
-            Error = me.Error
+            Summary = summary.Ok ? summary.Data : null,
+            SummaryError = summary.Ok ? null : summary.Error,
+            Alerts = alerts.Data ?? new List<DashboardAlert>(),
+            AlertsError = alerts.Ok ? null : alerts.Error
         });
     }
 }

@@ -10,5 +10,6 @@
 
         // Tổ hợp vai trò dùng chung cho [Authorize(Roles = ...)]
         public const string AdminOperator = Admin + "," + Operator;
+        public const string AdminAccountant = Admin + "," + Accountant;
     }
 }

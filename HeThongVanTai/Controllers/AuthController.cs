@@ -57,6 +57,14 @@ namespace HeThongVanTai.Controllers
             var user = await _userManager.FindByEmailAsync(dto.Username);
             if (user != null && await _userManager.CheckPasswordAsync(user, dto.Password))
             {
+                // Tài khoản bị khóa không được đăng nhập (kiểm tra sau mật khẩu để không lộ tài khoản nào tồn tại)
+                if (await _userManager.IsLockedOutAsync(user))
+                {
+                    _logger.LogWarning("Đăng nhập bị chặn, tài khoản đã khóa: {Email}", user.Email);
+                    return StatusCode(StatusCodes.Status403Forbidden,
+                        new { message = "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên." });
+                }
+
                 var roles = await _userManager.GetRolesAsync(user);
                 var token = _tokenRepository.CreateJWTToken(user, roles.ToList());
                 _logger.LogInformation("Đăng nhập thành công: {Email}", user.Email);

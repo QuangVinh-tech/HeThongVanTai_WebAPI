@@ -1,0 +1,8 @@
+/* CSS riêng của trang Báo cáo (Vinh) */
+.filter-vt { background: var(--vt-tint); border-radius: 12px; padding: .75rem; margin-left: 0; margin-right: 0; }
+.report-value { font-size: 1.4rem; font-weight: 700; color: var(--vt-primary); overflow-wrap: anywhere; }
+.sort-link { color: inherit; text-decoration: none; white-space: nowrap; }
+.sort-link:hover { color: var(--vt-primary); }
+.pagination-vt .page-link { color: var(--vt-primary); border-color: var(--vt-line); }
+.pagination-vt .page-item.active .page-link { background: var(--vt-primary); border-color: var(--vt-primary); color: #FFFFFF; }
+.pagination-vt .page-item.disabled .page-link { color: var(--vt-sold); }
