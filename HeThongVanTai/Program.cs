@@ -10,8 +10,18 @@ using HeThongVanTai.Data;
 using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Repositories;
 using HeThongVanTai.Services;
+using Serilog;
+
+// Logger tạm để ghi được cả lỗi khởi động; sau khi host dựng xong sẽ thay bằng cấu hình trong appsettings (mục "Serilog")
+Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateBootstrapLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Ghi log ra console và file Logs/api-<ngày>.log (cấu hình ở appsettings.json, mục "Serilog")
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext());
 
 builder.Services.AddControllers(o => o.Filters.Add<ServiceExceptionFilter>())
     .AddJsonOptions(o => o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
@@ -112,6 +122,7 @@ if (app.Environment.IsDevelopment())
     }
 }
 
+app.UseSerilogRequestLogging();   // mỗi request một dòng log (chỉ đường dẫn, không ghi body, không ghi token)
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAuthentication();   // phải đứng trước UseAuthorization

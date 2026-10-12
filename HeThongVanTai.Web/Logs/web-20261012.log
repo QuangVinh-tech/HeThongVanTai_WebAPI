@@ -1,0 +1,7 @@
+2026-10-12 08:32:47.738 [INF] Microsoft.Hosting.Lifetime: Now listening on: https://localhost:7300
+2026-10-12 08:32:47.767 [INF] Microsoft.Hosting.Lifetime: Now listening on: http://localhost:5300
+2026-10-12 08:32:47.790 [INF] Microsoft.Hosting.Lifetime: Application started. Press Ctrl+C to shut down.
+2026-10-12 08:32:47.791 [INF] Microsoft.Hosting.Lifetime: Hosting environment: Development
+2026-10-12 08:32:47.792 [INF] Microsoft.Hosting.Lifetime: Content root path: C:\Users\ASUS\source\repos\HeThongVanTai\HeThongVanTai.Web
+2026-10-12 08:32:49.892 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET / responded 200 in 165.6387 ms
+2026-10-12 08:32:56.852 [INF] Serilog.AspNetCore.RequestLoggingMiddleware: HTTP GET /Account/Login responded 200 in 86.0199 ms

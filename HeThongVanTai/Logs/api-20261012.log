@@ -1,0 +1,6 @@
+2026-10-12 08:32:50.176 [WRN] Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware: The WebRootPath was not found: C:\Users\ASUS\source\repos\HeThongVanTai\HeThongVanTai\wwwroot. Static files may be unavailable.
+2026-10-12 08:32:50.358 [INF] Microsoft.Hosting.Lifetime: Now listening on: https://localhost:7200
+2026-10-12 08:32:50.360 [INF] Microsoft.Hosting.Lifetime: Now listening on: http://localhost:5039
+2026-10-12 08:32:50.415 [INF] Microsoft.Hosting.Lifetime: Application started. Press Ctrl+C to shut down.
+2026-10-12 08:32:50.416 [INF] Microsoft.Hosting.Lifetime: Hosting environment: Development
+2026-10-12 08:32:50.417 [INF] Microsoft.Hosting.Lifetime: Content root path: C:\Users\ASUS\source\repos\HeThongVanTai\HeThongVanTai
