@@ -47,7 +47,7 @@ public class PaymentServiceTests : IDisposable
     {
         var b = SeedBooking(DateTime.Now.AddMinutes(10));
 
-        await new PaymentService(_db).CreateAsync(new PayDto { BookingId = b.Id, Method = "Cash" });
+        await new PaymentService(_db, Microsoft.Extensions.Logging.Abstractions.NullLogger<PaymentService>.Instance).CreateAsync(new PayDto { BookingId = b.Id, Method = "Cash" });
 
         var booking = await _db.Bookings.FindAsync(b.Id);
         Assert.Equal("Paid", booking!.Status);
@@ -59,7 +59,7 @@ public class PaymentServiceTests : IDisposable
     public async Task ChuyenKhoan_ChoXacNhan_RoiMoiPaid()
     {
         var b = SeedBooking(DateTime.Now.AddMinutes(10));
-        var svc = new PaymentService(_db);
+        var svc = new PaymentService(_db, Microsoft.Extensions.Logging.Abstractions.NullLogger<PaymentService>.Instance);
 
         await svc.CreateAsync(new PayDto { BookingId = b.Id, Method = "BankTransfer" });
         Assert.Equal("Holding", (await _db.Bookings.FindAsync(b.Id))!.Status);
@@ -76,7 +76,7 @@ public class PaymentServiceTests : IDisposable
         var b = SeedBooking(DateTime.Now.AddMinutes(-1));
 
         var ex = await Assert.ThrowsAsync<ServiceException>(() =>
-            new PaymentService(_db).CreateAsync(new PayDto { BookingId = b.Id, Method = "Cash" }));
+            new PaymentService(_db, Microsoft.Extensions.Logging.Abstractions.NullLogger<PaymentService>.Instance).CreateAsync(new PayDto { BookingId = b.Id, Method = "Cash" }));
 
         Assert.Equal(400, ex.Status);
     }
@@ -85,7 +85,7 @@ public class PaymentServiceTests : IDisposable
     public async Task ThanhToanHaiLan_BaoLoi409()
     {
         var b = SeedBooking(DateTime.Now.AddMinutes(10));
-        var svc = new PaymentService(_db);
+        var svc = new PaymentService(_db, Microsoft.Extensions.Logging.Abstractions.NullLogger<PaymentService>.Instance);
         await svc.CreateAsync(new PayDto { BookingId = b.Id, Method = "BankTransfer" });
 
         var ex = await Assert.ThrowsAsync<ServiceException>(() =>
