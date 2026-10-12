@@ -14,10 +14,12 @@ public class TicketsController : ControllerBase
     public TicketsController(BookingService svc) => _svc = svc;
 
     // Công khai: tra cứu vé theo mã vé
+    [AllowAnonymous]
     [HttpGet("lookup/{code}")]
     public async Task<IActionResult> Lookup(string code) => Ok(await _svc.GetTicketInfoAsync(code));
 
     // Công khai: ảnh QR (PNG) chứa mã vé
+    [AllowAnonymous]
     [HttpGet("{code}/qr")]
     public async Task<IActionResult> Qr(string code)
     {

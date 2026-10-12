@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -11,6 +12,7 @@ namespace HeThongVanTai.Controllers
 {
     [Route("api/drivers")]
     [ApiController]
+    [Authorize(Roles = AppRoles.AdminOperator)]
     public class DriversController : ControllerBase
     {
         private readonly AppDbContext _context;

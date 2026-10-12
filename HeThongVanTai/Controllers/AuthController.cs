@@ -22,6 +22,7 @@ namespace HeThongVanTai.Controllers
         }
 
         // POST: /api/Auth/Register
+        [AllowAnonymous]
         [HttpPost("Register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDTO dto)
         {
@@ -40,6 +41,7 @@ namespace HeThongVanTai.Controllers
         }
 
         // POST: /api/Auth/Login
+        [AllowAnonymous]
         [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO dto)
         {

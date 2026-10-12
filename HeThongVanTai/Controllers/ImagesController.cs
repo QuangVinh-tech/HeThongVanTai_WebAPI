@@ -20,6 +20,7 @@ namespace HeThongVanTai.Controllers
             _imageRepository = imageRepository;
         }
 
+        [Authorize(Roles = AppRoles.AdminOperator)]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HeThongVanTai.Data;
 using HeThongVanTai.Models.Domain;
@@ -8,6 +9,7 @@ namespace HeThongVanTai.Controllers
 {
     [Route("api")]
     [ApiController]
+    [Authorize(Roles = AppRoles.AdminOperator)]
     public class DanhMucController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -17,6 +19,7 @@ namespace HeThongVanTai.Controllers
             _context = context;
         }
 
+        [AllowAnonymous]
         [HttpGet("stations")]
         public async Task<IActionResult> GetStations([FromQuery] string? city, [FromQuery] string? keyword)
         {
@@ -31,6 +34,7 @@ namespace HeThongVanTai.Controllers
             return Ok(await query.ToListAsync());
         }
 
+        [AllowAnonymous]
         [HttpGet("stations/{id}")]
         public async Task<IActionResult> GetStationById(int id)
         {
@@ -83,6 +87,7 @@ namespace HeThongVanTai.Controllers
             return Ok(new { message = "Đã xóa bến xe thành công." });
         }
 
+        [AllowAnonymous]
         [HttpGet("routes")]
         public async Task<IActionResult> GetBusRoutes()
         {
@@ -107,6 +112,7 @@ namespace HeThongVanTai.Controllers
             return Ok(routes);
         }
 
+        [AllowAnonymous]
         [HttpGet("routes/{id}")]
         public async Task<IActionResult> GetBusRouteById(int id)
         {
