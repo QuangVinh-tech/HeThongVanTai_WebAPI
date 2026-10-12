@@ -1,0 +1,6 @@
+/* CSS riêng của module Danh mục (Vinh) */
+.form-narrow { max-width: 640px; }
+.filter-vt { background: var(--vt-tint); border-radius: 12px; padding: .75rem; margin-left: 0; margin-right: 0; }
+.seat-grid { display: flex; flex-wrap: wrap; gap: .4rem; min-height: 44px; }
+.seat-grid .seat { position: relative; }
+.seat-grid .seat:hover { background: var(--vt-bad); border-color: var(--vt-bad); color: #FFFFFF; }

@@ -17,10 +17,15 @@ public class ServiceException : Exception
 
 public class ServiceExceptionFilter : IExceptionFilter
 {
+    private readonly ILogger<ServiceExceptionFilter> _logger;
+    public ServiceExceptionFilter(ILogger<ServiceExceptionFilter> logger) => _logger = logger;
+
     public void OnException(ExceptionContext context)
     {
         if (context.Exception is ServiceException ex)
         {
+            _logger.LogWarning("Nghiệp vụ bị từ chối ({Status}) tại {Path}: {Message}",
+                ex.Status, context.HttpContext.Request.Path.Value, ex.Message);
             context.Result = new ObjectResult(new { message = ex.Message }) { StatusCode = ex.Status };
             context.ExceptionHandled = true;
         }
@@ -57,6 +62,17 @@ public static class Rules
     // Lỗi vi phạm unique index (SQL Server báo mã 2601 hoặc 2627)
     public static bool IsDuplicate(DbUpdateException ex) =>
         ex.InnerException is SqlException { Number: 2601 or 2627 };
+}
+
+// Làm sạch chuỗi do người dùng nhập trước khi đưa vào log (chống chèn xuống dòng giả dòng log)
+public static class LogText
+{
+    public static string Clean(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return "";
+        var s = value.Replace('\r', ' ').Replace('\n', ' ');
+        return s.Length > 100 ? s[..100] : s;
+    }
 }
 
 // Đọc thông tin người dùng từ token đăng nhập

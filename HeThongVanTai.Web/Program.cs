@@ -1,7 +1,18 @@
 using HeThongVanTai.Web.Infrastructure;
+using HeThongVanTai.Web.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Serilog;
+
+// Logger tạm để ghi được cả lỗi khởi động; sau đó thay bằng cấu hình trong appsettings (mục "Serilog")
+Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateBootstrapLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Ghi log ra console và file Logs/web-<ngày>.log
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext());
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
@@ -17,6 +28,9 @@ builder.Services.AddHttpClient<ApiClient>(client =>
     client.BaseAddress = new Uri(apiBaseUrl.TrimEnd('/') + "/");
     client.Timeout = TimeSpan.FromSeconds(30);
 }).AddHttpMessageHandler<BearerTokenHandler>();
+
+// Service gọi API theo từng module
+builder.Services.AddScoped<DanhMucApiService>();
 
 // Web đăng nhập bằng cookie; token JWT của API được cất trong cookie (HttpOnly)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -38,6 +52,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseSerilogRequestLogging();   // mỗi request một dòng log (chỉ đường dẫn, không ghi form hay token)
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
