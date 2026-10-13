@@ -35,14 +35,6 @@ public class RegisterViewModel
     public string ConfirmPassword { get; set; } = "";
 }
 
-public class DashboardPlaceholderViewModel
-{
-    public bool ApiOk { get; set; }
-    public string? Email { get; set; }
-    public List<string> Roles { get; set; } = new();
-    public string? Error { get; set; }
-}
-
 public class ErrorViewModel
 {
     public string? RequestId { get; set; }

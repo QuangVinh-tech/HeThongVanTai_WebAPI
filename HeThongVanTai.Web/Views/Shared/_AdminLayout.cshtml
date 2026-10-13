@@ -11,30 +11,66 @@
     <div class="row">
         <aside class="col-lg-2 sidebar-vt py-3">
             <nav class="nav flex-column gap-1">
-                <a class="nav-link @(currentController == "Admin" ? "active" : "")"
-                   asp-controller="Admin" asp-action="Dashboard">
-                    <i class="bi bi-speedometer2 me-2"></i>Tổng quan
+                @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Operator))
+                {
+                    <a class="nav-link @(currentController == "Admin" ? "active" : "")"
+                       asp-controller="Admin" asp-action="Dashboard">
+                        <i class="bi bi-speedometer2 me-2"></i>Tổng quan
+                    </a>
+                    <a class="nav-link @(currentController == "Stations" ? "active" : "")"
+                       asp-controller="Stations" asp-action="Index">
+                        <i class="bi bi-geo-alt me-2"></i>Bến xe
+                    </a>
+                    <a class="nav-link @(currentController == "Routes" ? "active" : "")"
+                       asp-controller="Routes" asp-action="Index">
+                        <i class="bi bi-signpost-split me-2"></i>Tuyến đường
+                    </a>
+                    <a class="nav-link @(currentController == "VehicleTypes" ? "active" : "")"
+                       asp-controller="VehicleTypes" asp-action="Index">
+                        <i class="bi bi-grid-3x3-gap me-2"></i>Loại xe và ghế
+                    </a>
+                    <a class="nav-link @(currentController == "AdminBookings" ? "active" : "")"
+                       asp-controller="AdminBookings" asp-action="Index">
+                        <i class="bi bi-ticket-perforated me-2"></i>Đặt vé
+                    </a>
+                }
+                @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Accountant))
+                {
+                    <a class="nav-link @(currentController == "Reports" ? "active" : "")"
+                       asp-controller="Reports" asp-action="Index">
+                        <i class="bi bi-bar-chart-line me-2"></i>Báo cáo doanh thu
+                    </a>
+                }
+                @if (User.IsInRole(AppRoles.Admin))
+                {
+                    <a class="nav-link @(currentController == "Users" ? "active" : "")"
+                       asp-controller="Users" asp-action="Index">
+                        <i class="bi bi-people me-2"></i>Người dùng
+                    </a>
+                }
+
+                <a class="nav-link @(currentController == "AdminTrips" ? "active" : "")"
+                   asp-controller="AdminTrips" asp-action="Index">
+                    <i class="bi bi-bus-front me-2"></i>Chuyến xe
                 </a>
-                <a class="nav-link @(currentController == "Stations" ? "active" : "")"
-                   asp-controller="Stations" asp-action="Index">
-                    <i class="bi bi-geo-alt me-2"></i>Bến xe
-                </a>
-                <a class="nav-link @(currentController == "Routes" ? "active" : "")"
-                   asp-controller="Routes" asp-action="Index">
-                    <i class="bi bi-signpost-split me-2"></i>Tuyến đường
-                </a>
-                <a class="nav-link @(currentController == "VehicleTypes" ? "active" : "")"
-                   asp-controller="VehicleTypes" asp-action="Index">
-                    <i class="bi bi-grid-3x3-gap me-2"></i>Loại xe và ghế
-                </a>
+
                 <a class="nav-link @(currentController == "Vehicles" ? "active" : "")"
                    asp-controller="Vehicles" asp-action="Index">
                     <i class="bi bi-bus-front me-2"></i>Xe
                 </a>
+
                 <a class="nav-link @(currentController == "Drivers" ? "active" : "")"
                    asp-controller="Drivers" asp-action="Index">
                     <i class="bi bi-person-badge me-2"></i>Tài xế
                 </a>
+
+                @if (User.IsInRole(AppRoles.Admin))
+                {
+                    <a class="nav-link @(currentController == "AdminPromotions" ? "active" : "")"
+                       asp-controller="AdminPromotions" asp-action="Index">
+                        <i class="bi bi-tag me-2"></i>Khuyến mãi
+                    </a>
+                }
             </nav>
         </aside>
         <section class="col-lg-10 py-4 px-lg-4">

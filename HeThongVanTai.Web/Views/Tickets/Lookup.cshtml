@@ -1,0 +1,50 @@
+﻿@model HeThongVanTai.Web.Models.ViewModels.DatVe.LookupViewModel
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@{
+    ViewData["Title"] = "Tra cứu vé";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/dat-ve.css" asp-append-version="true" />
+}
+
+<div class="container py-4" style="max-width: 760px;">
+    <h1 class="h3 fw-bold mb-3">Tra cứu vé</h1>
+
+    <form method="get" asp-controller="Tickets" asp-action="Lookup" class="card card-vt p-4 mb-4">
+        <label class="form-label small" for="code">Mã vé hoặc mã đặt vé</label>
+        <div class="input-group">
+            <input type="text" class="form-control" id="code" name="code" value="@Model.Code"
+                   placeholder="Nhập mã trên vé hoặc mã đặt vé" required />
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i>Tra cứu</button>
+        </div>
+    </form>
+
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <div class="alert alert-danger">@Model.Error</div>
+    }
+
+    @if (Model.Booking != null)
+    {
+        var b = Model.Booking;
+        <div class="card card-vt p-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h5 mb-0">Đặt vé @b.Code</h2>
+                <span class="pill @DatVeHelpers.BookingStatusClass(b.Status)">@DatVeHelpers.BookingStatusText(b.Status)</span>
+            </div>
+            @foreach (var t in b.Tickets)
+            {
+                <div class="border-top py-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div>Ghế <strong>@t.SeatCode</strong> - @t.PassengerName</div>
+                        <div class="small text-muted">
+                            @t.Route @(t.DepartAt.HasValue ? ", " + t.DepartAt.Value.ToString("HH:mm dd/MM/yyyy") : "")
+                            - @DatVeHelpers.TicketStatusText(t.Status)
+                        </div>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary" asp-controller="Tickets" asp-action="Detail" asp-route-code="@t.TicketCode">Xem vé</a>
+                </div>
+            }
+        </div>
+    }
+</div>

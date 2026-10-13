@@ -25,8 +25,19 @@ builder.Services.AddHttpClient<ApiClient>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 }).AddHttpMessageHandler<BearerTokenHandler>();
 
+// Đăng ký các HttpClient cho từng Service chuyên biệt
+builder.Services.AddHttpClient<TannApiService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+}).AddHttpMessageHandler<BearerTokenHandler>();
+
+// Đăng ký các Scoped Services
 builder.Services.AddScoped<DanhMucApiService>();
 builder.Services.AddScoped<XeTaiXeApiService>();
+builder.Services.AddScoped<DashboardApiService>();
+builder.Services.AddScoped<UsersApiService>();
+builder.Services.AddScoped<ReportsApiService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

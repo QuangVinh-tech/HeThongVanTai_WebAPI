@@ -1,0 +1,52 @@
+﻿@model HeThongVanTai.Web.Models.ViewModels.DatVe.TicketViewModel
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@{
+    ViewData["Title"] = "Vé " + Model.Ticket.TicketCode;
+    var t = Model.Ticket;
+    var valid = t.Status == "Active" && t.BookingStatus == "Paid";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/dat-ve.css" asp-append-version="true" />
+}
+
+<div class="container py-4">
+    @if (t.BookingStatus != "Paid")
+    {
+        <div class="alert alert-warning no-print" style="max-width: 640px; margin: 0 auto 1rem;">
+            Vé này chưa có hiệu lực: đặt vé đang ở trạng thái
+            <strong>@DatVeHelpers.BookingStatusText(t.BookingStatus)</strong>.
+        </div>
+    }
+
+    <div class="eticket shadow-sm">
+        <div class="eticket-head d-flex justify-content-between align-items-center">
+            <div>
+                <div class="small text-muted">Vé điện tử</div>
+                <div class="eticket-code">@t.TicketCode</div>
+            </div>
+            <span class="pill @(valid ? "pill-ok" : "pill-info")">@(valid ? "Còn hiệu lực" : DatVeHelpers.TicketStatusText(t.Status))</span>
+        </div>
+        <div class="eticket-body">
+            <div class="row g-3">
+                <div class="col-sm-7">
+                    <div class="fw-bold fs-5">@t.Route</div>
+                    <div>Khởi hành: <strong>@t.DepartAt.ToString("HH:mm dd/MM/yyyy")</strong></div>
+                    <div>Ghế: <strong>@t.SeatCode</strong></div>
+                    <div>Hành khách: @t.PassengerName</div>
+                    <div>Biển số xe: @t.Plate</div>
+                    <div>Giá vé: @DatVeHelpers.Money(t.Price)</div>
+                    <div class="small text-muted mt-2">Mã đặt vé @t.BookingCode</div>
+                </div>
+                <div class="col-sm-5 text-center">
+                    <img src="@Model.QrUrl" width="180" height="180" alt="Mã QR của vé @t.TicketCode" />
+                    <div class="small text-muted">Đưa mã này cho nhân viên khi lên xe</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-3 no-print">
+        <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer me-1"></i>In vé</button>
+        <a class="btn btn-outline-primary" asp-controller="Tickets" asp-action="Lookup">Tra cứu vé khác</a>
+    </div>
+</div>

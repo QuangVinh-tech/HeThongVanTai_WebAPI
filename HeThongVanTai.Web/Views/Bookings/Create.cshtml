@@ -1,0 +1,121 @@
+﻿@model HeThongVanTai.Web.Models.ViewModels.DatVe.CreateBookingViewModel
+@using System.Globalization
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@{
+    ViewData["Title"] = "Đặt vé";
+    var m = Model.Map;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/dat-ve.css" asp-append-version="true" />
+}
+
+<div class="container py-4">
+    <h1 class="h3 fw-bold mb-3">Thông tin đặt vé</h1>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <form method="post" asp-controller="Bookings" asp-action="Create" class="card card-vt p-4">
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div>@e.ErrorMessage</div>
+                        }
+                    </div>
+                }
+
+                <input type="hidden" name="TripId" value="@m.TripId" />
+
+                @if (Model.IsStaff)
+                {
+                    <h2 class="h5 mb-3">Khách hàng (bán vé tại quầy)</h2>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small" for="CustomerName">Họ tên khách</label>
+                            <input type="text" class="form-control" id="CustomerName" name="CustomerName"
+                                   value="@Model.Form.CustomerName" maxlength="100" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small" for="CustomerPhone">Số điện thoại</label>
+                            <input type="text" class="form-control" id="CustomerPhone" name="CustomerPhone"
+                                   value="@Model.Form.CustomerPhone" pattern="0[0-9]{9}" maxlength="10"
+                                   title="10 số, bắt đầu bằng 0" required />
+                        </div>
+                    </div>
+                }
+
+                <h2 class="h5 mb-3">Hành khách</h2>
+                @for (var i = 0; i < Model.Form.Passengers.Count; i++)
+                {
+                    <div class="mb-3">
+                        <label class="form-label small" for="name-@i">Họ tên hành khách, ghế <strong>@Model.Form.Passengers[i].SeatCode</strong></label>
+                        <input type="hidden" name="Passengers[@i].SeatCode" value="@Model.Form.Passengers[i].SeatCode" />
+                        <input type="text" class="form-control" id="name-@i" name="Passengers[@i].Name"
+                               value="@Model.Form.Passengers[i].Name" maxlength="100" required />
+                    </div>
+                }
+
+                <h2 class="h5 mt-2 mb-3">Mã giảm giá</h2>
+                <div class="input-group mb-1">
+                    <input type="text" class="form-control" id="promo" name="PromoCode" value="@Model.Form.PromoCode"
+                           placeholder="Nhập mã (nếu có)" maxlength="30" />
+                    <button type="button" class="btn btn-outline-primary" id="btnPromo">Kiểm tra mã</button>
+                </div>
+                <div id="promoMsg" class="small mb-3" aria-live="polite"></div>
+
+                <div class="d-flex justify-content-between">
+                    <a class="btn btn-outline-primary" asp-controller="Trips" asp-action="Seats"
+                       asp-route-id="@m.TripId" asp-route-tickets="@Model.Form.Passengers.Count">Quay lại chọn ghế</a>
+                    <button type="submit" class="btn btn-primary px-4">Giữ ghế và thanh toán</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card card-vt p-4">
+                <h2 class="h5">Chuyến đi</h2>
+                <div class="fw-semibold">@m.RouteName</div>
+                <div>@m.DepartAt.ToString("HH:mm dd/MM/yyyy")</div>
+                <div class="small text-muted mb-3">@m.VehicleType (@m.VehiclePlate)</div>
+                <div class="d-flex justify-content-between"><span>Ghế</span><strong>@string.Join(", ", Model.Form.Passengers.Select(p => p.SeatCode))</strong></div>
+                <div class="d-flex justify-content-between"><span>Giá vé</span><span>@DatVeHelpers.Money(m.Price) x @Model.Form.Passengers.Count</span></div>
+                <div class="d-flex justify-content-between"><span>Tạm tính</span><span>@DatVeHelpers.Money(Model.Subtotal)</span></div>
+                <div class="d-flex justify-content-between"><span>Giảm giá</span><span id="discount">0 đ</span></div>
+                <hr />
+                <div class="d-flex justify-content-between fs-5 fw-bold"><span>Tổng cộng</span><span id="total">@DatVeHelpers.Money(Model.Subtotal)</span></div>
+                <div class="small text-muted mt-2">Ghế được giữ trong vài phút sau khi bạn bấm "Giữ ghế và thanh toán".</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var subtotal = @Model.Subtotal.ToString(CultureInfo.InvariantCulture);
+            var promo = document.getElementById('promo');
+            var msg = document.getElementById('promoMsg');
+            var discountEl = document.getElementById('discount');
+            var totalEl = document.getElementById('total');
+            function fmt(n) { return Number(n).toLocaleString('vi-VN') + ' đ'; }
+
+            document.getElementById('btnPromo').addEventListener('click', function () {
+                var url = '@Url.Action("CheckPromo", "Bookings")?code=' + encodeURIComponent(promo.value.trim()) +
+                          '&amount=' + subtotal;
+                fetch(url, { credentials: 'same-origin' })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        msg.textContent = d.message;
+                        msg.className = 'small mb-3 ' + (d.ok ? 'text-success' : 'text-danger');
+                        discountEl.textContent = fmt(d.discount);
+                        totalEl.textContent = fmt(d.total);
+                    })
+                    .catch(function () {
+                        msg.textContent = 'Không kiểm tra được mã lúc này.';
+                        msg.className = 'small mb-3 text-danger';
+                    });
+            });
+        })();
+    </script>
+}

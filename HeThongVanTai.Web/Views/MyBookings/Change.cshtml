@@ -1,0 +1,101 @@
+﻿@model HeThongVanTai.Web.Models.ViewModels.DatVe.ChangeSeatViewModel
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@{
+    ViewData["Title"] = "Đổi ghế";
+    var m = Model.Map;
+    var manyFloors = m.Seats.Select(s => s.Floor).Distinct().Count() > 1;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/dat-ve.css" asp-append-version="true" />
+}
+
+<div class="container py-4">
+    <h1 class="h3 fw-bold mb-1">Đổi ghế</h1>
+    <p class="text-muted mb-3">
+        @m.RouteName, khởi hành @m.DepartAt.ToString("HH:mm dd/MM/yyyy"). Ghế hiện tại:
+        <strong>@Model.CurrentSeat</strong>. Chỉ đổi được trước giờ khởi hành ít nhất 2 giờ.
+    </p>
+
+    <form method="post" asp-controller="MyBookings" asp-action="ChangeConfirmed" asp-route-ticketId="@Model.TicketId">
+        <input type="hidden" name="tripId" value="@Model.TripId" />
+        <input type="hidden" name="currentSeat" value="@Model.CurrentSeat" />
+        <input type="hidden" name="newSeatCode" id="newSeatCode" value="" />
+
+        <div class="card card-vt p-4 mb-3">
+            <div class="seat-legend mb-3">
+                <span><span class="swatch"></span>Trống</span>
+                <span><span class="swatch swatch-selected"></span>Ghế mới</span>
+                <span><span class="swatch swatch-sold"></span>Đã bán</span>
+            </div>
+
+            @foreach (var floor in m.Seats.GroupBy(s => s.Floor).OrderBy(g => g.Key))
+            {
+                <div class="mb-3">
+                    @if (manyFloors)
+                    {
+                        <div class="fw-semibold mb-2">Tầng @floor.Key</div>
+                    }
+                    <div class="seat-map">
+                        @foreach (var s in floor)
+                        {
+                            if (s.SeatCode.Equals(Model.CurrentSeat, StringComparison.OrdinalIgnoreCase))
+                            {
+                                <button type="button" class="seat current" disabled title="Ghế hiện tại">@s.SeatCode</button>
+                            }
+                            else if (s.IsAvailable)
+                            {
+                                <button type="button" class="seat" data-code="@s.SeatCode" aria-pressed="false">@s.SeatCode</button>
+                            }
+                            else
+                            {
+                                <button type="button" class="seat sold" disabled title="Ghế đã bán">@s.SeatCode</button>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div id="picked" class="fw-semibold" aria-live="polite">Chưa chọn ghế mới</div>
+            <div>
+                <a class="btn btn-outline-primary me-2" asp-action="Index">Quay lại</a>
+                <button type="submit" id="btnChange" class="btn btn-primary px-4" disabled>Xác nhận đổi ghế</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var buttons = document.querySelectorAll('.seat[data-code]');
+            var input = document.getElementById('newSeatCode');
+            var submit = document.getElementById('btnChange');
+            var label = document.getElementById('picked');
+            var current = null;
+
+            buttons.forEach(function (b) {
+                b.addEventListener('click', function () {
+                    if (current) {
+                        current.classList.remove('selected');
+                        current.setAttribute('aria-pressed', 'false');
+                    }
+                    if (current === b) {
+                        current = null;
+                        input.value = '';
+                        label.textContent = 'Chưa chọn ghế mới';
+                        submit.disabled = true;
+                        return;
+                    }
+                    current = b;
+                    b.classList.add('selected');
+                    b.setAttribute('aria-pressed', 'true');
+                    input.value = b.getAttribute('data-code');
+                    label.textContent = 'Ghế mới: ' + input.value;
+                    submit.disabled = false;
+                });
+            });
+        })();
+    </script>
+}
