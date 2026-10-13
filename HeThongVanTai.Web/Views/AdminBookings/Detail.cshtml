@@ -1,0 +1,119 @@
+﻿@model HeThongVanTai.Web.Models.ViewModels.DatVe.AdminBookingDetailViewModel
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@{
+    ViewData["Title"] = "Chi tiết đặt vé";
+    Layout = "_AdminLayout";
+    var b = Model.Booking;
+    var hasLivePayment = Model.Payments.Any(p => p.Status == "Pending" || p.Status == "Paid");
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h4 mb-0">
+        Đặt vé @b.Code
+        <span class="pill @DatVeHelpers.BookingStatusClass(b.Status) ms-2">@DatVeHelpers.BookingStatusText(b.Status)</span>
+    </h1>
+    <a class="btn btn-outline-primary" asp-action="Index">Quay lại danh sách</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card card-vt p-4 mb-3">
+            <h2 class="h5">Vé</h2>
+            <div class="small text-muted mb-2">
+                Khách hàng: @(b.Customer ?? "-")
+                @if (b.CreatedAt.HasValue)
+                {
+                    <text> | Đặt lúc @b.CreatedAt.Value.ToString("HH:mm dd/MM/yyyy")</text>
+                }
+                @if (b.Status == "Holding" && b.HoldExpiresAt.HasValue)
+                {
+                    <text> | Giữ ghế đến @b.HoldExpiresAt.Value.ToString("HH:mm dd/MM/yyyy")</text>
+                }
+            </div>
+            @foreach (var t in b.Tickets)
+            {
+                <div class="border-top py-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div>Ghế <strong>@t.SeatCode</strong> - @t.PassengerName</div>
+                        <div class="small text-muted">
+                            Mã vé @t.TicketCode, @DatVeHelpers.TicketStatusText(t.Status)
+                            @if (!string.IsNullOrEmpty(t.Route))
+                            {
+                                <text> | @t.Route</text>
+                            }
+                            @if (t.DepartAt.HasValue)
+                            {
+                                <text> | @t.DepartAt.Value.ToString("HH:mm dd/MM/yyyy")</text>
+                            }
+                        </div>
+                    </div>
+                    <div class="text-end">@DatVeHelpers.Money(t.Price)</div>
+                </div>
+            }
+            @if (b.DiscountAmount > 0)
+            {
+                <div class="d-flex justify-content-between border-top pt-2 text-success">
+                    <span>Giảm giá</span><span>- @DatVeHelpers.Money(b.DiscountAmount)</span>
+                </div>
+            }
+            <div class="d-flex justify-content-between fw-bold border-top pt-2 mt-1">
+                <span>Tổng cộng</span><span>@DatVeHelpers.Money(b.TotalAmount)</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card card-vt p-4 mb-3">
+            <h2 class="h5">Thanh toán</h2>
+            @if (Model.Payments.Count == 0)
+            {
+                <div class="text-muted">Chưa có giao dịch nào.</div>
+            }
+            @foreach (var p in Model.Payments)
+            {
+                <div class="border-top py-2">
+                    <div class="d-flex justify-content-between">
+                        <span>@DatVeHelpers.PaymentMethodText(p.Method), @DatVeHelpers.Money(p.Amount)</span>
+                        <span class="fw-semibold">@p.Status</span>
+                    </div>
+                    @if (p.PaidAt.HasValue)
+                    {
+                        <div class="small text-muted">@p.PaidAt.Value.ToString("HH:mm dd/MM/yyyy")</div>
+                    }
+                    @if (p.Status == "Pending")
+                    {
+                        <form method="post" asp-action="ConfirmPayment" asp-route-id="@b.Id" class="mt-2"
+                              data-confirm="Xác nhận đã nhận đủ tiền chuyển khoản?">
+                            <input type="hidden" name="paymentId" value="@p.Id" />
+                            <button type="submit" class="btn btn-sm btn-primary">Xác nhận đã nhận tiền</button>
+                        </form>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (b.Status == "Holding" || b.Status == "Paid")
+        {
+            <div class="card card-vt p-4">
+                <h2 class="h5">Thao tác</h2>
+                <div class="d-flex flex-wrap gap-2">
+                    @if (b.Status == "Holding" && !hasLivePayment)
+                    {
+                        <form method="post" asp-action="CollectCash" asp-route-id="@b.Id"
+                              data-confirm="Thu tiền mặt và xác nhận thanh toán đặt vé này?">
+                            <button type="submit" class="btn btn-primary">Thu tiền mặt</button>
+                        </form>
+                    }
+                    <form method="post" asp-action="CancelBooking" asp-route-id="@b.Id"
+                          data-confirm="Hủy đặt vé này? Việc hoàn tiền áp dụng theo chính sách.">
+                        <button type="submit" class="btn btn-outline-primary">Hủy đặt vé</button>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ConfirmDeleteScript" />
+}

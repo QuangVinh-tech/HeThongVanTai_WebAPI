@@ -29,6 +29,10 @@
                        asp-controller="VehicleTypes" asp-action="Index">
                         <i class="bi bi-grid-3x3-gap me-2"></i>Loại xe và ghế
                     </a>
+                    <a class="nav-link @(currentController == "AdminBookings" ? "active" : "")"
+                       asp-controller="AdminBookings" asp-action="Index">
+                        <i class="bi bi-ticket-perforated me-2"></i>Đặt vé
+                    </a>
                 }
                 @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Accountant))
                 {
@@ -42,6 +46,17 @@
                     <a class="nav-link @(currentController == "Users" ? "active" : "")"
                        asp-controller="Users" asp-action="Index">
                         <i class="bi bi-people me-2"></i>Người dùng
+                    </a>
+                }
+                <a class="nav-link @(currentController == "AdminTrips" ? "active" : "")"
+                   asp-controller="AdminTrips" asp-action="Index">
+                    <i class="bi bi-bus-front me-2"></i>Chuyến xe
+                </a>
+                @if (User.IsInRole(AppRoles.Admin))
+                {
+                    <a class="nav-link @(currentController == "AdminPromotions" ? "active" : "")"
+                       asp-controller="AdminPromotions" asp-action="Index">
+                        <i class="bi bi-tag me-2"></i>Khuyến mãi
                     </a>
                 }
                 @* Mỗi người thêm mục menu của mình vào đây khi trang đã xong, ví dụ:

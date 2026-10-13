@@ -1,0 +1,101 @@
+﻿@model HeThongVanTai.Web.Models.ViewModels.DatVe.PayViewModel
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@{
+    ViewData["Title"] = "Thanh toán";
+    var b = Model.Booking;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/dat-ve.css" asp-append-version="true" />
+}
+
+<div class="container py-4">
+    <h1 class="h3 fw-bold mb-3">Thanh toán</h1>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card card-vt p-4 mb-3 text-center">
+                <div class="text-muted">Thời gian giữ ghế còn lại</div>
+                <div class="hold-timer" id="timer" data-seconds="@Model.RemainingSeconds" aria-live="polite">--:--</div>
+                <div class="small text-muted">Hết giờ, ghế được trả lại và bạn cần chọn lại.</div>
+            </div>
+
+            <form method="post" asp-controller="Bookings" asp-action="Pay" asp-route-id="@b.Id" class="card card-vt p-4">
+                <h2 class="h5 mb-3">Phương thức thanh toán</h2>
+
+                @if (Model.IsStaff)
+                {
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="method" id="m-cash" value="Cash" checked />
+                        <label class="form-check-label" for="m-cash">Tiền mặt (thu tại quầy, xác nhận ngay)</label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="method" id="m-bank" value="BankTransfer" />
+                        <label class="form-check-label" for="m-bank">Chuyển khoản (chờ xác nhận)</label>
+                    </div>
+                }
+                else
+                {
+                    <input type="hidden" name="method" value="BankTransfer" />
+                    <p class="mb-2"><strong>Chuyển khoản</strong></p>
+                }
+
+                <div class="alert alert-info small">
+                    Chuyển đúng số tiền <strong>@DatVeHelpers.Money(b.TotalAmount)</strong> với nội dung chuyển khoản là
+                    <strong>@b.Code</strong>. Vé được xác nhận sau khi nhân viên kiểm tra khoản chuyển,
+                    hãy chuyển trước khi hết giờ giữ ghế.
+                    @if (!string.IsNullOrWhiteSpace(Model.BankInfo))
+                    {
+                        <div class="mt-1">@Model.BankInfo</div>
+                    }
+                </div>
+
+                <button type="submit" class="btn btn-primary px-4">Xác nhận thanh toán</button>
+            </form>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card card-vt p-4">
+                <h2 class="h5">Đặt vé @b.Code</h2>
+                @foreach (var t in b.Tickets.Where(t => t.Status == "Active"))
+                {
+                    <div class="d-flex justify-content-between">
+                        <span>Ghế @t.SeatCode - @t.PassengerName</span>
+                        <span>@DatVeHelpers.Money(t.Price)</span>
+                    </div>
+                }
+                @if (b.DiscountAmount > 0)
+                {
+                    <div class="d-flex justify-content-between text-success">
+                        <span>Giảm giá</span><span>- @DatVeHelpers.Money(b.DiscountAmount)</span>
+                    </div>
+                }
+                <hr />
+                <div class="d-flex justify-content-between fs-5 fw-bold"><span>Tổng cộng</span><span>@DatVeHelpers.Money(b.TotalAmount)</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var el = document.getElementById('timer');
+            var left = parseInt(el.getAttribute('data-seconds'), 10) || 0;
+            function render() {
+                var m = Math.floor(left / 60), s = left % 60;
+                el.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+            }
+            render();
+            var timer = setInterval(function () {
+                left--;
+                if (left <= 0) {
+                    clearInterval(timer);
+                    el.textContent = '00:00';
+                    location.reload();   // trang sẽ báo hết giờ và đưa về chọn lại ghế
+                    return;
+                }
+                render();
+            }, 1000);
+        })();
+    </script>
+}

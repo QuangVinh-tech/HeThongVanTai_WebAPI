@@ -1,0 +1,94 @@
+﻿@model HeThongVanTai.Web.Models.ViewModels.DatVe.PromotionForm
+@{
+    var isEdit = Model.Id.HasValue;
+    ViewData["Title"] = isEdit ? "Sửa mã giảm giá" : "Thêm mã giảm giá";
+    Layout = "_AdminLayout";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h4 mb-0">@ViewData["Title"]</h1>
+    <a class="btn btn-outline-primary" asp-action="Index">Quay lại danh sách</a>
+</div>
+
+<form method="post" asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@(isEdit ? Model.Id : null)"
+      class="card card-vt p-4" style="max-width: 760px;">
+    @if (ViewData.ModelState.TryGetValue("", out var general) && general.Errors.Count > 0)
+    {
+        <div class="alert alert-danger">
+            @foreach (var e in general.Errors)
+            {
+                <div>@e.ErrorMessage</div>
+            }
+        </div>
+    }
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label small" asp-for="Code">Mã giảm giá</label>
+            <input asp-for="Code" class="form-control text-uppercase" maxlength="30" />
+            <span asp-validation-for="Code" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small" asp-for="DiscountType">Loại giảm</label>
+            <select asp-for="DiscountType" class="form-select" id="DiscountType">
+                <option value="Percent">Phần trăm (%)</option>
+                <option value="Amount">Số tiền cố định (đ)</option>
+            </select>
+            <span asp-validation-for="DiscountType" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small" asp-for="Value" id="valueLabel">Giá trị giảm</label>
+            <input asp-for="Value" type="number" min="1" step="any" class="form-control" />
+            <span asp-validation-for="Value" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6" id="maxBox">
+            <label class="form-label small" asp-for="MaxDiscount">Giảm tối đa (đ, không bắt buộc)</label>
+            <input asp-for="MaxDiscount" type="number" min="0" step="1000" class="form-control" />
+            <span asp-validation-for="MaxDiscount" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small" asp-for="MinOrder">Đơn tối thiểu (đ)</label>
+            <input asp-for="MinOrder" type="number" min="0" step="1000" class="form-control" />
+            <span asp-validation-for="MinOrder" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small" asp-for="UsageLimit">Giới hạn lượt dùng (để trống nếu không giới hạn)</label>
+            <input asp-for="UsageLimit" type="number" min="1" class="form-control" />
+            <span asp-validation-for="UsageLimit" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small" for="StartAt">Bắt đầu</label>
+            <input type="datetime-local" class="form-control" id="StartAt" name="StartAt"
+                   value="@(Model.StartAt?.ToString("yyyy-MM-ddTHH:mm"))" required />
+            <span asp-validation-for="StartAt" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small" for="EndAt">Kết thúc</label>
+            <input type="datetime-local" class="form-control" id="EndAt" name="EndAt"
+                   value="@(Model.EndAt?.ToString("yyyy-MM-ddTHH:mm"))" required />
+            <span asp-validation-for="EndAt" class="text-danger small"></span>
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary px-4">@(isEdit ? "Lưu" : "Thêm mã")</button>
+        <a class="btn btn-outline-primary" asp-action="Index">Hủy</a>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        (function () {
+            var type = document.getElementById('DiscountType');
+            var maxBox = document.getElementById('maxBox');
+            var label = document.getElementById('valueLabel');
+            function sync() {
+                var percent = type.value === 'Percent';
+                maxBox.classList.toggle('d-none', !percent);
+                label.textContent = percent ? 'Giá trị giảm (%)' : 'Giá trị giảm (đ)';
+            }
+            type.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
+}

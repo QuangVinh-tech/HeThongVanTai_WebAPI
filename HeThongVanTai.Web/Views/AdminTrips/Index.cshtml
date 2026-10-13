@@ -1,0 +1,261 @@
+﻿@model HeThongVanTai.Web.Models.ViewModels.DatVe.AdminTripsViewModel
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@{
+    ViewData["Title"] = "Quản lý chuyến xe";
+    Layout = "_AdminLayout";
+    var f = Model.Filter;
+    var result = Model.Result;
+    var filtering = f.BusRouteId.HasValue || f.Date.HasValue || !string.IsNullOrWhiteSpace(f.Status);
+
+    Dictionary<string, string> PageRoute(int p)
+    {
+        var d = new Dictionary<string, string>
+                {
+                    ["page"] = p.ToString(),
+                    ["isAscending"] = f.IsAscending ? "true" : "false"
+                };
+        if (f.BusRouteId.HasValue) d["busRouteId"] = f.BusRouteId.Value.ToString();
+        if (f.Date.HasValue) d["date"] = f.Date.Value.ToString("yyyy-MM-dd");
+        if (!string.IsNullOrWhiteSpace(f.Status)) d["status"] = f.Status!;
+        if (!string.IsNullOrWhiteSpace(f.SortBy)) d["sortBy"] = f.SortBy!;
+        return d;
+    }
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h4 mb-0">Quản lý chuyến xe</h1>
+    <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg me-1"></i>Tạo chuyến</a>
+</div>
+
+<form method="get" class="filter-vt row g-2 align-items-end mb-3">
+    <div class="col-12 col-md-3">
+        <label class="form-label small mb-1" for="busRouteId">Tuyến đường</label>
+        <select id="busRouteId" name="busRouteId" class="form-select">
+            <option value="">Tất cả</option>
+            @foreach (var r in Model.Routes)
+            {
+                <option value="@r.Id" selected="@(f.BusRouteId == r.Id)">@r.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-6 col-md-2">
+        <label class="form-label small mb-1" for="date">Ngày đi</label>
+        <input id="date" type="date" name="date" value="@(f.Date?.ToString("yyyy-MM-dd"))" class="form-control" />
+    </div>
+    <div class="col-6 col-md-2">
+        <label class="form-label small mb-1" for="status">Trạng thái</label>
+        <select id="status" name="status" class="form-select">
+            <option value="" selected="@(string.IsNullOrEmpty(f.Status))">Tất cả</option>
+            <option value="Open" selected="@(f.Status == "Open")">Mở bán</option>
+            <option value="Delayed" selected="@(f.Status == "Delayed")">Hoãn</option>
+            <option value="Cancelled" selected="@(f.Status == "Cancelled")">Đã hủy</option>
+        </select>
+    </div>
+    <div class="col-12 col-md-3">
+        <label class="form-label small mb-1" for="sortBy">Sắp xếp</label>
+        <div class="input-group">
+            <select id="sortBy" name="sortBy" class="form-select">
+                <option value="" selected="@(string.IsNullOrEmpty(f.SortBy))">Giờ đi</option>
+                <option value="Price" selected="@(f.SortBy == "Price")">Giá vé</option>
+            </select>
+            <select name="isAscending" class="form-select" aria-label="Thứ tự">
+                <option value="true" selected="@(f.IsAscending)">Tăng dần</option>
+                <option value="false" selected="@(!f.IsAscending)">Giảm dần</option>
+            </select>
+        </div>
+    </div>
+    <div class="col-12 col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-grow-1">Lọc</button>
+        @if (filtering)
+        {
+            <a class="btn btn-outline-primary" asp-action="Index">Bỏ lọc</a>
+        }
+    </div>
+</form>
+
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div class="alert alert-danger">@Model.Error</div>
+}
+
+<div class="card card-vt">
+    @if (result == null || result.Items.Count == 0)
+    {
+        <div class="p-4 text-center text-muted">
+            @(filtering ? "Không có chuyến nào khớp với điều kiện lọc." : "Chưa có chuyến xe nào. Hãy tạo chuyến đầu tiên.")
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-vt table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Tuyến</th>
+                        <th>Giờ đi</th>
+                        <th>Xe và tài xế</th>
+                        <th class="text-end">Giá vé</th>
+                        <th class="text-end">Đã đặt</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in result.Items)
+                    {
+                        var label = $"{t.RouteName}, {t.DepartAt:HH:mm dd/MM/yyyy}";
+                        <tr>
+                            <td class="fw-semibold">@t.RouteName<div class="small text-muted">@t.FromStation - @t.ToStation</div></td>
+                            <td>@t.DepartAt.ToString("HH:mm dd/MM/yyyy")@if (t.ArriveAt.HasValue)
+                                {
+                                    <div class="small text-muted">đến @t.ArriveAt.Value.ToString("HH:mm")</div>
+                                }</td>
+                            <td>@t.VehiclePlate<div class="small text-muted">@t.VehicleType, @t.DriverName</div></td>
+                            <td class="text-end">@DatVeHelpers.Money(t.Price)</td>
+                            <td class="text-end">@t.BookedSeats / @t.TotalSeats</td>
+                            <td><span class="pill @TripStatusHelper.Class(t.Status)">@TripStatusHelper.Text(t.Status)</span></td>
+                            <td class="text-end text-nowrap">
+                                @if (t.Status != "Cancelled")
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#vehicleModal"
+                                            data-trip-id="@t.Id" data-vehicle-id="@t.VehicleId" data-driver-id="@t.DriverId" data-label="@label">
+                                        Đổi xe
+                                    </button>
+                                }
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#statusModal"
+                                        data-trip-id="@t.Id" data-status="@t.Status" data-label="@label">
+                                    Trạng thái
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@if (result != null && result.TotalPages > 1)
+{
+    <nav aria-label="Phân trang" class="mt-3">
+        <ul class="pagination justify-content-center">
+            <li class="page-item @(result.PageNumber <= 1 ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-all-route-data="PageRoute(result.PageNumber - 1)">Trước</a>
+            </li>
+            @for (var p = Math.Max(1, result.PageNumber - 2); p <= Math.Min(result.TotalPages, result.PageNumber + 2); p++)
+            {
+                <li class="page-item @(p == result.PageNumber ? "active" : "")">
+                    <a class="page-link" asp-action="Index" asp-all-route-data="PageRoute(p)">@p</a>
+                </li>
+            }
+            <li class="page-item @(result.PageNumber >= result.TotalPages ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-all-route-data="PageRoute(result.PageNumber + 1)">Sau</a>
+            </li>
+        </ul>
+    </nav>
+}
+
+@* Cửa sổ đổi xe / tài xế: dùng chung cho mọi dòng, JavaScript đặt lại địa chỉ gửi và giá trị hiện tại *@
+<div class="modal fade" id="vehicleModal" tabindex="-1" aria-labelledby="vehicleTitle" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" id="vehicleForm" asp-action="ChangeVehicle" asp-route-id="0" class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="vehicleTitle">Đổi xe / tài xế</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted" id="vehicleLabel"></p>
+                <div class="mb-3">
+                    <label class="form-label small" for="newVehicleId">Xe mới</label>
+                    <select class="form-select" id="newVehicleId" name="newVehicleId" required>
+                        <option value="">Chọn xe</option>
+                        @foreach (var v in Model.Vehicles)
+                        {
+                            <option value="@v.Id">@v.Plate - @v.VehicleTypeName (@v.SeatCount chỗ)</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-1">
+                    <label class="form-label small" for="newDriverId">Tài xế mới (giữ nguyên nếu không chọn)</label>
+                    <select class="form-select" id="newDriverId" name="newDriverId">
+                        <option value="">Giữ nguyên tài xế</option>
+                        @foreach (var d in Model.Drivers)
+                        {
+                            <option value="@d.Id">@d.FullName</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Đóng</button>
+                <button type="submit" class="btn btn-primary">Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* Cửa sổ đổi trạng thái *@
+<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusTitle" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" id="statusForm" asp-action="UpdateStatus" asp-route-id="0" class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="statusTitle">Đổi trạng thái chuyến</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted" id="statusLabel"></p>
+                <div class="mb-3">
+                    <label class="form-label small" for="statusSelect">Trạng thái</label>
+                    <select class="form-select" id="statusSelect" name="status">
+                        <option value="Open">Mở bán</option>
+                        <option value="Delayed">Hoãn (đổi giờ khởi hành)</option>
+                        <option value="Cancelled">Hủy chuyến</option>
+                    </select>
+                </div>
+                <div class="mb-1 d-none" id="delayBox">
+                    <label class="form-label small" for="newDepartAt">Giờ khởi hành mới</label>
+                    <input type="datetime-local" class="form-control" id="newDepartAt" name="newDepartAt" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Đóng</button>
+                <button type="submit" class="btn btn-primary">Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var base = '@Url.Content("~/Admin/Trips/")';
+
+            document.getElementById('vehicleModal').addEventListener('show.bs.modal', function (e) {
+                var b = e.relatedTarget;
+                document.getElementById('vehicleForm').action = base + b.getAttribute('data-trip-id') + '/ChangeVehicle';
+                document.getElementById('vehicleLabel').textContent = b.getAttribute('data-label');
+                document.getElementById('newVehicleId').value = b.getAttribute('data-vehicle-id');
+                document.getElementById('newDriverId').value = '';
+            });
+
+            var statusSelect = document.getElementById('statusSelect');
+            var delayBox = document.getElementById('delayBox');
+            var delayInput = document.getElementById('newDepartAt');
+            function toggleDelay() {
+                var on = statusSelect.value === 'Delayed';
+                delayBox.classList.toggle('d-none', !on);
+                delayInput.required = on;
+            }
+            statusSelect.addEventListener('change', toggleDelay);
+
+            document.getElementById('statusModal').addEventListener('show.bs.modal', function (e) {
+                var b = e.relatedTarget;
+                document.getElementById('statusForm').action = base + b.getAttribute('data-trip-id') + '/Status';
+                document.getElementById('statusLabel').textContent = b.getAttribute('data-label');
+                statusSelect.value = b.getAttribute('data-status');
+                delayInput.value = '';
+                toggleDelay();
+            });
+        })();
+    </script>
+}

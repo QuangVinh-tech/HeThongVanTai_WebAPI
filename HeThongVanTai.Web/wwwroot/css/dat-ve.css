@@ -1,0 +1,85 @@
+﻿/* CSS riêng cho luồng đặt vé (Tấn). Màu, .pill, .seat dùng từ site.css */
+
+.seat-map {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.seat-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: .9rem;
+    color: var(--vt-muted);
+}
+
+    .seat-legend .swatch {
+        display: inline-block;
+        width: 1.1rem;
+        height: 1.1rem;
+        margin-right: .35rem;
+        border-radius: 5px;
+        border: 1.5px solid #FFB5C5;
+        background: #FFE3EA;
+        vertical-align: -.2rem;
+    }
+
+    .seat-legend .swatch-selected {
+        background: var(--vt-primary);
+        border-color: var(--vt-primary);
+    }
+
+    .seat-legend .swatch-sold {
+        background: var(--vt-sold);
+        border-color: var(--vt-sold);
+    }
+
+/* Ghế hiện tại khi đổi ghế (phần 3) */
+.seat.current {
+    background: var(--vt-pink);
+    border: 2px dashed var(--vt-primary);
+    color: var(--vt-primary);
+    cursor: not-allowed;
+}
+
+/* Đồng hồ đếm ngược giữ ghế (phần 2) */
+.hold-timer {
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--vt-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Vé điện tử (phần 3) */
+.eticket {
+    max-width: 640px;
+    margin: 0 auto;
+    border: 2px solid var(--vt-pink);
+    border-radius: 12px;
+    background: #FFFFFF;
+}
+
+.eticket-head {
+    background: var(--vt-tint);
+    border-bottom: 2px dashed var(--vt-secondary);
+    padding: 1rem 1.25rem;
+    border-radius: 10px 10px 0 0;
+}
+
+.eticket-body {
+    padding: 1.25rem;
+}
+
+.eticket-code {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: var(--vt-primary);
+}
+
+@media print {
+    header, footer, .no-print {
+        display: none !important;
+    }
+}

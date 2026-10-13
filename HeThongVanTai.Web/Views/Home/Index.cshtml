@@ -1,5 +1,7 @@
+@using HeThongVanTai.Web.Models.ViewModels.DanhMuc
 @{
     ViewData["Title"] = "Trang chủ";
+    var stations = ViewData["Stations"] as List<StationItem> ?? new List<StationItem>();
 }
 
 <section class="hero-vt">
@@ -10,24 +12,39 @@
 </section>
 
 <div class="container">
-    @* TODO (Tấn): gắn form này vào trang Tìm chuyến (/Trips/Search). Các ô điểm đi và điểm đến lấy từ
-       GET api/stations (công khai). Giữ nguyên bố cục card để thống nhất giao diện. *@
     <form method="get" action="/Trips/Search" class="card card-vt search-card p-4">
         <div class="row g-3 align-items-end">
             <div class="col-md-3">
                 <label class="form-label small" for="fromStationId">Điểm đi</label>
-                <select class="form-select" id="fromStationId" name="fromStationId"><option value="">Chọn điểm đi</option></select>
+                <select class="form-select" id="fromStationId" name="fromStationId" required>
+                    <option value="">Chọn điểm đi</option>
+                    @foreach (var s in stations)
+                    {
+                        <option value="@s.Id">@s.Name</option>
+                    }
+                </select>
             </div>
             <div class="col-md-3">
                 <label class="form-label small" for="toStationId">Điểm đến</label>
-                <select class="form-select" id="toStationId" name="toStationId"><option value="">Chọn điểm đến</option></select>
+                <select class="form-select" id="toStationId" name="toStationId" required>
+                    <option value="">Chọn điểm đến</option>
+                    @foreach (var s in stations)
+                    {
+                        <option value="@s.Id">@s.Name</option>
+                    }
+                </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label small" for="date">Ngày đi</label>
-                <input type="date" class="form-control" id="date" name="date" />
+                <input type="date" class="form-control" id="date" name="date"
+                       min="@DateTime.Today.ToString("yyyy-MM-dd")" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
             </div>
-            <div class="col-md-3 d-grid">
-                <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i>Tìm chuyến xe</button>
+            <div class="col-md-2">
+                <label class="form-label small" for="tickets">Số vé</label>
+                <input type="number" class="form-control" id="tickets" name="tickets" min="1" max="10" value="1" required />
+            </div>
+            <div class="col-md-2 d-grid">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i>Tìm chuyến</button>
             </div>
         </div>
     </form>

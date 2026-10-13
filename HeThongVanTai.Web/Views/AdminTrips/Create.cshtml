@@ -1,0 +1,77 @@
+﻿@model HeThongVanTai.Web.Models.ViewModels.DatVe.CreateTripViewModel
+@{
+    ViewData["Title"] = "Tạo chuyến xe";
+    Layout = "_AdminLayout";
+    var f = Model.Form;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h4 mb-0">Tạo chuyến xe</h1>
+    <a class="btn btn-outline-primary" asp-action="Index">Quay lại danh sách</a>
+</div>
+
+<form method="post" asp-action="Create" class="card card-vt p-4" style="max-width: 760px;">
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <div>@e.ErrorMessage</div>
+            }
+        </div>
+    }
+
+    <div class="row g-3">
+        <div class="col-12">
+            <label class="form-label small" for="BusRouteId">Tuyến đường</label>
+            <select class="form-select" id="BusRouteId" name="BusRouteId" required>
+                <option value="">Chọn tuyến</option>
+                @foreach (var r in Model.Routes)
+                {
+                    <option value="@r.Id" selected="@(f.BusRouteId == r.Id)">@r.Name (@r.DistanceKm km, @r.DurationMin phút)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small" for="VehicleId">Xe</label>
+            <select class="form-select" id="VehicleId" name="VehicleId" required>
+                <option value="">Chọn xe</option>
+                @foreach (var v in Model.Vehicles)
+                {
+                    <option value="@v.Id" selected="@(f.VehicleId == v.Id)">@v.Plate - @v.VehicleTypeName (@v.SeatCount chỗ)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small" for="DriverId">Tài xế</label>
+            <select class="form-select" id="DriverId" name="DriverId" required>
+                <option value="">Chọn tài xế</option>
+                @foreach (var d in Model.Drivers)
+                {
+                    <option value="@d.Id" selected="@(f.DriverId == d.Id)">@d.FullName</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small" for="DepartAt">Giờ khởi hành</label>
+            <input type="datetime-local" class="form-control" id="DepartAt" name="DepartAt"
+                   value="@(f.DepartAt?.ToString("yyyy-MM-ddTHH:mm"))" required />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small" for="ArriveAt">Giờ đến (không bắt buộc)</label>
+            <input type="datetime-local" class="form-control" id="ArriveAt" name="ArriveAt"
+                   value="@(f.ArriveAt?.ToString("yyyy-MM-ddTHH:mm"))" />
+            <div class="form-text">Để trống thì hệ thống tự tính theo thời gian chạy của tuyến.</div>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small" for="Price">Giá vé (đ)</label>
+            <input type="number" class="form-control" id="Price" name="Price" min="1000" step="1000"
+                   value="@(f.Price > 0 ? f.Price.ToString("0") : "")" required />
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary px-4">Tạo chuyến</button>
+        <a class="btn btn-outline-primary" asp-action="Index">Hủy</a>
+    </div>
+</form>

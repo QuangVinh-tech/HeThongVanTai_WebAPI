@@ -1,0 +1,75 @@
+﻿@model HeThongVanTai.Web.Models.ViewModels.DatVe.PaymentResultViewModel
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@{
+    ViewData["Title"] = "Kết quả thanh toán";
+    var b = Model.Booking;
+    var pending = Model.Payments.FirstOrDefault(p => p.Status == "Pending");
+    var paid = b.Status == "Paid";
+    var failed = b.Status == "Cancelled" || b.Status == "Expired";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/dat-ve.css" asp-append-version="true" />
+}
+
+<div class="container py-4" style="max-width: 760px;">
+    @if (paid)
+    {
+        <div class="alert alert-success">
+            <h1 class="h4 mb-1">Thanh toán thành công</h1>
+            Đặt vé <strong>@b.Code</strong> đã được xác nhận.
+        </div>
+    }
+    else if (pending != null && b.Status == "Holding")
+    {
+        <div class="alert alert-warning">
+            <h1 class="h4 mb-1">Đang chờ xác nhận chuyển khoản</h1>
+            Đã ghi nhận yêu cầu thanh toán <strong>@DatVeHelpers.Money(pending.Amount)</strong> cho đặt vé
+            <strong>@b.Code</strong>. Nội dung chuyển khoản: <strong>@(pending.TransferContent ?? b.Code)</strong>.
+            Vé chỉ có hiệu lực sau khi nhân viên xác nhận, vui lòng chuyển trước khi hết giờ giữ ghế.
+            Bấm "Tải lại trạng thái" để cập nhật.
+        </div>
+    }
+    else if (failed)
+    {
+        <div class="alert alert-danger">
+            <h1 class="h4 mb-1">Đặt vé không còn hiệu lực</h1>
+            Đặt vé <strong>@b.Code</strong> đã @(b.Status == "Expired" ? "hết hạn giữ chỗ" : "bị hủy").
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">Đặt vé <strong>@b.Code</strong>: @DatVeHelpers.BookingStatusText(b.Status)</div>
+    }
+
+    <div class="card card-vt p-4 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="h5 mb-0">Đặt vé @b.Code</h2>
+            <span class="pill @DatVeHelpers.BookingStatusClass(b.Status)">@DatVeHelpers.BookingStatusText(b.Status)</span>
+        </div>
+        @foreach (var t in b.Tickets)
+        {
+            <div class="d-flex justify-content-between align-items-center border-top py-2">
+                <div>
+                    Ghế <strong>@t.SeatCode</strong> - @t.PassengerName
+                    <div class="small text-muted">Mã vé @t.TicketCode, @DatVeHelpers.TicketStatusText(t.Status)</div>
+                </div>
+                @if (paid && t.Status == "Active")
+                {
+                    <a class="btn btn-sm btn-outline-primary" href="/Tickets/@t.TicketCode">Xem vé QR</a>
+                }
+            </div>
+        }
+        <div class="d-flex justify-content-between fw-bold border-top pt-2">
+            <span>Tổng cộng</span><span>@DatVeHelpers.Money(b.TotalAmount)</span>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-primary" href="/Account/MyBookings">Vé của tôi</a>
+        <a class="btn btn-outline-primary" asp-controller="Trips" asp-action="Search">Tìm chuyến khác</a>
+        @if (!paid && b.Status == "Holding")
+        {
+            <a class="btn btn-outline-primary" href="/Bookings/@b.Id/Result">Tải lại trạng thái</a>
+        }
+    </div>
+</div>  
