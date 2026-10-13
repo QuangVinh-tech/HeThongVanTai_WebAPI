@@ -430,8 +430,12 @@ public class BookingServiceTests : BookingTestBase
         AddTrip(MainTrip.DepartAt.AddHours(4), status: "Delayed");     // không được hiện
         AddBooking(MainTrip, "Holding", 100_000m, "A1");               // chiếm 1 ghế của chuyến chính
 
-        var res = await Svc().SearchAsync(FromStation.Id, ToStation.Id, MainTrip.DepartAt.Date,
-            null, null, null, null, null, null, 1, 10);
+
+        var res = await Svc().SearchAsync(
+            FromStation.Id,
+            ToStation.Id,
+            MainTrip.DepartAt.Date);
+
 
         Assert.Equal(1, Prop<int>(res, "total"));
         var first = Prop<System.Collections.IEnumerable>(res, "items").Cast<object>().Single();
@@ -440,17 +444,24 @@ public class BookingServiceTests : BookingTestBase
         Assert.Equal(2, Prop<int>(first, "AvailableSeats"));
     }
 
-    [Fact]
-    public async Task TimChuyen_SaiNgayHoacSaiBen_KhongCoKetQua()
+    
+[Fact]
+public async Task TimChuyen_SaiNgayHoacSaiBen_KhongCoKetQua()
     {
-        var wrongDay = await Svc().SearchAsync(FromStation.Id, ToStation.Id, MainTrip.DepartAt.Date.AddDays(1),
-            null, null, null, null, null, null, 1, 10);
-        var wrongWay = await Svc().SearchAsync(ToStation.Id, FromStation.Id, MainTrip.DepartAt.Date,
-            null, null, null, null, null, null, 1, 10);
+        var wrongDay = await Svc().SearchAsync(
+            FromStation.Id,
+            ToStation.Id,
+            MainTrip.DepartAt.Date.AddDays(1));
+
+        var wrongWay = await Svc().SearchAsync(
+            ToStation.Id,
+            FromStation.Id,
+            MainTrip.DepartAt.Date);
 
         Assert.Equal(0, Prop<int>(wrongDay, "total"));
         Assert.Equal(0, Prop<int>(wrongWay, "total"));
     }
+
 
     // ===================== Danh sách đặt vé (quản trị) và khách hàng =====================
 

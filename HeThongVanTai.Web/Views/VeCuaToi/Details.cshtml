@@ -1,0 +1,121 @@
+@using HeThongVanTai.Web.Models.ViewModels.VeKhach
+@model MyBookingDetailViewModel
+@{
+    var b = Model.Booking;
+    ViewData["Title"] = "Đặt vé " + b.Code;
+    var refund = Model.Refund;
+    var hasTransfer = b.Payments.Any(p => p.Status == "Pending" || p.Status == "Paid");
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/ve-khach.css" asp-append-version="true" />
+}
+
+<div class="container py-4">
+    <a asp-action="Index" class="small"><i class="bi bi-arrow-left"></i> Vé của tôi</a>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2 mb-3">
+        <h1 class="h4 mb-0">Đặt vé @b.Code</h1>
+        <span class="pill @VeLabels.BookingPill(b.Status)">@VeLabels.Booking(b.Status)</span>
+    </div>
+
+    @if (b.Status == "Holding" && b.HoldExpiresAt.HasValue)
+    {
+        <div class="alert alert-warning">
+            Ghế đang được giữ đến <strong>@VeLabels.Time(b.HoldExpiresAt.Value)</strong>. Quá giờ này mà chưa thanh toán, đặt vé sẽ tự hủy.
+        </div>
+    }
+
+    <partial name="~/Views/VeCuaToi/_TicketCards.cshtml" model="b" />
+
+    <div class="row g-3 mt-1">
+        <div class="col-12 col-lg-6">
+            <div class="card card-vt p-3 h-100">
+                <h2 class="h6">Thanh toán</h2>
+                <dl class="ticket-info mb-2">
+                    <dt>Đặt lúc</dt><dd>@VeLabels.Time(b.CreatedAt)</dd>
+                    @if (b.DiscountAmount > 0)
+                    {
+                        <dt>Giảm giá</dt><dd>-@VeLabels.Money(b.DiscountAmount)</dd>
+                    }
+                    <dt>Tổng tiền</dt><dd class="fw-semibold">@VeLabels.Money(b.TotalAmount)</dd>
+                </dl>
+
+                @if (b.Payments.Count > 0)
+                {
+                    <div class="table-responsive">
+                        <table class="table table-vt table-sm mb-0">
+                            <thead><tr><th>Hình thức</th><th>Số tiền</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
+                            <tbody>
+                                @foreach (var p in b.Payments)
+                                {
+                                    <tr>
+                                        <td>@VeLabels.Method(p.Method)</td>
+                                        <td>@VeLabels.Money(p.Amount)</td>
+                                        <td>@VeLabels.Payment(p.Status)</td>
+                                        <td>@(p.PaidAt.HasValue ? VeLabels.Time(p.PaidAt.Value) : "-")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="small text-muted mb-0">Chưa có giao dịch thanh toán.</p>
+                }
+
+                @if (b.Status == "Holding" && !hasTransfer)
+                {
+                    <div class="small mt-3">
+                        Chuyển khoản với nội dung <strong>@b.Code</strong>, sau đó bấm nút bên dưới.
+                        Nhân viên sẽ xác nhận khi nhận được tiền. Muốn trả tiền mặt, vui lòng đến quầy.
+                    </div>
+                    <form asp-action="Pay" asp-route-id="@b.Id" method="post" class="mt-2">
+                        <input type="hidden" name="code" value="@b.Code" />
+                        <button type="submit" class="btn btn-primary">Tôi đã chuyển khoản</button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        @if (refund != null && refund.CanCancel)
+        {
+            <div class="col-12 col-lg-6">
+                <div class="card card-vt p-3 h-100">
+                    <h2 class="h6">Hủy đặt vé</h2>
+                    @if (b.Status == "Paid")
+                    {
+                        <p class="small mb-2">
+                            Nếu hủy bây giờ, bạn được hoàn <strong>@VeLabels.Percent(refund.RefundRate)</strong>
+                            (@VeLabels.Money(refund.RefundAmount)).
+                            Hoàn 100% khi hủy trước 24 giờ, 70% từ 12 đến 24 giờ, 50% từ 2 đến 12 giờ, dưới 2 giờ không hoàn.
+                        </p>
+                    }
+                    else
+                    {
+                        <p class="small mb-2">Đặt vé chưa thanh toán, hủy sẽ nhả ghế ngay và không mất phí.</p>
+                    }
+                    <form asp-action="Cancel" asp-route-id="@b.Id" method="post"
+                          data-confirm="@("Hủy đặt vé " + b.Code + "? Thao tác này không hoàn tác được.")">
+                        <input type="hidden" name="code" value="@b.Code" />
+                        <button type="submit" class="btn btn-outline-primary">Hủy đặt vé</button>
+                    </form>
+                </div>
+            </div>
+        }
+        else if (refund != null && !string.IsNullOrEmpty(refund.Reason))
+        {
+            <div class="col-12 col-lg-6">
+                <div class="card card-vt p-3 h-100">
+                    <h2 class="h6">Hủy đặt vé</h2>
+                    <p class="small mb-0">Không thể hủy: @refund.Reason</p>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ConfirmDeleteScript" />
+}

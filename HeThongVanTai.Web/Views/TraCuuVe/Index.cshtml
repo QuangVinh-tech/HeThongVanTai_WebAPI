@@ -1,0 +1,58 @@
+@using HeThongVanTai.Web.Models.ViewModels.VeKhach
+@model TraCuuViewModel
+@{
+    ViewData["Title"] = "Tra cứu vé";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/ve-khach.css" asp-append-version="true" />
+}
+
+<div class="container py-4">
+    <div class="lookup-wrap mx-auto">
+        <h1 class="h4 mb-1">Tra cứu vé</h1>
+        <p class="small text-muted">Không cần đăng nhập. Nhập mã đặt vé và số điện thoại (hoặc email) đã dùng khi đặt.</p>
+
+        <form asp-action="Index" method="post" class="card card-vt p-3">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+            <div class="mb-3">
+                <label asp-for="Form.Code" class="form-label"></label>
+                <input asp-for="Form.Code" class="form-control text-uppercase" autocomplete="off" />
+                <span asp-validation-for="Form.Code" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Form.Contact" class="form-label"></label>
+                <input asp-for="Form.Contact" class="form-control" autocomplete="off" />
+                <span asp-validation-for="Form.Contact" class="text-danger small"></span>
+            </div>
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Tra cứu</button>
+        </form>
+    </div>
+
+    @if (Model.Booking != null)
+    {
+        var b = Model.Booking;
+        <div class="mt-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <h2 class="h5 mb-0">Đặt vé @b.Code</h2>
+                <span class="pill @VeLabels.BookingPill(b.Status)">@VeLabels.Booking(b.Status)</span>
+            </div>
+            <p class="small mb-3">
+                Tổng tiền <strong>@VeLabels.Money(b.TotalAmount)</strong> · Đặt lúc @VeLabels.Time(b.CreatedAt)
+                @if (b.Status == "Holding" && b.HoldExpiresAt.HasValue)
+                {
+                    <span> · Giữ ghế đến @VeLabels.Time(b.HoldExpiresAt.Value)</span>
+                }
+            </p>
+            <partial name="~/Views/VeCuaToi/_TicketCards.cshtml" model="b" />
+            <p class="small mt-3">
+                Muốn thanh toán hoặc hủy vé? <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@("/VeCuaToi/" + b.Code)">Đăng nhập</a>
+                bằng tài khoản đã đặt vé.
+            </p>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

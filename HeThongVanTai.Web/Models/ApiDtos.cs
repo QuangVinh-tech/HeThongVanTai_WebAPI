@@ -11,3 +11,16 @@ public class MeResponse
     public string? Email { get; set; }
     public List<string> Roles { get; set; } = new();
 }
+
+// API trả về sau khi đăng ký
+public class RegisterResponse
+{
+    public string Message { get; set; } = "";
+    public bool RequiresVerification { get; set; }
+    public bool EmailSent { get; set; }
+}
+
+public class MessageResponse
+{
+    public string Message { get; set; } = "";
+}

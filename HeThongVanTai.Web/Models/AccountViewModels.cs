@@ -35,6 +35,18 @@ public class RegisterViewModel
     public string ConfirmPassword { get; set; } = "";
 }
 
+public class VerifyEmailViewModel
+{
+    [Required(ErrorMessage = "Thiếu email cần xác thực")]
+    [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+    public string Email { get; set; } = "";
+
+    [Required(ErrorMessage = "Vui lòng nhập mã xác thực")]
+    [RegularExpression(@"^\d{6}$", ErrorMessage = "Mã gồm đúng 6 chữ số")]
+    [Display(Name = "Mã xác thực")]
+    public string Code { get; set; } = "";
+}
+
 public class ErrorViewModel
 {
     public string? RequestId { get; set; }
