@@ -9,24 +9,53 @@ namespace HeThongVanTai.Data
         {
         }
 
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<BusRoute>().HasOne(r => r.FromStation).WithMany()
-                .HasForeignKey(r => r.FromStationId).OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<BusRoute>().HasOne(r => r.ToStation).WithMany()
-                .HasForeignKey(r => r.ToStationId).OnDelete(DeleteBehavior.Restrict);
+            base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Ticket>().HasIndex(t => new { t.TripId, t.SeatCode })
-                .IsUnique().HasFilter("[Status] <> 'Cancelled'");
+            modelBuilder.Entity<BusRoute>()
+                .HasOne(r => r.FromStation)
+                .WithMany()
+                .HasForeignKey(r => r.FromStationId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Ticket>().HasIndex(t => t.TicketCode)
-                .IsUnique().HasFilter("[TicketCode] <> ''");
-            modelBuilder.Entity<Promotion>().HasIndex(p => p.Code).IsUnique();
+            modelBuilder.Entity<BusRoute>()
+                .HasOne(r => r.ToStation)
+                .WithMany()
+                .HasForeignKey(r => r.ToStationId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // Mỗi vé chỉ được đánh giá 1 lần
-            modelBuilder.Entity<Review>().HasIndex(r => r.TicketId).IsUnique();
-            modelBuilder.Entity<Review>().HasIndex(r => r.TripId);
+            modelBuilder.Entity<Ticket>()
+                .HasIndex(t => new { t.TripId, t.SeatCode })
+                .IsUnique()
+                .HasFilter("[Status] <> 'Cancelled'");
+
+            modelBuilder.Entity<Ticket>()
+                .HasIndex(t => t.TicketCode)
+                .IsUnique()
+                .HasFilter("[TicketCode] <> ''");
+
+            modelBuilder.Entity<Promotion>()
+                .HasIndex(p => p.Code)
+                .IsUnique();
+
+            // Mỗi vé chỉ được đánh giá một lần.
+            modelBuilder.Entity<Review>()
+                .HasIndex(r => r.TicketId)
+                .IsUnique();
+
+            modelBuilder.Entity<Review>()
+                .HasIndex(r => r.TripId);
+
+            // Mỗi mã giao dịch SePay chỉ được gắn với một thanh toán.
+            // Cho phép nhiều bản ghi Payment có giá trị null.
+            modelBuilder.Entity<Payment>()
+                .HasIndex(p => p.SePayTransactionId)
+                .IsUnique()
+                .HasFilter("[SePayTransactionId] IS NOT NULL");
         }
+
 
         public DbSet<Station> Stations { get; set; }
         public DbSet<BusRoute> BusRoutes { get; set; }
@@ -42,5 +71,6 @@ namespace HeThongVanTai.Data
         public DbSet<Promotion> Promotions { get; set; }
         public DbSet<Image> Images { get; set; }
         public DbSet<Review> Reviews { get; set; }
+        public string? SePayTransactionId { get; set; }
     }
 }

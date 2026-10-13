@@ -1,8 +1,9 @@
-﻿using HeThongVanTai.Data;
+﻿
+using HeThongVanTai.Data;
 using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Models.DTO;
-using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace HeThongVanTai.Services;
 
@@ -11,7 +12,9 @@ public class PaymentService
     private readonly AppDbContext _db;
     private readonly ILogger<PaymentService> _logger;
 
-    public PaymentService(AppDbContext db, ILogger<PaymentService> logger)
+    public PaymentService(
+        AppDbContext db,
+        ILogger<PaymentService> logger)
     {
         _db = db;
         _logger = logger;
@@ -26,119 +29,262 @@ public class PaymentService
         p.Method,
         p.Status,
         p.PaidAt,
-        TransferContent = bookingCode   // khách chuyển khoản ghi nội dung = mã booking
+        p.SePayTransactionId,
+        p.BankReference,
+        TransferContent = bookingCode
     };
 
-    private static void Complete(Booking b, Payment p)
+    private static void Complete(Booking booking, Payment payment)
     {
-        p.Status = "Paid";
-        p.PaidAt = DateTime.Now;
-        b.Status = "Paid";
-        b.HoldExpiresAt = null;
+        payment.Status = "Paid";
+        payment.PaidAt = DateTime.Now;
+
+        booking.Status = "Paid";
+        booking.HoldExpiresAt = null;
     }
 
-    // Cash: Paid ngay (thu tại quầy). BankTransfer: Pending, chờ xác nhận.
     public async Task<object> CreateAsync(PayDto dto)
     {
         var method = new[] { "Cash", "BankTransfer" }
-            .FirstOrDefault(m => string.Equals(m, dto.Method, StringComparison.OrdinalIgnoreCase))
-            ?? throw new ServiceException(400, "Phương thức phải là Cash hoặc BankTransfer.");
+            .FirstOrDefault(m => string.Equals(
+                m, dto.Method, StringComparison.OrdinalIgnoreCase))
+            ?? throw new ServiceException(
+                400, "Phương thức phải là Cash hoặc BankTransfer.");
 
-        var b = await _db.Bookings.Include(x => x.Payments).FirstOrDefaultAsync(x => x.Id == dto.BookingId)
-                ?? throw new ServiceException(404, "Không tìm thấy booking.");
+        var booking = await _db.Bookings
+            .Include(b => b.Payments)
+            .FirstOrDefaultAsync(b => b.Id == dto.BookingId)
+            ?? throw new ServiceException(404, "Không tìm thấy booking.");
 
-        if (b.Status != "Holding")
-            throw new ServiceException(400, "Booking không ở trạng thái chờ thanh toán.");
-        if (b.HoldExpiresAt is null || b.HoldExpiresAt <= DateTime.Now)
-            throw new ServiceException(400, "Booking đã hết hạn giữ chỗ.");
-        if (b.Payments.Any(p => p.Status == "Paid" || p.Status == "Pending"))
-            throw new ServiceException(409, "Booking đã có giao dịch thanh toán.");
+        if (booking.Status != "Holding")
+            throw new ServiceException(
+                400, "Booking không ở trạng thái chờ thanh toán.");
+
+        if (booking.HoldExpiresAt is null ||
+            booking.HoldExpiresAt <= DateTime.Now)
+        {
+            throw new ServiceException(
+                400, "Booking đã hết hạn giữ chỗ.");
+        }
+
+        if (booking.Payments.Any(p =>
+                p.Status == "Paid" || p.Status == "Pending"))
+        {
+            throw new ServiceException(
+                409, "Booking đã có giao dịch thanh toán.");
+        }
 
         var payment = new Payment
         {
-            BookingId = b.Id,
-            Amount = b.TotalAmount,     // số tiền do server lấy từ booking, client không được gửi
+            BookingId = booking.Id,
+            Amount = booking.TotalAmount,
             Method = method,
             Status = "Pending"
         };
-        if (method == "Cash") Complete(b, payment);
+
+        // Tiền mặt được xác nhận tại quầy theo luồng nghiệp vụ hiện có.
+        if (method == "Cash")
+            Complete(booking, payment);
 
         _db.Payments.Add(payment);
         await _db.SaveChangesAsync();
-        _logger.LogInformation("Thanh toán: booking {BookingCode}, {Method}, {Amount}, trạng thái {Status}",
-            b.Code, method, payment.Amount, payment.Status);
-        return Shape(payment, b.Code);
+
+        _logger.LogInformation(
+            "Thanh toán booking {BookingCode}: {Method}, {Amount}, {Status}",
+            booking.Code, method, payment.Amount, payment.Status);
+
+        return Shape(payment, booking.Code);
     }
 
-    // Kế toán xác nhận đã nhận chuyển khoản
     public async Task<object> ConfirmAsync(int paymentId)
     {
-        var p = await _db.Payments.Include(x => x.Booking).FirstOrDefaultAsync(x => x.Id == paymentId)
-                ?? throw new ServiceException(404, "Không tìm thấy giao dịch.");
+        var payment = await _db.Payments
+            .Include(p => p.Booking)
+            .FirstOrDefaultAsync(p => p.Id == paymentId)
+            ?? throw new ServiceException(404, "Không tìm thấy giao dịch.");
 
-        if (p.Status == "Paid") throw new ServiceException(409, "Giao dịch đã được xác nhận.");
-        if (p.Status != "Pending") throw new ServiceException(400, "Giao dịch không ở trạng thái chờ xác nhận.");
-        if (p.Booking.Status != "Holding" || p.Booking.HoldExpiresAt is null || p.Booking.HoldExpiresAt <= DateTime.Now)
-            throw new ServiceException(400, "Booking đã hết hạn giữ chỗ hoặc đã bị hủy.");
+        if (payment.Status == "Paid")
+            throw new ServiceException(409, "Giao dịch đã được xác nhận.");
 
-        Complete(p.Booking, p);
+        if (payment.Status != "Pending")
+            throw new ServiceException(
+                400, "Giao dịch không ở trạng thái chờ xác nhận.");
+
+        var booking = payment.Booking;
+
+        if (booking.Status != "Holding" ||
+            booking.HoldExpiresAt is null ||
+            booking.HoldExpiresAt <= DateTime.Now)
+        {
+            throw new ServiceException(
+                400, "Booking đã hết hạn giữ chỗ hoặc đã bị hủy.");
+        }
+
+        Complete(booking, payment);
         await _db.SaveChangesAsync();
-        _logger.LogInformation("Xác nhận chuyển khoản: booking {BookingCode}, {Amount}", p.Booking.Code, p.Amount);
-        return Shape(p, p.Booking.Code);
+
+        _logger.LogInformation(
+            "Xác nhận thanh toán booking {BookingCode}, {Amount}",
+            booking.Code, payment.Amount);
+
+        return Shape(payment, booking.Code);
     }
 
     public async Task<List<object>> ByBookingAsync(int bookingId)
     {
-        var list = await _db.Payments.AsNoTracking()
+        var payments = await _db.Payments
+            .AsNoTracking()
             .Include(p => p.Booking)
             .Where(p => p.BookingId == bookingId)
             .OrderBy(p => p.Id)
             .ToListAsync();
-        return list.Select(p => Shape(p, p.Booking.Code)).ToList();
+
+        return payments
+            .Select(p => Shape(p, p.Booking.Code))
+            .ToList();
     }
 
-    // Mã đặt vé có dạng BK + yymmdd + 5 ký tự (xem Rules.NewBookingCode). Ngân hàng có thể thêm chữ phía trước/sau.
-    private static readonly Regex BookingCodeRegex =
-        new(@"BK\d{6}[A-Z0-9]{5}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex BookingCodeRegex = new(
+        @"BK\d{6}[A-Z0-9]{5}",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-    // Webhook ngân hàng: tiền vào tài khoản, nội dung chứa mã đặt vé thì tự xác nhận thanh toán.
-    // Luôn trả kết quả (không ném lỗi) để webhook trả 200, tránh bị gửi lại liên tục.
-    public async Task<string> ConfirmByTransferAsync(string? content, decimal amount, string? bankRef)
+    /// <summary>
+    /// Xử lý webhook chuyển khoản từ SePay.
+    /// </summary>
+    public async Task<string> ConfirmByTransferAsync(
+        string? content,
+        decimal amount,
+        string? sePayTransactionId,
+        string? bankReference)
     {
-        var m = BookingCodeRegex.Match(content ?? "");
-        if (!m.Success) return "ignored: không có mã đặt vé trong nội dung";
+        if (string.IsNullOrWhiteSpace(sePayTransactionId))
+            return "manual: thiếu mã giao dịch SePay";
 
-        var code = m.Value.ToUpperInvariant();
-        var b = await _db.Bookings.Include(x => x.Payments).FirstOrDefaultAsync(x => x.Code == code);
-        if (b == null) return "ignored: không tìm thấy đặt vé";
+        if (amount <= 0)
+            return "manual: số tiền giao dịch không hợp lệ";
 
-        if (b.Status == "Paid" || b.Payments.Any(p => p.Status == "Paid"))
-            return "ok: đặt vé đã thanh toán trước đó";   // webhook gửi lặp thì bỏ qua
+        // Chặn webhook đã được xử lý trước đó.
+        var existingPayment = await _db.Payments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                p => p.SePayTransactionId == sePayTransactionId);
 
-        // Tiền đã vào nhưng không tự xác nhận được: ghi log mức Warning để kế toán xử lý tay / hoàn tiền
-        if (b.Status != "Holding" || b.HoldExpiresAt is null || b.HoldExpiresAt <= DateTime.Now)
+        if (existingPayment != null)
         {
-            _logger.LogWarning("Nhận chuyển khoản {Amount} cho đặt vé {BookingCode} nhưng đặt vé đã hết hạn/hủy (ref {Ref}), cần xử lý thủ công",
-                amount, b.Code, LogText.Clean(bankRef));
+            _logger.LogInformation(
+                "Webhook SePay trùng: transaction {TransactionId}",
+                sePayTransactionId);
+
+            return "ok: giao dịch đã được xử lý trước đó";
+        }
+
+        // Tìm mã booking trong nội dung chuyển khoản.
+        var match = BookingCodeRegex.Match(content ?? "");
+
+        if (!match.Success)
+            return "ignored: không có mã đặt vé trong nội dung";
+
+        var bookingCode = match.Value.ToUpperInvariant();
+
+        var booking = await _db.Bookings
+            .Include(b => b.Payments)
+            .FirstOrDefaultAsync(b => b.Code == bookingCode);
+
+        if (booking == null)
+            return "ignored: không tìm thấy đặt vé";
+
+        // Không tự động xác nhận nếu booking đã được thanh toán.
+        if (booking.Status == "Paid" ||
+            booking.Payments.Any(p => p.Status == "Paid"))
+        {
+            _logger.LogWarning(
+                "Nhận giao dịch {TransactionId} cho booking {BookingCode} đã thanh toán. Cần đối soát thủ công.",
+                sePayTransactionId, booking.Code);
+
+            return "manual: đặt vé đã thanh toán, cần đối soát giao dịch";
+        }
+
+        if (booking.Status != "Holding" ||
+            booking.HoldExpiresAt is null ||
+            booking.HoldExpiresAt <= DateTime.Now)
+        {
+            _logger.LogWarning(
+                "Nhận giao dịch {TransactionId}, số tiền {Amount} cho booking {BookingCode} đã hết hạn hoặc bị hủy.",
+                sePayTransactionId, amount, booking.Code);
+
             return "manual: đặt vé hết hạn hoặc đã hủy";
         }
-        if (amount < b.TotalAmount)
+
+        // Không tự động xác nhận nếu số tiền không khớp.
+        // Giao dịch thừa hoặc thiếu đều cần đối soát thủ công.
+        if (amount != booking.TotalAmount)
         {
-            _logger.LogWarning("Nhận chuyển khoản {Amount} cho đặt vé {BookingCode} nhưng thiếu so với {Total} (ref {Ref}), cần xử lý thủ công",
-                amount, b.Code, b.TotalAmount, LogText.Clean(bankRef));
-            return "manual: số tiền chưa đủ";
+            _logger.LogWarning(
+                "Sai số tiền booking {BookingCode}: nhận {Received}, yêu cầu {Expected}, transaction {TransactionId}.",
+                booking.Code, amount, booking.TotalAmount, sePayTransactionId);
+
+            return amount < booking.TotalAmount
+                ? "manual: số tiền chưa đủ"
+                : "manual: số tiền vượt quá số tiền cần thanh toán";
         }
 
-        var payment = b.Payments.FirstOrDefault(p => p.Status == "Pending" && p.Method == "BankTransfer");
+        // Dùng payment BankTransfer đang chờ nếu đã tạo trước đó.
+        var payment = booking.Payments.FirstOrDefault(p =>
+            p.Method == "BankTransfer" &&
+            p.Status == "Pending");
+
         if (payment == null)
         {
-            // Khách quét QR chuyển luôn, chưa bấm nút trên web
-            payment = new Payment { BookingId = b.Id, Amount = b.TotalAmount, Method = "BankTransfer", Status = "Pending" };
+            payment = new Payment
+            {
+                BookingId = booking.Id,
+                Amount = booking.TotalAmount,
+                Method = "BankTransfer",
+                Status = "Pending"
+            };
+
             _db.Payments.Add(payment);
         }
-        Complete(b, payment);
-        await _db.SaveChangesAsync();
-        _logger.LogInformation("Tự động xác nhận chuyển khoản: booking {BookingCode}, {Amount}", b.Code, payment.Amount);
+
+        payment.SePayTransactionId = sePayTransactionId;
+        payment.BankReference = bankReference;
+
+        Complete(booking, payment);
+
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            // Có thể webhook đồng thời đã lưu cùng mã giao dịch.
+            _logger.LogWarning(
+                ex,
+                "Không lưu được giao dịch SePay {TransactionId}; kiểm tra giao dịch trùng hoặc lỗi database.",
+                sePayTransactionId);
+
+            _db.Entry(booking).State = EntityState.Unchanged;
+
+            if (payment.Id != 0)
+                _db.Entry(payment).State = EntityState.Unchanged;
+            else
+                _db.Entry(payment).State = EntityState.Detached;
+
+            var duplicate = await _db.Payments
+                .AsNoTracking()
+                .AnyAsync(p =>
+                    p.SePayTransactionId == sePayTransactionId);
+
+            if (duplicate)
+                return "ok: giao dịch đã được xử lý trước đó";
+
+            throw;
+        }
+
+        _logger.LogInformation(
+            "SePay xác nhận thành công: booking {BookingCode}, amount {Amount}, transaction {TransactionId}, bank ref {BankReference}",
+            booking.Code, amount, sePayTransactionId, bankReference);
+
         return "ok: đã xác nhận";
     }
 }

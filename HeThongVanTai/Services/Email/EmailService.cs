@@ -1,6 +1,7 @@
-using System.Net;
-using System.Net.Mail;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.Extensions.Options;
+using MimeKit;
 
 namespace HeThongVanTai.Services.Email;
 
@@ -68,22 +69,36 @@ public class EmailService : IEmailService
         }
 
         var from = string.IsNullOrWhiteSpace(_opt.From) ? _opt.User : _opt.From;
-        using var mail = new MailMessage
-        {
-            From = new MailAddress(from, _opt.FromName),
-            Subject = m.Subject,
-            Body = m.Html,
-            IsBodyHtml = true
-        };
-        mail.To.Add(new MailAddress(m.To));
 
-        using var client = new SmtpClient(_opt.Host, _opt.Port)
+        var message = new MimeMessage();
+        message.From.Add(new MailboxAddress(_opt.FromName, from));
+        message.To.Add(MailboxAddress.Parse(m.To));
+        message.Subject = m.Subject;
+        message.Body = new BodyBuilder { HtmlBody = m.Html, TextBody = m.Text }.ToMessageBody();
+
+        // Cổng 465 dùng SSL ngay khi kết nối, cổng 587 dùng STARTTLS (Gmail dùng 587)
+        var secure = _opt.Port == 465 ? SecureSocketOptions.SslOnConnect
+                   : _opt.EnableSsl ? SecureSocketOptions.StartTls
+                   : SecureSocketOptions.None;
+
+        using var client = new SmtpClient { Timeout = 15000 };
+        await client.ConnectAsync(_opt.Host, _opt.Port, secure);
+
+        if (!string.IsNullOrWhiteSpace(_opt.User))
         {
-            EnableSsl = _opt.EnableSsl,
-            Credentials = string.IsNullOrWhiteSpace(_opt.User) ? null : new NetworkCredential(_opt.User, _opt.Password),
-            Timeout = 15000
-        };
-        await client.SendMailAsync(mail);
+            // Mật khẩu ứng dụng Gmail hiển thị thành 4 nhóm cách nhau bởi dấu cách; bỏ dấu cách nếu lỡ dán cả vào
+            var password = (_opt.Password ?? "").Replace(" ", "");
+            if (password.Length == 0)
+            {
+                _logger.LogError("Chưa đặt mật khẩu gửi mail (Email:Password, đặt bằng dotnet user-secrets) nên không gửi được email tới {To}",
+                    LogText.Clean(m.To));
+                throw new EmailNotConfiguredException();
+            }
+            await client.AuthenticateAsync(_opt.User, password);
+        }
+
+        await client.SendAsync(message);
+        await client.DisconnectAsync(true);
         _logger.LogInformation("Đã gửi email '{Subject}' tới {To}", m.Subject, LogText.Clean(m.To));
     }
 }
