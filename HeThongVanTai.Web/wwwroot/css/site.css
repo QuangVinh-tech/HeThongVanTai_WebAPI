@@ -30,7 +30,16 @@
     --bs-link-hover-color-rgb: 219, 112, 147;
 }
 
-body { color: var(--vt-text); background: #FFFFFF; }
+body {
+    font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--vt-text);
+    background: #FFFFFF;
+}
+h1, h2, h3, h4, h5 { font-weight: 700; }
+a:focus-visible, button:focus-visible, .btn:focus-visible {
+    outline: 3px solid rgba(255, 130, 171, .55);
+    outline-offset: 2px;
+}
 .text-muted { color: var(--vt-muted) !important; }
 
 /* Nút */
@@ -54,9 +63,15 @@ body { color: var(--vt-text); background: #FFFFFF; }
     --bs-btn-active-border-color: #B03060;
     --bs-btn-focus-shadow-rgb: 176, 48, 96;
 }
+.btn { border-radius: 10px; font-weight: 600; }
 .btn-register { color: var(--vt-primary); }
+.btn-register:hover { background: var(--vt-tint); color: var(--vt-primary-dark); }
+.btn-login { --bs-btn-border-color: rgba(255, 255, 255, .7); }
+.btn-login:hover { color: var(--vt-primary); }
 
 /* Form */
+.form-control, .form-select { border-radius: 10px; min-height: 46px; }
+.form-label { font-size: .85rem; font-weight: 600; color: var(--vt-muted); margin-bottom: .3rem; }
 .form-control:focus, .form-select:focus {
     border-color: var(--vt-secondary);
     box-shadow: 0 0 0 .25rem rgba(176, 48, 96, .15);
@@ -64,35 +79,69 @@ body { color: var(--vt-text); background: #FFFFFF; }
 .validation-summary-valid { display: none; }
 
 /* Thanh điều hướng, chân trang */
-.navbar-vt { background: linear-gradient(120deg, #B03060, #DB7093); }
-.navbar-vt .nav-link, .navbar-vt .navbar-brand { color: #FFFFFF; }
-.navbar-vt .nav-link:hover { color: #FFE4EA; }
+.navbar-vt {
+    background: var(--vt-primary-dark);              /* màu đặc để tách khỏi banner bên dưới */
+    box-shadow: 0 2px 12px rgba(150, 42, 82, .25);
+    padding-top: .6rem; padding-bottom: .6rem;
+}
+.navbar-vt .navbar-brand { color: #FFFFFF; font-size: 1.3rem; letter-spacing: .2px; }
+.navbar-vt .nav-link { color: rgba(255, 255, 255, .88); font-weight: 500; position: relative; }
+.navbar-vt .nav-link:hover, .navbar-vt .nav-link:focus { color: #FFFFFF; }
+@media (min-width: 992px) {
+    .navbar-vt .navbar-nav.me-auto .nav-link { padding-left: .9rem; padding-right: .9rem; }
+    .navbar-vt .navbar-nav.me-auto .nav-link::after {
+        content: ""; position: absolute; left: .9rem; right: .9rem; bottom: .2rem; height: 2px;
+        background: var(--vt-pink); border-radius: 2px; transform: scaleX(0); transition: transform .2s ease;
+    }
+    .navbar-vt .navbar-nav.me-auto .nav-link:hover::after { transform: scaleX(1); }
+}
+.navbar-vt .navbar-toggler { border-color: rgba(255, 255, 255, .5); }
+.navbar-vt .navbar-toggler:focus { box-shadow: 0 0 0 .2rem rgba(255, 192, 203, .4); }
+@media (max-width: 991.98px) {
+    .navbar-vt .navbar-collapse { padding: .75rem 0 .5rem; border-top: 1px solid rgba(255, 255, 255, .2); margin-top: .5rem; }
+    .navbar-vt .btn { width: 100%; }
+}
+.dropdown-menu { border: 1px solid var(--vt-line); border-radius: 12px; box-shadow: 0 8px 24px rgba(176, 48, 96, .15); }
+.dropdown-item { color: var(--vt-text); }
+.dropdown-item:hover, .dropdown-item:focus { background: var(--vt-tint); color: var(--vt-primary-dark); }
+.alert-vt { border-radius: 12px; border: 0; box-shadow: 0 2px 8px rgba(176, 48, 96, .08); }
 .footer-vt { background: var(--vt-soft); border-top: 1px solid var(--vt-line); color: var(--vt-muted); }
 
 /* Thẻ, banner */
 .card-vt {
     background: #FFFFFF;
     border: 1px solid var(--vt-line);
-    border-radius: 14px;
+    border-radius: 16px;
     box-shadow: 0 6px 18px rgba(176, 48, 96, .08);
 }
 .hero-vt {
-    background: linear-gradient(120deg, #B03060, #DB7093 60%, #FF82AB);
+    position: relative; overflow: hidden;
+    background:
+        radial-gradient(circle at 85% 20%, rgba(255, 255, 255, .22), transparent 45%),
+        linear-gradient(135deg, #B03060 0%, #DB7093 60%, #FF82AB 100%);
     color: #FFFFFF;
-    padding: 3rem 0 5rem;
-    border-radius: 0 0 28px 28px;
+    padding: 3.5rem 0 6rem;
+    border-radius: 0 0 32px 32px;
 }
-.hero-vt h1 { color: #FFFFFF; }
-.search-card { margin-top: -3.5rem; }
+.hero-vt h1 { color: #FFFFFF; font-weight: 700; font-size: clamp(1.75rem, 4vw, 2.75rem); }
+.hero-vt p { color: rgba(255, 255, 255, .92); }
+.search-card {
+    margin-top: -4rem; position: relative; z-index: 2;
+    box-shadow: 0 14px 36px rgba(176, 48, 96, .18);
+}
+.search-card .btn { min-height: 46px; }
 .feature-icon {
-    width: 44px; height: 44px; border-radius: 12px;
+    width: 48px; height: 48px; border-radius: 14px;
     background: var(--vt-tint); color: var(--vt-primary);
-    display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+    display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
 }
-.auth-wrap { max-width: 440px; margin: 3rem auto; }
+@media (max-width: 575.98px) {
+    .hero-vt { padding: 2.25rem 0 5rem; border-radius: 0 0 24px 24px; }
+}
+.auth-wrap { max-width: 440px; margin: 3rem auto; padding-left: 1rem; padding-right: 1rem; }
 
 /* Khu quản trị */
-.sidebar-vt { background: var(--vt-soft); border-right: 1px solid var(--vt-line); min-height: calc(100vh - 56px); }
+.sidebar-vt { position: sticky; top: 64px; background: var(--vt-soft); border-right: 1px solid var(--vt-line); min-height: calc(100vh - 64px); }
 .sidebar-vt .nav-link { color: var(--vt-text); border-radius: 10px; padding: .55rem .85rem; font-weight: 500; }
 .sidebar-vt .nav-link:hover { background: var(--vt-tint); }
 .sidebar-vt .nav-link.active { background: var(--vt-primary); color: #FFFFFF; }

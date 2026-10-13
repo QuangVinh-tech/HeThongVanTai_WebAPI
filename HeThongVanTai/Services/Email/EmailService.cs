@@ -25,14 +25,21 @@ public class EmailMessage
     public string Text { get; set; } = "";
 }
 
+// Ném ra khi chưa cấu hình SMTP (Email:Host trống) để nơi gọi biết là CHƯA gửi được email nào
+public class EmailNotConfiguredException : Exception
+{
+    public EmailNotConfiguredException() : base("Chưa cấu hình SMTP (mục Email trong appsettings)") { }
+}
+
 public interface IEmailService
 {
     Task SendAsync(EmailMessage message);
 }
 
 /// <summary>
-/// Gửi email qua SMTP. Chưa cấu hình Host thì không gửi: ở Development ghi nội dung vào log
-/// (để thử mã OTP khi chưa có tài khoản SMTP), ở môi trường khác chỉ cảnh báo, không ghi nội dung.
+/// Gửi email qua SMTP. Chưa cấu hình Host thì không gửi được: ở Development ghi nội dung vào log
+/// (để thử mã OTP khi chưa có tài khoản SMTP), ở môi trường khác chỉ ghi lỗi, không ghi nội dung.
+/// Cả hai trường hợp đều ném EmailNotConfiguredException để nơi gọi không báo nhầm là "đã gửi".
 /// </summary>
 public class EmailService : IEmailService
 {
@@ -57,7 +64,7 @@ public class EmailService : IEmailService
             else
                 _logger.LogError("Chưa cấu hình SMTP (mục Email trong appsettings) nên không gửi được email tới {To}",
                     LogText.Clean(m.To));
-            return;
+            throw new EmailNotConfiguredException();
         }
 
         var from = string.IsNullOrWhiteSpace(_opt.From) ? _opt.User : _opt.From;

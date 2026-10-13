@@ -233,6 +233,12 @@ namespace HeThongVanTai.Controllers
                 });
                 return true;
             }
+            catch (EmailNotConfiguredException)
+            {
+                // EmailService đã ghi log (Development: kèm mã OTP). Không phải lỗi bất ngờ nên không in stack trace.
+                _logger.LogWarning("Chưa gửi được email OTP tới {Email} vì chưa cấu hình SMTP", LogText.Clean(user.Email));
+                return false;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Không gửi được email OTP tới {Email}", LogText.Clean(user.Email));
