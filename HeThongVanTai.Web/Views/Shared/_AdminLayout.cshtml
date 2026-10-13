@@ -27,8 +27,14 @@
                    asp-controller="VehicleTypes" asp-action="Index">
                     <i class="bi bi-grid-3x3-gap me-2"></i>Loại xe và ghế
                 </a>
-                @* Mỗi người thêm mục menu của mình vào đây khi trang đã xong, ví dụ:
-                   <a class="nav-link" href="/Admin/Vehicles"><i class="bi bi-bus-front me-2"></i>Xe</a> *@
+                <a class="nav-link @(currentController == "Vehicles" ? "active" : "")"
+                   asp-controller="Vehicles" asp-action="Index">
+                    <i class="bi bi-bus-front me-2"></i>Xe
+                </a>
+                <a class="nav-link @(currentController == "Drivers" ? "active" : "")"
+                   asp-controller="Drivers" asp-action="Index">
+                    <i class="bi bi-person-badge me-2"></i>Tài xế
+                </a>
             </nav>
         </aside>
         <section class="col-lg-10 py-4 px-lg-4">

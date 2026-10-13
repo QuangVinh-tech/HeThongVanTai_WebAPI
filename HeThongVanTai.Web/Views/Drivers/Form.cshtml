@@ -1,0 +1,97 @@
+﻿@using HeThongVanTai.Web.Models.ViewModels.XeTaiXe
+@model DriverForm
+@{
+    var isNew = Model.Id == 0;
+    ViewData["Title"] = isNew ? "Thêm tài xế" : "Sửa tài xế";
+    Layout = "_AdminLayout";
+}
+
+<h1 class="h4 mb-3">@ViewData["Title"]</h1>
+
+<div class="card card-vt p-4 form-xe">
+    <form method="post" enctype="multipart/form-data" asp-action="@(isNew ? "Create" : "Edit")" asp-route-id="@(isNew ? (int?)null : Model.Id)">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+        <input type="hidden" asp-for="AvatarUrl" />
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+                <label asp-for="FullName" class="form-label"></label>
+                <input asp-for="FullName" class="form-control" maxlength="100" />
+                <span asp-validation-for="FullName" class="text-danger small"></span>
+            </div>
+            <div class="col-12 col-md-6">
+                <label asp-for="Phone" class="form-label"></label>
+                <input asp-for="Phone" class="form-control" maxlength="15" placeholder="Ví dụ: 0912345678" />
+                <span asp-validation-for="Phone" class="text-danger small"></span>
+            </div>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-md-4">
+                <label asp-for="LicenseNo" class="form-label"></label>
+                <input asp-for="LicenseNo" class="form-control" maxlength="30" />
+                <span asp-validation-for="LicenseNo" class="text-danger small"></span>
+            </div>
+            <div class="col-12 col-md-4">
+                <label asp-for="LicenseClass" class="form-label"></label>
+                <input asp-for="LicenseClass" class="form-control" maxlength="10" list="licenseClasses" />
+                <datalist id="licenseClasses">
+                    @foreach (var c in XeTaiXeOptions.LicenseClasses)
+                    {
+                        <option value="@c"></option>
+                    }
+                </datalist>
+                <span asp-validation-for="LicenseClass" class="text-danger small"></span>
+            </div>
+            <div class="col-12 col-md-4">
+                <label asp-for="LicenseExpiry" class="form-label"></label>
+                <input asp-for="LicenseExpiry" class="form-control" />
+                <span asp-validation-for="LicenseExpiry" class="text-danger small"></span>
+            </div>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-md-4">
+                <label asp-for="Status" class="form-label"></label>
+                <select asp-for="Status" class="form-select">
+                    @foreach (var s in XeTaiXeOptions.Statuses)
+                    {
+                        <option value="@s.Value">@s.Label</option>
+                    }
+                </select>
+                <span asp-validation-for="Status" class="text-danger small"></span>
+            </div>
+        </div>
+        <div class="mb-4">
+            <label asp-for="AvatarFile" class="form-label"></label>
+            <input asp-for="AvatarFile" type="file" class="form-control" accept=".jpg,.jpeg,.png" />
+            <div class="form-text">Chỉ nhận .jpg, .jpeg, .png, tối đa 5MB. Không chọn ảnh mới thì giữ ảnh hiện tại.</div>
+            <span asp-validation-for="AvatarFile" class="text-danger small"></span>
+            <div class="mt-2">
+                <img id="avatarPreview" src="@Model.AvatarUrl" alt="Ảnh đại diện" class="preview-avatar-xe @(string.IsNullOrEmpty(Model.AvatarUrl) ? "d-none" : "")" />
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Lưu</button>
+            <a class="btn btn-outline-primary" asp-action="Index">Hủy</a>
+        </div>
+    </form>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/xe-tai-xe.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var input = document.getElementById('AvatarFile');
+            var preview = document.getElementById('avatarPreview');
+            if (!input || !preview) return;
+            input.addEventListener('change', function () {
+                var file = input.files && input.files[0];
+                if (!file) return;
+                preview.src = URL.createObjectURL(file);
+                preview.classList.remove('d-none');
+            });
+        })();
+    </script>
+}
