@@ -59,6 +59,59 @@ public class BookingService
             .ToListAsync();
     }
 
+    // Tìm chuyến có lọc, sắp xếp, phân trang (Web dùng). Kết quả: { items, total, page, pageSize }
+    // sort: "time" (mặc định), "time_desc", "price", "price_desc"
+    public async Task<object> SearchPagedAsync(int fromId, int toId, DateTime date,
+        int? fromHour, int? toHour, int? vehicleTypeId, decimal? minPrice, decimal? maxPrice,
+        int? tickets, string? sort, int page, int pageSize)
+    {
+        await ReleaseExpiredAsync();
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 50);
+        var now = DateTime.Now;
+        var start = date.Date;
+        var end = start.AddDays(1);
+
+        var q = _db.Trips.AsNoTracking()
+            .Where(t => t.Status == "Open" && t.DepartAt > now
+                     && t.BusRoute.FromStationId == fromId && t.BusRoute.ToStationId == toId
+                     && t.DepartAt >= start && t.DepartAt < end);
+
+        if (fromHour.HasValue) q = q.Where(t => t.DepartAt.Hour >= fromHour.Value);
+        if (toHour.HasValue) q = q.Where(t => t.DepartAt.Hour < toHour.Value);
+        if (vehicleTypeId.HasValue) q = q.Where(t => t.Vehicle.VehicleType.Id == vehicleTypeId.Value);
+        if (minPrice.HasValue) q = q.Where(t => t.Price >= minPrice.Value);
+        if (maxPrice.HasValue) q = q.Where(t => t.Price <= maxPrice.Value);
+        if (tickets.HasValue && tickets.Value > 0)
+            q = q.Where(t => t.Vehicle.VehicleType.SeatCount - t.Tickets.Count(k => k.Status != "Cancelled") >= tickets.Value);
+
+        q = (sort ?? "").ToLowerInvariant() switch
+        {
+            "price" or "price_asc" => q.OrderBy(t => t.Price),
+            "price_desc" => q.OrderByDescending(t => t.Price),
+            "time_desc" => q.OrderByDescending(t => t.DepartAt),
+            _ => q.OrderBy(t => t.DepartAt)
+        };
+
+        var total = await q.CountAsync();
+        var items = await q.Skip((page - 1) * pageSize).Take(pageSize)
+            .Select(t => new
+            {
+                TripId = t.Id,
+                Route = t.BusRoute.Name,
+                t.DepartAt,
+                t.ArriveAt,
+                t.Price,
+                Plate = t.Vehicle.Plate,
+                VehicleType = t.Vehicle.VehicleType.Name,
+                TotalSeats = t.Vehicle.VehicleType.SeatCount,
+                AvailableSeats = t.Vehicle.VehicleType.SeatCount - t.Tickets.Count(k => k.Status != "Cancelled")
+            })
+            .ToListAsync();
+
+        return new { items, total, page, pageSize };
+    }
+
     // ============== Đặt vé, giữ ghế, áp mã ==============
     public async Task<(int Id, object Body)> CreateAsync(CreateBookingDto dto)
     {

@@ -27,8 +27,13 @@ public class BookingsController : ControllerBase
     [AllowAnonymous]
     [HttpGet("api/trips/search")]
     public async Task<IActionResult> Search(
-        [FromQuery] int fromStationId, [FromQuery] int toStationId, [FromQuery] DateTime date)
-        => Ok(await _svc.SearchAsync(fromStationId, toStationId, date));
+        [FromQuery] int fromStationId, [FromQuery] int toStationId, [FromQuery] DateTime date,
+        [FromQuery] int? fromHour = null, [FromQuery] int? toHour = null,
+        [FromQuery] int? vehicleTypeId = null, [FromQuery] decimal? minPrice = null,
+        [FromQuery] decimal? maxPrice = null, [FromQuery] int? tickets = null,
+        [FromQuery] string? sort = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        => Ok(await _svc.SearchPagedAsync(fromStationId, toStationId, date, fromHour, toHour,
+            vehicleTypeId, minPrice, maxPrice, tickets, sort, page, pageSize));
 
     // Đặt vé: khách thường lấy hồ sơ từ token; Admin/Seller (bán tại quầy) gửi customerId trong body
     [Authorize]

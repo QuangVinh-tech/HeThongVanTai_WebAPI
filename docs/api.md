@@ -75,7 +75,7 @@ Cách tính doanh thu: tiền đã thu (`Paid`) trừ tiền đã hoàn (`Refund
 |---|---|---|---|
 | GET | `/api/trips` | Mọi người | Danh sách chuyến. |
 | GET | `/api/trips/{id}/seats` | Mọi người | Sơ đồ ghế của chuyến (ghế trống, đã bán). |
-| GET | `/api/trips/search` | Mọi người | Tìm chuyến theo bến đi, bến đến, ngày. |
+| GET | `/api/trips/search` | Mọi người | Tìm chuyến theo `fromStationId`, `toStationId`, `date`; lọc thêm `fromHour`, `toHour`, `vehicleTypeId`, `minPrice`, `maxPrice`, `tickets` (số ghế trống tối thiểu); `sort` (`time`, `time_desc`, `price`, `price_desc`); phân trang `page`, `pageSize` (tối đa 50). Trả `{ items, total, page, pageSize }`. |
 | POST | `/api/trips` | Admin, Operator | Tạo chuyến. |
 | POST | `/api/trips/generate-schedule` | Admin, Operator | Sinh lịch chạy. |
 | PUT | `/api/trips/{id}/change-vehicle` | Admin, Operator | Đổi xe, tài xế. |

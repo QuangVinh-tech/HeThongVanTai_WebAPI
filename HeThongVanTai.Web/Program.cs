@@ -35,6 +35,7 @@ builder.Services.AddScoped<DashboardApiService>();
 builder.Services.AddScoped<UsersApiService>();
 builder.Services.AddScoped<ReportsApiService>();
 builder.Services.AddScoped<VeKhachApiService>();
+builder.Services.AddScoped<XeTaiXeApiService>();
 
 // Web đăng nhập bằng cookie; token JWT của API được cất trong cookie (HttpOnly)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
