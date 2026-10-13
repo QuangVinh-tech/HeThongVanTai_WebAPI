@@ -35,7 +35,10 @@ builder.Services.AddScoped<DashboardApiService>();
 builder.Services.AddScoped<UsersApiService>();
 builder.Services.AddScoped<ReportsApiService>();
 builder.Services.AddScoped<VeKhachApiService>();
-builder.Services.AddScoped<XeTaiXeApiService>();
+builder.Services.AddScoped<XeTaiXeApiService>();   // Xe, Tài xế (Admin/Vehicles, Admin/Drivers)
+
+// Tài khoản nhận chuyển khoản để tạo mã QR (mục "BankTransfer" trong appsettings.json)
+builder.Services.Configure<BankQrOptions>(builder.Configuration.GetSection("BankTransfer"));
 
 // Web đăng nhập bằng cookie; token JWT của API được cất trong cookie (HttpOnly)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

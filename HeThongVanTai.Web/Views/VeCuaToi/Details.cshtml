@@ -1,5 +1,6 @@
 @using HeThongVanTai.Web.Models.ViewModels.VeKhach
 @model MyBookingDetailViewModel
+@inject Microsoft.Extensions.Options.IOptions<HeThongVanTai.Web.Infrastructure.BankQrOptions> BankQr
 @{
     var b = Model.Booking;
     ViewData["Title"] = "Đặt vé " + b.Code;
@@ -65,16 +66,54 @@
                     <p class="small text-muted mb-0">Chưa có giao dịch thanh toán.</p>
                 }
 
-                @if (b.Status == "Holding" && !hasTransfer)
+                @if (b.Status == "Holding")
                 {
-                    <div class="small mt-3">
-                        Chuyển khoản với nội dung <strong>@b.Code</strong>, sau đó bấm nút bên dưới.
-                        Nhân viên sẽ xác nhận khi nhận được tiền. Muốn trả tiền mặt, vui lòng đến quầy.
+                    var bank = BankQr.Value;
+                    <div class="mt-3">
+                        @if (bank.IsConfigured)
+                        {
+                            <div class="transfer-box">
+                                <img class="transfer-qr" src="@bank.BuildImageUrl(b.TotalAmount, b.Code)"
+                                     alt="Mã QR chuyển khoản đặt vé @b.Code" width="220" height="220" loading="lazy" />
+                                <dl class="ticket-info mb-0">
+                                    <dt>Ngân hàng</dt><dd>@bank.BankId</dd>
+                                    <dt>Số tài khoản</dt><dd class="fw-semibold">@bank.AccountNo</dd>
+                                    @if (!string.IsNullOrWhiteSpace(bank.AccountName))
+                                    {
+                                        <dt>Chủ tài khoản</dt><dd>@bank.AccountName</dd>
+                                    }
+                                    <dt>Số tiền</dt><dd class="fw-semibold">@VeLabels.Money(b.TotalAmount)</dd>
+                                    <dt>Nội dung</dt><dd class="fw-semibold">@b.Code</dd>
+                                </dl>
+                            </div>
+                            <div class="small text-muted mt-2">
+                                Mở ứng dụng ngân hàng, chọn quét mã QR. Số tiền và nội dung đã điền sẵn, vui lòng không sửa nội dung.
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="small">
+                                Chuyển khoản với nội dung <strong>@b.Code</strong>. (Quản trị viên chưa cấu hình tài khoản nhận tiền
+                                nên chưa có mã QR.)
+                            </div>
+                        }
+
+                        @if (!hasTransfer)
+                        {
+                            <div class="small mt-2">
+                                Chuyển khoản xong, bấm nút bên dưới. Nhân viên sẽ xác nhận khi nhận được tiền.
+                                Muốn trả tiền mặt, vui lòng đến quầy.
+                            </div>
+                            <form asp-action="Pay" asp-route-id="@b.Id" method="post" class="mt-2">
+                                <input type="hidden" name="code" value="@b.Code" />
+                                <button type="submit" class="btn btn-primary">Tôi đã chuyển khoản</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info small mt-2 mb-0">Đã ghi nhận bạn chuyển khoản. Đang chờ nhân viên xác nhận.</div>
+                        }
                     </div>
-                    <form asp-action="Pay" asp-route-id="@b.Id" method="post" class="mt-2">
-                        <input type="hidden" name="code" value="@b.Code" />
-                        <button type="submit" class="btn btn-primary">Tôi đã chuyển khoản</button>
-                    </form>
                 }
             </div>
         </div>

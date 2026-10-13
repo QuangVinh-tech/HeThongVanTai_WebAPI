@@ -13,12 +13,15 @@ public class BookingsController : Controller
     private readonly ApiClient _api;
     private readonly IConfiguration _cfg;
     private readonly ILogger<BookingsController> _logger;
+    private readonly BankQrOptions _bank;
 
-    public BookingsController(ApiClient api, IConfiguration cfg, ILogger<BookingsController> logger)
+    public BookingsController(ApiClient api, IConfiguration cfg, ILogger<BookingsController> logger,
+        Microsoft.Extensions.Options.IOptions<BankQrOptions> bank)
     {
         _api = api;
         _cfg = cfg;
         _logger = logger;
+        _bank = bank.Value;
     }
 
     private bool IsStaff => User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Seller);
@@ -205,7 +208,11 @@ public class BookingsController : Controller
             Booking = bk,
             RemainingSeconds = remaining,
             IsStaff = IsStaff,
-            BankInfo = _cfg["Payment:BankInfo"]
+            BankInfo = _cfg["Payment:BankInfo"],
+            QrUrl = _bank.IsConfigured ? _bank.BuildImageUrl(bk.TotalAmount, bk.Code) : null,
+            BankId = _bank.BankId,
+            AccountNo = _bank.AccountNo,
+            AccountName = _bank.AccountName
         });
     }
 
@@ -234,6 +241,15 @@ public class BookingsController : Controller
 
         _logger.LogInformation("{User} thanh toán đặt vé {Id} bằng {Method}", User.Identity?.Name, id, method);
         return RedirectToAction(nameof(Result), new { id });
+    }
+
+    // Trang kết quả gọi mỗi vài giây để biết tiền đã về chưa (webhook ngân hàng tự xác nhận)
+    [HttpGet("Bookings/{id:int}/Status")]
+    public async Task<IActionResult> Status(int id)
+    {
+        var b = await _api.GetAsync<BookingDto>($"api/bookings/{id}");
+        if (!b.Ok || b.Data == null) return NotFound();
+        return Json(new { status = b.Data.Status });
     }
 
     [HttpGet("Bookings/{id:int}/Result")]

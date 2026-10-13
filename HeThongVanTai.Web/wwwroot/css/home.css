@@ -1,0 +1,56 @@
+/* CSS riêng cho trang chủ. Dùng biến màu của site.css, không sửa site.css */
+.home-section { padding: 2.5rem 0; }
+.home-section.alt { background: var(--vt-soft); }
+.home-title { text-align: center; color: var(--vt-primary); font-weight: 700; margin-bottom: .25rem; }
+.home-sub { text-align: center; color: var(--vt-muted); margin-bottom: 1.75rem; }
+
+/* Ô tìm chuyến */
+.search-wrap { margin-top: -3.5rem; position: relative; z-index: 2; }
+.search-card .trip-type { display: flex; gap: 1.5rem; align-items: center; margin-bottom: 1rem; }
+.search-card .trip-type .form-check-label { font-weight: 600; color: var(--vt-primary); }
+.swap-btn {
+    width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--vt-line);
+    background: #fff; color: var(--vt-primary); display: inline-flex; align-items: center; justify-content: center;
+}
+.swap-btn:hover { background: var(--vt-tint); }
+.search-submit { min-width: 220px; border-radius: 999px; padding: .7rem 2rem; }
+
+/* Khuyến mãi / tin tức */
+.promo-card { border: 0; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 18px rgba(176, 48, 96, .12); height: 100%; background: #fff; }
+.promo-img {
+    height: 170px; display: flex; align-items: center; justify-content: center; text-align: center;
+    padding: 1rem; color: #fff; font-weight: 700; font-size: 1.15rem;
+    background: linear-gradient(135deg, var(--vt-primary), var(--vt-accent));
+}
+.promo-card:nth-child(2n) .promo-img { background: linear-gradient(135deg, var(--vt-secondary), var(--vt-pink)); }
+.promo-body { padding: 1rem 1.1rem; }
+.promo-body h3 { font-size: 1rem; margin-bottom: .35rem; }
+
+/* Tuyến phổ biến */
+.route-card {
+    display: block; text-decoration: none; background: #fff; border: 1px solid var(--vt-line);
+    border-radius: 14px; padding: 1rem 1.2rem; height: 100%; transition: box-shadow .15s, transform .15s;
+}
+.route-card:hover { box-shadow: 0 8px 20px rgba(176, 48, 96, .15); transform: translateY(-2px); }
+.route-card .from { font-size: .8rem; color: var(--vt-muted); }
+.route-card .to { font-weight: 700; color: var(--vt-primary); font-size: 1.1rem; }
+.route-card .meta { font-size: .85rem; color: var(--vt-muted); }
+
+/* Số liệu */
+.stat-item { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.25rem; }
+.stat-icon {
+    flex: 0 0 64px; height: 64px; border-radius: 50%; background: var(--vt-tint); color: var(--vt-primary);
+    display: flex; align-items: center; justify-content: center; font-size: 1.7rem;
+}
+.stat-num { font-size: 1.6rem; font-weight: 700; color: var(--vt-primary); line-height: 1.1; }
+.stat-num small { font-size: .9rem; color: var(--vt-text); font-weight: 600; margin-left: .25rem; }
+
+/* Dịch vụ */
+.service-item { text-align: center; color: var(--vt-text); font-weight: 600; }
+.service-item .stat-icon { margin: 0 auto .6rem; width: 84px; height: 84px; flex-basis: 84px; font-size: 2.2rem; }
+.service-item.active { color: var(--vt-primary); }
+
+@media (max-width: 767.98px) {
+    .search-wrap { margin-top: -2.5rem; }
+    .search-submit { width: 100%; }
+}

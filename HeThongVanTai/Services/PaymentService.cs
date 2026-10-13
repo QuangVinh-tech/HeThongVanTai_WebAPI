@@ -1,6 +1,7 @@
 ﻿using HeThongVanTai.Data;
 using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Models.DTO;
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeThongVanTai.Services;
@@ -94,5 +95,50 @@ public class PaymentService
             .OrderBy(p => p.Id)
             .ToListAsync();
         return list.Select(p => Shape(p, p.Booking.Code)).ToList();
+    }
+
+    // Mã đặt vé có dạng BK + yymmdd + 5 ký tự (xem Rules.NewBookingCode). Ngân hàng có thể thêm chữ phía trước/sau.
+    private static readonly Regex BookingCodeRegex =
+        new(@"BK\d{6}[A-Z0-9]{5}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    // Webhook ngân hàng: tiền vào tài khoản, nội dung chứa mã đặt vé thì tự xác nhận thanh toán.
+    // Luôn trả kết quả (không ném lỗi) để webhook trả 200, tránh bị gửi lại liên tục.
+    public async Task<string> ConfirmByTransferAsync(string? content, decimal amount, string? bankRef)
+    {
+        var m = BookingCodeRegex.Match(content ?? "");
+        if (!m.Success) return "ignored: không có mã đặt vé trong nội dung";
+
+        var code = m.Value.ToUpperInvariant();
+        var b = await _db.Bookings.Include(x => x.Payments).FirstOrDefaultAsync(x => x.Code == code);
+        if (b == null) return "ignored: không tìm thấy đặt vé";
+
+        if (b.Status == "Paid" || b.Payments.Any(p => p.Status == "Paid"))
+            return "ok: đặt vé đã thanh toán trước đó";   // webhook gửi lặp thì bỏ qua
+
+        // Tiền đã vào nhưng không tự xác nhận được: ghi log mức Warning để kế toán xử lý tay / hoàn tiền
+        if (b.Status != "Holding" || b.HoldExpiresAt is null || b.HoldExpiresAt <= DateTime.Now)
+        {
+            _logger.LogWarning("Nhận chuyển khoản {Amount} cho đặt vé {BookingCode} nhưng đặt vé đã hết hạn/hủy (ref {Ref}), cần xử lý thủ công",
+                amount, b.Code, LogText.Clean(bankRef));
+            return "manual: đặt vé hết hạn hoặc đã hủy";
+        }
+        if (amount < b.TotalAmount)
+        {
+            _logger.LogWarning("Nhận chuyển khoản {Amount} cho đặt vé {BookingCode} nhưng thiếu so với {Total} (ref {Ref}), cần xử lý thủ công",
+                amount, b.Code, b.TotalAmount, LogText.Clean(bankRef));
+            return "manual: số tiền chưa đủ";
+        }
+
+        var payment = b.Payments.FirstOrDefault(p => p.Status == "Pending" && p.Method == "BankTransfer");
+        if (payment == null)
+        {
+            // Khách quét QR chuyển luôn, chưa bấm nút trên web
+            payment = new Payment { BookingId = b.Id, Amount = b.TotalAmount, Method = "BankTransfer", Status = "Pending" };
+            _db.Payments.Add(payment);
+        }
+        Complete(b, payment);
+        await _db.SaveChangesAsync();
+        _logger.LogInformation("Tự động xác nhận chuyển khoản: booking {BookingCode}, {Amount}", b.Code, payment.Amount);
+        return "ok: đã xác nhận";
     }
 }
