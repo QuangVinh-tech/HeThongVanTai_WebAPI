@@ -17,7 +17,7 @@
 <div class="container py-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <h1 class="h4 mb-0">Vé của tôi</h1>
-        <a asp-controller="TraCuuVe" asp-action="Index" class="small">Tra cứu vé bằng mã đặt vé</a>
+        <a asp-controller="TraCuuVe" asp-action="Index" class="small text-muted">Tra cứu vé bằng mã (không cần đăng nhập)</a>
     </div>
 
     <div class="status-tabs mb-3">
@@ -52,27 +52,66 @@
         <div class="d-flex flex-column gap-3">
             @foreach (var b in Model.Items)
             {
-                var first = b.Tickets.OrderBy(t => t.DepartAt).FirstOrDefault();
-                var seats = string.Join(", ", b.Tickets.Where(t => t.Status != "Cancelled").Select(t => t.SeatCode));
-                <a class="card card-vt booking-row text-decoration-none" asp-action="Details" asp-route-code="@b.Code">
-                    <div class="p-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                var tickets = b.Tickets.OrderBy(t => t.DepartAt).ToList();
+                var first = tickets.FirstOrDefault();
+                <div class="card card-vt">
+                    <div class="booking-head p-3 d-flex flex-wrap justify-content-between align-items-start gap-2">
                         <div>
                             <div class="fw-semibold">@(first == null ? "Đặt vé " + b.Code : first.Route)</div>
                             <div class="small text-muted">
-                                Mã @b.Code
-                                @if (first != null)
-                                {
-                                    <span> · Khởi hành @VeLabels.Time(first.DepartAt)</span>
-                                }
+                                Mã đặt vé <strong>@b.Code</strong> · Đặt lúc @VeLabels.Time(b.CreatedAt)
                             </div>
-                            <div class="small text-muted">Ghế: @(string.IsNullOrEmpty(seats) ? "-" : seats)</div>
                         </div>
                         <div class="text-end">
                             <span class="pill @VeLabels.BookingPill(b.Status)">@VeLabels.Booking(b.Status)</span>
                             <div class="fw-semibold mt-1">@VeLabels.Money(b.TotalAmount)</div>
                         </div>
                     </div>
-                </a>
+                    <div class="p-3">
+                        @if (tickets.Count > 0)
+                        {
+                            <div class="row g-3">
+                                @foreach (var t in tickets)
+                                {
+                                    var active = t.Status == "Active";
+                                    var showQr = active && b.Status == "Paid";
+                                    <div class="col-12 col-md-6">
+                                        <div class="my-ticket @(active ? "" : "ticket-off")">
+                                            <dl class="ticket-info mb-0">
+                                                <dt>Khởi hành</dt><dd>@VeLabels.Time(t.DepartAt)</dd>
+                                                <dt>Ghế</dt><dd>@t.SeatCode</dd>
+                                                <dt>Hành khách</dt><dd>@(string.IsNullOrWhiteSpace(t.PassengerName) ? "-" : t.PassengerName)</dd>
+                                                <dt>Mã vé</dt><dd class="fw-semibold">@t.TicketCode</dd>
+                                                <dt>Trạng thái</dt><dd><span class="pill @(active ? "pill-ok" : "pill-bad")">@VeLabels.Ticket(t.Status)</span></dd>
+                                            </dl>
+                                            @if (showQr)
+                                            {
+                                                <div class="ticket-qr text-center">
+                                                    <img src="@Url.Action("Qr", "TraCuuVe", new { ticketCode = t.TicketCode })"
+                                                         alt="Mã QR của vé @t.TicketCode" width="96" height="96" loading="lazy" />
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+                            <a class="btn btn-outline-primary btn-sm" asp-action="Details" asp-route-code="@b.Code">Chi tiết</a>
+                            @if (b.Status == "Holding")
+                            {
+                                <a class="btn btn-primary btn-sm" asp-action="Details" asp-route-code="@b.Code">
+                                    <i class="bi bi-qr-code me-1"></i>Thanh toán bằng QR
+                                </a>
+                                @if (b.HoldExpiresAt.HasValue)
+                                {
+                                    <span class="small text-muted">Giữ ghế đến @VeLabels.Time(b.HoldExpiresAt.Value)</span>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
             }
         </div>
 

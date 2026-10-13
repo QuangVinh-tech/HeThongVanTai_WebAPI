@@ -21,6 +21,22 @@
 .ticket-info dd { margin: 0; word-break: break-word; }
 .ticket-qr img { border: 1px solid var(--vt-line); border-radius: 10px; padding: 6px; background: #FFFFFF; }
 
+/* Vé hiển thị trực tiếp trong danh sách "Vé của tôi" */
+.booking-head { background: var(--vt-soft); border-radius: 16px 16px 0 0; }
+.my-ticket {
+    display: flex; gap: .75rem; align-items: center; justify-content: space-between;
+    border: 1px solid var(--vt-line); border-radius: 12px; padding: .75rem; height: 100%;
+}
+.my-ticket.ticket-off { opacity: .65; }
+.my-ticket .ticket-qr img { width: 96px; height: 96px; }
+
+/* Khung chuyển khoản có mã QR */
+.transfer-box { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+.transfer-qr {
+    width: 220px; max-width: 100%; height: auto;
+    border: 1px solid var(--vt-line); border-radius: 12px; padding: 6px; background: #FFFFFF;
+}
+
 @media (max-width: 575.98px) {
     .ticket-card > .d-flex { flex-direction: column; }
     .ticket-qr { align-self: center; }

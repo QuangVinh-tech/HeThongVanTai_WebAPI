@@ -19,6 +19,12 @@ public class HomeController : Controller
         // Load stations for the search form on the home page
         var stations = await _danhMuc.GetStationsAsync(null, null);
         ViewData["Stations"] = stations.Ok && stations.Data != null ? stations.Data : new List<StationItem>();
+
+        // Tuyến phổ biến: lấy từ API tuyến, chọn các tuyến dài nhất (API chưa có số liệu lượt đặt)
+        var routes = await _danhMuc.GetRoutesAsync();
+        ViewData["PopularRoutes"] = routes.Ok && routes.Data != null
+            ? routes.Data.OrderByDescending(r => r.DistanceKm).Take(6).ToList()
+            : new List<RouteItem>();
         return View();
     }
 

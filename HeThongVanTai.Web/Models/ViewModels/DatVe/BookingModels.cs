@@ -79,6 +79,10 @@ public class PayViewModel
     public int RemainingSeconds { get; set; }
     public bool IsStaff { get; set; }
     public string? BankInfo { get; set; }   // tùy chọn: Payment:BankInfo trong appsettings
+    public string? QrUrl { get; set; }      // ảnh VietQR đã điền sẵn số tiền và nội dung (null nếu chưa cấu hình BankTransfer)
+    public string? BankId { get; set; }
+    public string? AccountNo { get; set; }
+    public string? AccountName { get; set; }
 }
 
 public class PaymentResultViewModel
