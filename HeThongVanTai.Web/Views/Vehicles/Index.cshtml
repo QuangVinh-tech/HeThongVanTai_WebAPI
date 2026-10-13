@@ -1,0 +1,167 @@
+﻿@using HeThongVanTai.Web.Models.ViewModels.XeTaiXe
+@model VehicleListModel
+@{
+    ViewData["Title"] = "Quản lý xe";
+    Layout = "_AdminLayout";
+    var f = Model.Filter;
+    var filtering = !string.IsNullOrWhiteSpace(f.Keyword) || !string.IsNullOrWhiteSpace(f.Status) || f.VehicleTypeId.HasValue;
+    var startPage = Math.Max(1, f.Page - 2);
+    var endPage = Math.Min(Model.TotalPages, f.Page + 2);
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-0">Quản lý xe</h1>
+        <div class="small text-muted">Tổng cộng @Model.TotalItems xe</div>
+    </div>
+    <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg me-1"></i>Thêm xe</a>
+</div>
+
+<form method="get" class="filter-xe row g-2 align-items-end mb-3">
+    <div class="col-12 col-md-3">
+        <label class="form-label small mb-1" for="Keyword">Biển số</label>
+        <input id="Keyword" name="Keyword" value="@f.Keyword" class="form-control" />
+    </div>
+    <div class="col-12 col-md-2">
+        <label class="form-label small mb-1" for="Status">Trạng thái</label>
+        <select id="Status" name="Status" class="form-select">
+            <option value="">Tất cả</option>
+            @foreach (var s in XeTaiXeOptions.Statuses)
+            {
+                <option value="@s.Value" selected="@(f.Status == s.Value)">@s.Label</option>
+            }
+        </select>
+    </div>
+    <div class="col-12 col-md-2">
+        <label class="form-label small mb-1" for="VehicleTypeId">Loại xe</label>
+        <select id="VehicleTypeId" name="VehicleTypeId" class="form-select">
+            <option value="">Tất cả</option>
+            @foreach (var t in Model.VehicleTypes)
+            {
+                <option value="@t.Id" selected="@(f.VehicleTypeId == t.Id)">@t.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-12 col-md-3">
+        <label class="form-label small mb-1" for="Sort">Sắp xếp</label>
+        <select id="Sort" name="Sort" class="form-select">
+            <option value="plate_asc" selected="@(f.Sort == "plate_asc")">Biển số A-Z</option>
+            <option value="plate_desc" selected="@(f.Sort == "plate_desc")">Biển số Z-A</option>
+            <option value="reg_asc" selected="@(f.Sort == "reg_asc")">Sắp hết hạn đăng kiểm</option>
+            <option value="ins_asc" selected="@(f.Sort == "ins_asc")">Sắp hết hạn bảo hiểm</option>
+        </select>
+    </div>
+    <div class="col-12 col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-grow-1">Lọc</button>
+        @if (filtering)
+        {
+            <a class="btn btn-outline-primary" asp-action="Index">Bỏ lọc</a>
+        }
+    </div>
+</form>
+
+@if (!string.IsNullOrEmpty(Model.LoadError))
+{
+    <div class="alert alert-danger">@Model.LoadError</div>
+}
+
+<div class="card card-vt">
+    @if (Model.Items.Count == 0)
+    {
+        <div class="p-4 text-center text-muted">
+            @(filtering ? "Không có xe nào khớp với điều kiện lọc." : "Chưa có xe nào. Hãy thêm xe đầu tiên.")
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-vt table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Ảnh</th>
+                        <th>Biển số</th>
+                        <th>Loại xe</th>
+                        <th>Hạn đăng kiểm</th>
+                        <th>Hạn bảo hiểm</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var v in Model.Items)
+                    {
+                        var reg = XeTaiXeOptions.ExpiryWarning(v.RegistrationExpiry);
+                        var ins = XeTaiXeOptions.ExpiryWarning(v.InsuranceExpiry);
+                        <tr>
+                            <td>
+                                @if (!string.IsNullOrEmpty(v.ImageUrl))
+                                {
+                                    <img src="@v.ImageUrl" alt="@v.Plate" class="thumb-xe" />
+                                }
+                                else
+                                {
+                                    <span class="thumb-empty-xe"><i class="bi bi-image"></i></span>
+                                }
+                            </td>
+                            <td class="fw-semibold">@v.Plate</td>
+                            <td>@v.VehicleTypeName (@v.SeatCount ghế)</td>
+                            <td>
+                                @(v.RegistrationExpiry?.ToString("dd/MM/yyyy") ?? "-")
+                                @if (reg != null)
+                                {
+                                    <span class="pill @reg.Value.Css ms-1">@reg.Value.Text</span>
+                                }
+                            </td>
+                            <td>
+                                @(v.InsuranceExpiry?.ToString("dd/MM/yyyy") ?? "-")
+                                @if (ins != null)
+                                {
+                                    <span class="pill @ins.Value.Css ms-1">@ins.Value.Text</span>
+                                }
+                            </td>
+                            <td><span class="pill @XeTaiXeOptions.StatusCss(v.Status)">@XeTaiXeOptions.StatusText(v.Status)</span></td>
+                            <td class="text-end text-nowrap">
+                                <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-id="@v.Id">Sửa</a>
+                                <form asp-action="Delete" asp-route-id="@v.Id" method="post" class="d-inline"
+                                      data-confirm="@("Xóa xe " + v.Plate + "?")">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">Xóa</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@if (Model.TotalPages > 1)
+{
+    <nav class="mt-3" aria-label="Phân trang">
+        <ul class="pagination justify-content-center mb-0">
+            <li class="page-item @(f.Page <= 1 ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-Keyword="@f.Keyword" asp-route-Status="@f.Status"
+                   asp-route-VehicleTypeId="@f.VehicleTypeId" asp-route-Sort="@f.Sort" asp-route-Page="@(f.Page - 1)">Trước</a>
+            </li>
+            @for (var i = startPage; i <= endPage; i++)
+            {
+                <li class="page-item @(i == f.Page ? "active" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-Keyword="@f.Keyword" asp-route-Status="@f.Status"
+                       asp-route-VehicleTypeId="@f.VehicleTypeId" asp-route-Sort="@f.Sort" asp-route-Page="@i">@i</a>
+                </li>
+            }
+            <li class="page-item @(f.Page >= Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-Keyword="@f.Keyword" asp-route-Status="@f.Status"
+                   asp-route-VehicleTypeId="@f.VehicleTypeId" asp-route-Sort="@f.Sort" asp-route-Page="@(f.Page + 1)">Sau</a>
+            </li>
+        </ul>
+    </nav>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/xe-tai-xe.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <partial name="_ConfirmDeleteScript" />
+}

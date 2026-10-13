@@ -1,0 +1,68 @@
+﻿.form-xe {
+    max-width: 760px;
+}
+
+.filter-xe {
+    background: var(--vt-tint);
+    border-radius: 12px;
+    padding: .75rem;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.thumb-xe {
+    width: 72px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--vt-line);
+}
+
+.thumb-empty-xe {
+    width: 72px;
+    height: 48px;
+    border-radius: 8px;
+    border: 1px dashed var(--vt-line);
+    background: var(--vt-soft);
+    color: var(--vt-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+}
+
+.avatar-xe {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 1px solid var(--vt-line);
+}
+
+.avatar-empty-xe {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--vt-tint);
+    color: var(--vt-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.preview-xe {
+    max-width: 260px;
+    max-height: 180px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid var(--vt-line);
+}
+
+.preview-avatar-xe {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 1px solid var(--vt-line);
+}

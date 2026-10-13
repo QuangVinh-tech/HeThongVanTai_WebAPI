@@ -48,10 +48,22 @@
                         <i class="bi bi-people me-2"></i>Người dùng
                     </a>
                 }
+
                 <a class="nav-link @(currentController == "AdminTrips" ? "active" : "")"
                    asp-controller="AdminTrips" asp-action="Index">
                     <i class="bi bi-bus-front me-2"></i>Chuyến xe
                 </a>
+
+                <a class="nav-link @(currentController == "Vehicles" ? "active" : "")"
+                   asp-controller="Vehicles" asp-action="Index">
+                    <i class="bi bi-bus-front me-2"></i>Xe
+                </a>
+
+                <a class="nav-link @(currentController == "Drivers" ? "active" : "")"
+                   asp-controller="Drivers" asp-action="Index">
+                    <i class="bi bi-person-badge me-2"></i>Tài xế
+                </a>
+
                 @if (User.IsInRole(AppRoles.Admin))
                 {
                     <a class="nav-link @(currentController == "AdminPromotions" ? "active" : "")"
@@ -59,8 +71,6 @@
                         <i class="bi bi-tag me-2"></i>Khuyến mãi
                     </a>
                 }
-                @* Mỗi người thêm mục menu của mình vào đây khi trang đã xong, ví dụ:
-                   <a class="nav-link" href="/Admin/Vehicles"><i class="bi bi-bus-front me-2"></i>Xe</a> *@
             </nav>
         </aside>
         <section class="col-lg-10 py-4 px-lg-4">
