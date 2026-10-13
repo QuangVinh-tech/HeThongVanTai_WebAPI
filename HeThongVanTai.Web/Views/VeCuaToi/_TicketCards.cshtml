@@ -1,0 +1,38 @@
+@using HeThongVanTai.Web.Models.ViewModels.VeKhach
+@model BookingDetail
+@* Danh sách vé của một đặt vé. Mã QR chỉ hiện khi đặt vé đã thanh toán và vé còn hiệu lực. *@
+<div class="row g-3">
+    @foreach (var t in Model.Tickets)
+    {
+        var active = t.Status == "Active";
+        var showQr = active && Model.Status == "Paid";
+        <div class="col-12 col-lg-6">
+            <div class="card card-vt ticket-card h-100 @(active ? "" : "ticket-off")">
+                <div class="p-3 d-flex gap-3">
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div class="ticket-route">@t.FromStation <i class="bi bi-arrow-right"></i> @t.ToStation</div>
+                            <span class="pill @(active ? "pill-ok" : "pill-bad")">@VeLabels.Ticket(t.Status)</span>
+                        </div>
+                        <dl class="ticket-info mb-0 mt-2">
+                            <dt>Khởi hành</dt><dd>@VeLabels.Time(t.DepartAt)</dd>
+                            <dt>Ghế</dt><dd>@t.SeatCode</dd>
+                            <dt>Hành khách</dt><dd>@(string.IsNullOrWhiteSpace(t.PassengerName) ? "-" : t.PassengerName)</dd>
+                            <dt>Biển số xe</dt><dd>@t.Plate</dd>
+                            <dt>Giá vé</dt><dd>@VeLabels.Money(t.Price)</dd>
+                            <dt>Mã vé</dt><dd class="fw-semibold">@t.TicketCode</dd>
+                        </dl>
+                    </div>
+                    @if (showQr)
+                    {
+                        <div class="ticket-qr text-center">
+                            <img src="@Url.Action("Qr", "TraCuuVe", new { ticketCode = t.TicketCode })"
+                                 alt="Mã QR của vé @t.TicketCode" width="120" height="120" loading="lazy" />
+                            <div class="small text-muted mt-1">Đưa mã này khi lên xe</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>

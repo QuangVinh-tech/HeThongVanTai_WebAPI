@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -10,6 +10,7 @@ using HeThongVanTai.Data;
 using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Repositories;
 using HeThongVanTai.Services;
+using HeThongVanTai.Services.Email;
 using Serilog;
 
 // Logger tạm để ghi được cả lỗi khởi động; sau khi host dựng xong sẽ thay bằng cấu hình trong appsettings (mục "Serilog")
@@ -64,6 +65,9 @@ builder.Services.AddScoped<PaymentService>();
 builder.Services.AddHostedService<HoldExpiryService>();
 
 // Auth (phan cua Vinh)
+builder.Services.AddMemoryCache();
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ITokenRepository, TokenRepository>();
 
 builder.Services.AddIdentityCore<IdentityUser>()
@@ -114,11 +118,18 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
     const string adminEmail = "admin@vantai.com";
-    if (await userManager.FindByEmailAsync(adminEmail) == null)
+    var seededAdmin = await userManager.FindByEmailAsync(adminEmail);
+    if (seededAdmin == null)
     {
-        var admin = new IdentityUser { UserName = adminEmail, Email = adminEmail };
+        // EmailConfirmed = true: tài khoản test không cần nhập OTP
+        var admin = new IdentityUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true };
         if ((await userManager.CreateAsync(admin, "Admin@123")).Succeeded)
             await userManager.AddToRoleAsync(admin, AppRoles.Admin);
+    }
+    else if (!seededAdmin.EmailConfirmed)
+    {
+        seededAdmin.EmailConfirmed = true;
+        await userManager.UpdateAsync(seededAdmin);
     }
 }
 

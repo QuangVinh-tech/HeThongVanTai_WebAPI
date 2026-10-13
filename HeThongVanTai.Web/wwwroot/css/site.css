@@ -119,3 +119,6 @@ body { color: var(--vt-text); background: #FFFFFF; }
 }
 .seat.selected { background: var(--vt-primary); border-color: var(--vt-primary); color: #FFFFFF; }
 .seat.sold { background: var(--vt-sold); border-color: var(--vt-sold); color: transparent; cursor: not-allowed; }
+
+/* Ô nhập mã OTP ở trang xác thực email */
+.otp-input { letter-spacing: .5rem; font-weight: 700; }

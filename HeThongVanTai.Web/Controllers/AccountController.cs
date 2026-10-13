@@ -12,6 +12,9 @@ public class AccountController : Controller
     private readonly ApiClient _api;
     private readonly ILogger<AccountController> _logger;
 
+    // Cụm trong thông báo lỗi 403 của API khi chưa xác thực email (xem AuthController bên API)
+    private const string NotConfirmedMarker = "chưa được xác thực";
+
     public AccountController(ApiClient api, ILogger<AccountController> logger)
     {
         _api = api;
@@ -49,6 +52,14 @@ public class AccountController : Controller
         var info = string.IsNullOrEmpty(jwt)
             ? null
             : JwtReader.Read(jwt, CookieAuthenticationDefaults.AuthenticationScheme);
+
+        // Mật khẩu đúng nhưng email chưa xác thực: gửi lại mã (nếu được) và chuyển sang trang nhập mã
+        if (result.Status == 403 && (result.Error ?? "").Contains(NotConfirmedMarker))
+        {
+            await _api.PostAsync<MessageResponse>("api/Auth/resend-otp", new { email = model.Email });
+            TempData["Error"] = "Tài khoản chưa xác thực email. Hãy nhập mã 6 số đã gửi tới email của bạn.";
+            return RedirectToAction(nameof(VerifyEmail), new { email = model.Email });
+        }
 
         if (!result.Ok || info == null)
         {
@@ -95,7 +106,7 @@ public class AccountController : Controller
         if (!ModelState.IsValid) return View(model);
 
         // Không gửi roles: API luôn gán vai trò Customer cho người tự đăng ký
-        var result = await _api.PostAsync<string>("api/Auth/Register",
+        var result = await _api.PostAsync<RegisterResponse>("api/Auth/Register",
             new { username = model.Email, password = model.Password });
 
         if (!result.Ok)
@@ -106,8 +117,62 @@ public class AccountController : Controller
         }
 
         _logger.LogInformation("Đăng ký Web thành công: {Email}", Safe(model.Email));
+        if (result.Data?.RequiresVerification == true)
+        {
+            TempData[result.Data.EmailSent ? "Success" : "Error"] = result.Data.Message;
+            return RedirectToAction(nameof(VerifyEmail), new { email = model.Email });
+        }
+
         TempData["Success"] = "Đăng ký thành công. Hãy đăng nhập.";
         return RedirectToAction(nameof(Login));
+    }
+
+    // Nhập mã OTP 6 số gửi qua email để kích hoạt tài khoản
+    [AllowAnonymous]
+    [HttpGet]
+    public IActionResult VerifyEmail(string? email)
+    {
+        if (User.Identity?.IsAuthenticated == true) return RedirectToAction("Index", "Home");
+        if (string.IsNullOrWhiteSpace(email)) return RedirectToAction(nameof(Register));
+        return View(new VerifyEmailViewModel { Email = email });
+    }
+
+    [AllowAnonymous]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VerifyEmail(VerifyEmailViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var result = await _api.PostAsync<MessageResponse>("api/Auth/verify-email",
+            new { email = model.Email, code = model.Code.Trim() });
+
+        if (!result.Ok)
+        {
+            // Không ghi mã OTP vào log
+            _logger.LogWarning("Xác thực email Web thất bại: {Email} (API trả {Status})", Safe(model.Email), result.Status);
+            model.Code = "";
+            ModelState.Clear();
+            ModelState.AddModelError(string.Empty, result.Error ?? "Xác thực thất bại. Vui lòng thử lại.");
+            return View(model);
+        }
+
+        _logger.LogInformation("Xác thực email Web thành công: {Email}", Safe(model.Email));
+        TempData["Success"] = "Xác thực thành công. Hãy đăng nhập.";
+        return RedirectToAction(nameof(Login));
+    }
+
+    [AllowAnonymous]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResendOtp(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return RedirectToAction(nameof(Register));
+
+        var result = await _api.PostAsync<MessageResponse>("api/Auth/resend-otp", new { email });
+        if (result.Ok) TempData["Success"] = result.Data?.Message ?? "Đã gửi lại mã.";
+        else TempData["Error"] = result.Error ?? "Không gửi lại được mã. Vui lòng thử lại.";
+        return RedirectToAction(nameof(VerifyEmail), new { email });
     }
 
     [Authorize]

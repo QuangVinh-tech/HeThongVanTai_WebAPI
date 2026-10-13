@@ -1,0 +1,38 @@
+@model VerifyEmailViewModel
+@{
+    ViewData["Title"] = "Xác thực email";
+}
+
+<div class="container auth-wrap">
+    <div class="card card-vt p-4">
+        <h1 class="h4 mb-2">Xác thực email</h1>
+        <p class="small text-muted">
+            Nhập mã 6 số đã gửi tới <strong>@Model.Email</strong>. Mã có hiệu lực khoảng 9 phút.
+            Nếu không thấy email, hãy kiểm tra thư mục thư rác.
+        </p>
+        <form asp-action="VerifyEmail" method="post">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+            <input type="hidden" asp-for="Email" />
+            <div class="mb-3">
+                <label asp-for="Code" class="form-label"></label>
+                <input asp-for="Code" class="form-control form-control-lg text-center otp-input" inputmode="numeric"
+                       maxlength="6" autocomplete="one-time-code" placeholder="••••••" autofocus />
+                <span asp-validation-for="Code" class="text-danger small"></span>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Xác thực</button>
+        </form>
+
+        <form asp-action="ResendOtp" method="post" class="mt-3 text-center">
+            <input type="hidden" name="email" value="@Model.Email" />
+            <span class="small">Chưa nhận được mã?</span>
+            <button type="submit" class="btn btn-link btn-sm p-0 align-baseline">Gửi lại mã</button>
+        </form>
+        <p class="small mt-2 mb-0 text-center">
+            <a asp-action="Register">Dùng email khác</a> · <a asp-action="Login">Đăng nhập</a>
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

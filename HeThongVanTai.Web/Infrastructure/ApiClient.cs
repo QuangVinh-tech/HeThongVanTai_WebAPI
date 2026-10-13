@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Net.Http;
 
 namespace HeThongVanTai.Web.Infrastructure;
 
@@ -11,6 +12,10 @@ public class ApiResult<T>
     public string? Error { get; init; }
 }
 
+/// <summary>
+/// Client dùng chung để gọi API. Controller chỉ gọi ApiClient, không tự tạo HttpClient
+/// và không viết cứng địa chỉ API. Token của người dùng được BearerTokenHandler gắn tự động.
+/// </summary>
 public class ApiClient
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
@@ -28,18 +33,97 @@ public class ApiClient
     public Task<ApiResult<T>> PutAsync<T>(string url, object? body = null) => SendAsync<T>(HttpMethod.Put, url, body);
     public Task<ApiResult<T>> PatchAsync<T>(string url, object? body = null) => SendAsync<T>(HttpMethod.Patch, url, body);
     public Task<ApiResult<T>> DeleteAsync<T>(string url) => SendAsync<T>(HttpMethod.Delete, url, null);
-    public Task<ApiResult<T>> PostFormAsync<T>(string url, MultipartFormDataContent form) => SendAsync<T>(HttpMethod.Post, url, form);
+
+    public async Task<ApiResult<T>> PostFormAsync<T>(
+        string url,
+        MultipartFormDataContent content)
+    {
+        try
+        {
+            using var response = await _http.PostAsync(url, content);
+            var text = await response.Content.ReadAsStringAsync();
+            var status = (int)response.StatusCode;
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning(
+                    "API từ chối {Status}: POST {Url}",
+                    status, url);
+
+                return new ApiResult<T>
+                {
+                    Ok = false,
+                    Status = status,
+                    Error = ExtractError(text, status)
+                };
+            }
+
+            return new ApiResult<T>
+            {
+                Ok = true,
+                Status = status,
+                Data = Parse<T>(text)
+            };
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex,
+                "Không kết nối được tới API: POST {Url}", url);
+
+            return Fail<T>(
+                "Không kết nối được tới API. Hãy kiểm tra API đã chạy chưa.");
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogError(ex,
+                "API phản hồi quá lâu: POST {Url}", url);
+
+            return Fail<T>(
+                "API phản hồi quá lâu. Vui lòng thử lại.");
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex,
+                "API trả về dữ liệu sai định dạng: POST {Url}", url);
+
+            return Fail<T>(
+                "API trả về dữ liệu không đúng định dạng.");
+        }
+    }
+
+
+    // Tải dữ liệu nhị phân (ví dụ ảnh QR) từ API
+    public async Task<ApiResult<byte[]>> GetBytesAsync(string url)
+    {
+        try
+        {
+            using var response = await _http.GetAsync(url);
+            var status = (int)response.StatusCode;
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("API từ chối {Status}: GET {Url}", status, url);
+                return new ApiResult<byte[]> { Ok = false, Status = status, Error = $"API trả về lỗi {status}." };
+            }
+            return new ApiResult<byte[]> { Ok = true, Status = status, Data = await response.Content.ReadAsByteArrayAsync() };
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Không kết nối được tới API: GET {Url}", url);
+            return Fail<byte[]>("Không kết nối được tới API. Hãy kiểm tra API đã chạy chưa.");
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogError(ex, "API phản hồi quá lâu: GET {Url}", url);
+            return Fail<byte[]>("API phản hồi quá lâu. Vui lòng thử lại.");
+        }
+    }
 
     private async Task<ApiResult<T>> SendAsync<T>(HttpMethod method, string url, object? body)
     {
         try
         {
             using var request = new HttpRequestMessage(method, url);
-            if (body is HttpContent content)
-            {
-                request.Content = content;
-            }
-            else if (body != null)
+            if (body != null)
             {
                 request.Content = new StringContent(JsonSerializer.Serialize(body, Json), Encoding.UTF8, "application/json");
             }
@@ -50,6 +134,7 @@ public class ApiClient
 
             if (!response.IsSuccessStatusCode)
             {
+                // Chỉ ghi phương thức, địa chỉ và mã lỗi; không ghi nội dung gửi đi (có thể chứa mật khẩu)
                 if (status >= 500) _logger.LogError("API lỗi {Status}: {Method} {Url}", status, method, url);
                 else _logger.LogWarning("API từ chối {Status}: {Method} {Url}", status, method, url);
                 return new ApiResult<T> { Ok = false, Status = status, Error = ExtractError(text, status) };
@@ -82,6 +167,7 @@ public class ApiClient
         return JsonSerializer.Deserialize<T>(text, Json);
     }
 
+    // API có nhiều kiểu trả lỗi: chuỗi thường, chuỗi JSON, mảng, {message}, ProblemDetails, lỗi validate {errors}
     private static string ExtractError(string text, int status)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -125,6 +211,7 @@ public class ApiClient
         }
         catch (JsonException)
         {
+            // Không phải JSON: API trả về chuỗi thường
             return text.Length > 300 ? text[..300] : text;
         }
 

@@ -1,4 +1,4 @@
-﻿using HeThongVanTai.Data;
+using HeThongVanTai.Data;
 using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Models.DTO;
 using Microsoft.EntityFrameworkCore;
@@ -32,38 +32,18 @@ public class BookingService
     };
 
     // ===================== Tìm chuyến =====================
-    public async Task<object> SearchAsync(int fromId, int toId, DateTime date,
-    int? fromHour, int? toHour, int? vehicleTypeId,
-    decimal? minPrice, decimal? maxPrice, string? sort, int page, int pageSize)
+    public async Task<object> SearchAsync(int fromId, int toId, DateTime date)
     {
         await ReleaseExpiredAsync();
         var now = DateTime.Now;
         var start = date.Date;
         var end = start.AddDays(1);
 
-        var q = _db.Trips.AsNoTracking()
+        return await _db.Trips.AsNoTracking()
             .Where(t => t.Status == "Open" && t.DepartAt > now
                      && t.BusRoute.FromStationId == fromId && t.BusRoute.ToStationId == toId
-                     && t.DepartAt >= start && t.DepartAt < end);
-
-        if (fromHour != null) q = q.Where(t => t.DepartAt.Hour >= fromHour);
-        if (toHour != null) q = q.Where(t => t.DepartAt.Hour <= toHour);
-        if (vehicleTypeId != null) q = q.Where(t => t.Vehicle.VehicleType.Id == vehicleTypeId);
-        if (minPrice != null) q = q.Where(t => t.Price >= minPrice);
-        if (maxPrice != null) q = q.Where(t => t.Price <= maxPrice);
-
-        q = sort switch
-        {
-            "price_asc" => q.OrderBy(t => t.Price),
-            "price_desc" => q.OrderByDescending(t => t.Price),
-            _ => q.OrderBy(t => t.DepartAt)
-        };
-
-        page = Math.Max(page, 1);
-        pageSize = Math.Clamp(pageSize, 1, 50);
-        var total = await q.CountAsync();
-
-        var items = await q.Skip((page - 1) * pageSize).Take(pageSize)
+                     && t.DepartAt >= start && t.DepartAt < end)
+            .OrderBy(t => t.DepartAt)
             .Select(t => new
             {
                 TripId = t.Id,
@@ -77,8 +57,6 @@ public class BookingService
                 AvailableSeats = t.Vehicle.VehicleType.SeatCount - t.Tickets.Count(k => k.Status != "Cancelled")
             })
             .ToListAsync();
-
-        return new { total, page, pageSize, items };
     }
 
     // ============== Đặt vé, giữ ghế, áp mã ==============
@@ -499,15 +477,15 @@ public class BookingService
         _db.Tickets.AnyAsync(t => t.Id == ticketId && t.Booking.Customer.UserId == userId);
 
     // "Vé của tôi"
-    public async Task<object> MineAsync(string userId, int page, int pageSize)
+    public async Task<object> MineAsync(string userId, int page, int pageSize, string? status = null)
     {
         await ReleaseExpiredAsync();
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 50);
 
-        var q = _db.Bookings.AsNoTracking()
-            .Where(b => b.Customer.UserId == userId)
-            .OrderByDescending(b => b.CreatedAt);
+        var filtered = _db.Bookings.AsNoTracking().Where(b => b.Customer.UserId == userId);
+        if (!string.IsNullOrWhiteSpace(status)) filtered = filtered.Where(b => b.Status == status);
+        var q = filtered.OrderByDescending(b => b.CreatedAt);
         var total = await q.CountAsync();
         var items = await q.Skip((page - 1) * pageSize).Take(pageSize)
             .Select(b => new
@@ -536,4 +514,65 @@ public class BookingService
             .ToListAsync();
         return new { total, page, pageSize, items };
     }
+
+    // ============ Chi tiết đặt vé của chính khách (có thanh toán) ============
+    public async Task<BookingDetailDto> MineDetailAsync(string userId, string code)
+    {
+        await ReleaseExpiredAsync();
+        var c = code.Trim().ToUpperInvariant();
+        return await DetailQuery(_db.Bookings.AsNoTracking().Where(b => b.Code == c && b.Customer.UserId == userId))
+                   .FirstOrDefaultAsync()
+               ?? throw new ServiceException(404, "Không tìm thấy đặt vé.");
+    }
+
+    // ============ Tra cứu không cần đăng nhập: mã đặt vé + SĐT hoặc email đã dùng khi đặt ============
+    public async Task<BookingDetailDto> LookupAsync(string code, string contact)
+    {
+        await ReleaseExpiredAsync();
+        var c = code.Trim().ToUpperInvariant();
+        var k = contact.Trim();
+        var kLower = k.ToLowerInvariant();
+
+        // Sai mã hay sai thông tin liên hệ đều trả cùng một lỗi, không cho đoán mã đặt vé
+        return await DetailQuery(_db.Bookings.AsNoTracking().Where(b => b.Code == c
+                       && (b.Customer.Phone == k
+                           || (b.Customer.Email != null && b.Customer.Email.ToLower() == kLower))))
+                   .FirstOrDefaultAsync()
+               ?? throw new ServiceException(404, "Không tìm thấy đặt vé khớp với mã và thông tin liên hệ.");
+    }
+
+    private static IQueryable<BookingDetailDto> DetailQuery(IQueryable<Booking> q) =>
+        q.Select(b => new BookingDetailDto
+        {
+            Id = b.Id,
+            Code = b.Code,
+            Status = b.Status,
+            TotalAmount = b.TotalAmount,
+            DiscountAmount = b.DiscountAmount,
+            HoldExpiresAt = b.HoldExpiresAt,
+            CreatedAt = b.CreatedAt,
+            Customer = b.Customer.FullName,
+            Tickets = b.Tickets.Select(t => new TicketDetailDto
+            {
+                Id = t.Id,
+                TicketCode = t.TicketCode,
+                SeatCode = t.SeatCode,
+                PassengerName = t.PassengerName,
+                Price = t.Price,
+                Status = t.Status,
+                Route = t.Trip.BusRoute.Name,
+                FromStation = t.Trip.BusRoute.FromStation.Name,
+                ToStation = t.Trip.BusRoute.ToStation.Name,
+                DepartAt = t.Trip.DepartAt,
+                Plate = t.Trip.Vehicle.Plate
+            }).ToList(),
+            Payments = b.Payments.OrderBy(p => p.Id).Select(p => new PaymentDetailDto
+            {
+                Id = p.Id,
+                Amount = p.Amount,
+                Method = p.Method,
+                Status = p.Status,
+                PaidAt = p.PaidAt
+            }).ToList()
+        });
 }

@@ -1,0 +1,27 @@
+/* Vé của khách: Vé của tôi, chi tiết vé, tra cứu vé. Dùng biến màu trong site.css */
+.lookup-wrap { max-width: 520px; }
+
+.status-tabs { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .25rem; }
+.status-tab {
+    white-space: nowrap; padding: .35rem .9rem; border-radius: 999px;
+    border: 1px solid var(--vt-line); color: var(--vt-text); text-decoration: none;
+    font-size: .875rem; font-weight: 500; background: #FFFFFF;
+}
+.status-tab:hover { background: var(--vt-tint); }
+.status-tab.active { background: var(--vt-primary); border-color: var(--vt-primary); color: #FFFFFF; }
+
+.booking-row { transition: box-shadow .15s ease, transform .15s ease; }
+.booking-row:hover { box-shadow: 0 4px 14px rgba(176, 48, 96, .15); transform: translateY(-1px); }
+
+.ticket-card { border-left: 4px solid var(--vt-primary); }
+.ticket-card.ticket-off { border-left-color: var(--vt-sold); opacity: .75; }
+.ticket-route { font-weight: 600; color: var(--vt-primary); }
+.ticket-info { display: grid; grid-template-columns: max-content 1fr; gap: .15rem .9rem; font-size: .9rem; }
+.ticket-info dt { color: var(--vt-muted); font-weight: 500; }
+.ticket-info dd { margin: 0; word-break: break-word; }
+.ticket-qr img { border: 1px solid var(--vt-line); border-radius: 10px; padding: 6px; background: #FFFFFF; }
+
+@media (max-width: 575.98px) {
+    .ticket-card > .d-flex { flex-direction: column; }
+    .ticket-qr { align-self: center; }
+}

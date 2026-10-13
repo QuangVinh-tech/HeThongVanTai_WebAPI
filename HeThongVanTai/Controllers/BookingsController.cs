@@ -1,4 +1,4 @@
-﻿using HeThongVanTai.Models.DTO;
+using HeThongVanTai.Models.DTO;
 using HeThongVanTai.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,12 +27,9 @@ public class BookingsController : ControllerBase
     [AllowAnonymous]
     [HttpGet("api/trips/search")]
     public async Task<IActionResult> Search(
-        [FromQuery] int fromStationId, [FromQuery] int toStationId, [FromQuery] DateTime date,
-        [FromQuery] int? fromHour, [FromQuery] int? toHour, [FromQuery] int? vehicleTypeId,
-        [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice,
-        [FromQuery] string? sort, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
-        => Ok(await _svc.SearchAsync(fromStationId, toStationId, date, fromHour, toHour,
-            vehicleTypeId, minPrice, maxPrice, sort, page, pageSize));
+        [FromQuery] int fromStationId, [FromQuery] int toStationId, [FromQuery] DateTime date)
+        => Ok(await _svc.SearchAsync(fromStationId, toStationId, date));
+
     // Đặt vé: khách thường lấy hồ sơ từ token; Admin/Seller (bán tại quầy) gửi customerId trong body
     [Authorize]
     [HttpPost("api/bookings")]
@@ -64,12 +61,28 @@ public class BookingsController : ControllerBase
     // "Vé của tôi"
     [Authorize]
     [HttpGet("api/bookings/mine")]
-    public async Task<IActionResult> Mine([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> Mine([FromQuery] int page = 1, [FromQuery] int pageSize = 10,
+        [FromQuery] string? status = null)
     {
         var uid = UserClaims.UserId(User);
         if (uid == null) return Unauthorized();
-        return Ok(await _svc.MineAsync(uid, page, pageSize));
+        return Ok(await _svc.MineAsync(uid, page, pageSize, status));
     }
+
+    // Chi tiết một đặt vé của chính mình (vé, thanh toán); không xem được đặt vé của người khác
+    [Authorize]
+    [HttpGet("api/bookings/mine/{code}")]
+    public async Task<IActionResult> MineDetail(string code)
+    {
+        var uid = UserClaims.UserId(User);
+        if (uid == null) return Unauthorized();
+        return Ok(await _svc.MineDetailAsync(uid, code));
+    }
+
+    // Công khai: tra cứu bằng mã đặt vé + SĐT/email đã dùng khi đặt
+    [AllowAnonymous]
+    [HttpPost("api/bookings/lookup")]
+    public async Task<IActionResult> Lookup(LookupBookingDto dto) => Ok(await _svc.LookupAsync(dto.Code, dto.Contact));
 
     // Xem trước số tiền hoàn trước khi hủy
     [Authorize]

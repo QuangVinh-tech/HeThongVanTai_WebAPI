@@ -3,10 +3,12 @@ using HeThongVanTai.Web.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Serilog;
 
+// Logger tạm để ghi được cả lỗi khởi động; sau đó thay bằng cấu hình trong appsettings (mục "Serilog")
 Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateBootstrapLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Ghi log ra console và file Logs/web-<ngày>.log
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .ReadFrom.Services(services)
@@ -15,9 +17,11 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 
+// Địa chỉ API đặt trong appsettings (ApiBaseUrl), không viết cứng trong controller
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"]
     ?? throw new InvalidOperationException("Thiếu cấu hình ApiBaseUrl trong appsettings.json");
 
+// Mọi lời gọi API đi qua ApiClient; BearerTokenHandler tự gắn token của người đang đăng nhập
 builder.Services.AddTransient<BearerTokenHandler>();
 builder.Services.AddHttpClient<ApiClient>(client =>
 {
@@ -25,20 +29,14 @@ builder.Services.AddHttpClient<ApiClient>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 }).AddHttpMessageHandler<BearerTokenHandler>();
 
-// Đăng ký các HttpClient cho từng Service chuyên biệt
-builder.Services.AddHttpClient<TannApiService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl.TrimEnd('/') + "/");
-    client.Timeout = TimeSpan.FromSeconds(30);
-}).AddHttpMessageHandler<BearerTokenHandler>();
-
-// Đăng ký các Scoped Services
+// Service gọi API theo từng module
 builder.Services.AddScoped<DanhMucApiService>();
-builder.Services.AddScoped<XeTaiXeApiService>();
 builder.Services.AddScoped<DashboardApiService>();
 builder.Services.AddScoped<UsersApiService>();
 builder.Services.AddScoped<ReportsApiService>();
+builder.Services.AddScoped<VeKhachApiService>();
 
+// Web đăng nhập bằng cookie; token JWT của API được cất trong cookie (HttpOnly)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -58,11 +56,11 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseSerilogRequestLogging();
+app.UseSerilogRequestLogging();   // mỗi request một dòng log (chỉ đường dẫn, không ghi form hay token)
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-app.UseAuthentication();
+app.UseAuthentication();   // phải đứng trước UseAuthorization
 app.UseAuthorization();
 
 app.MapControllerRoute(
