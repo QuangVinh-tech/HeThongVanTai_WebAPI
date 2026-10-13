@@ -29,6 +29,13 @@ builder.Services.AddHttpClient<ApiClient>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 }).AddHttpMessageHandler<BearerTokenHandler>();
 
+// Dang ky HttpClient cho TannApiService goi API Backend
+builder.Services.AddHttpClient<TannApiService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+}).AddHttpMessageHandler<BearerTokenHandler>();
+
 // Service gọi API theo từng module
 builder.Services.AddScoped<DanhMucApiService>();
 builder.Services.AddScoped<DashboardApiService>();

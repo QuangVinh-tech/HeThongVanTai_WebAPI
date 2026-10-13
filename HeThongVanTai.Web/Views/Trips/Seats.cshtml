@@ -1,0 +1,113 @@
+﻿@model HeThongVanTai.Web.Models.ViewModels.DatVe.SeatsViewModel
+@using System.Globalization
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@{
+    ViewData["Title"] = "Chọn ghế";
+    var m = Model.Map;
+    var manyFloors = m.Seats.Select(s => s.Floor).Distinct().Count() > 1;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/dat-ve.css" asp-append-version="true" />
+}
+
+<div class="container py-4">
+    <h1 class="h3 fw-bold mb-1">Chọn ghế</h1>
+    <p class="text-muted mb-3">
+        @m.RouteName, khởi hành @m.DepartAt.ToString("HH:mm dd/MM/yyyy"), @m.VehicleType (@m.VehiclePlate),
+        @DatVeHelpers.Money(m.Price) mỗi ghế
+    </p>
+
+    <form method="get" action="/Bookings/Create" id="seatForm">
+        <input type="hidden" name="tripId" value="@m.TripId" />
+        <div id="seatInputs"></div>
+
+        <div class="card card-vt p-4 mb-3">
+            <div class="seat-legend mb-3">
+                <span><span class="swatch"></span>Trống</span>
+                <span><span class="swatch swatch-selected"></span>Đang chọn</span>
+                <span><span class="swatch swatch-sold"></span>Đã bán</span>
+            </div>
+
+            @foreach (var floor in m.Seats.GroupBy(s => s.Floor).OrderBy(g => g.Key))
+            {
+                <div class="mb-3">
+                    @if (manyFloors)
+                    {
+                        <div class="fw-semibold mb-2">Tầng @floor.Key</div>
+                    }
+                    <div class="seat-map">
+                        @foreach (var s in floor)
+                        {
+                            if (s.IsAvailable)
+                            {
+                                <button type="button" class="seat" data-code="@s.SeatCode" aria-pressed="false">@s.SeatCode</button>
+                            }
+                            else
+                            {
+                                <button type="button" class="seat sold" disabled title="Ghế đã bán" aria-label="Ghế @s.SeatCode đã bán">@s.SeatCode</button>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div id="summary" class="fw-semibold" aria-live="polite">Đã chọn 0/@Model.Tickets ghế</div>
+            <div>
+                <a class="btn btn-outline-primary me-2" asp-action="Search">Quay lại</a>
+                <button type="submit" id="btnNext" class="btn btn-primary px-4" disabled>Tiếp tục</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var max = @Model.Tickets;
+            var price = @m.Price.ToString(CultureInfo.InvariantCulture);
+            var buttons = document.querySelectorAll('.seat[data-code]');
+            var holder = document.getElementById('seatInputs');
+            var summary = document.getElementById('summary');
+            var next = document.getElementById('btnNext');
+            var picked = [];
+
+            function render() {
+                holder.innerHTML = '';
+                picked.forEach(function (code) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'seats';
+                    input.value = code;
+                    holder.appendChild(input);
+                });
+                var total = (picked.length * price).toLocaleString('vi-VN');
+                summary.textContent = 'Đã chọn ' + picked.length + '/' + max + ' ghế' +
+                    (picked.length > 0 ? ' (' + picked.join(', ') + ') - Tạm tính: ' + total + ' đ' : '');
+                next.disabled = picked.length === 0;
+            }
+
+            buttons.forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var code = b.getAttribute('data-code');
+                    var i = picked.indexOf(code);
+                    if (i >= 0) {
+                        picked.splice(i, 1);
+                        b.classList.remove('selected');
+                        b.setAttribute('aria-pressed', 'false');
+                    } else if (picked.length < max) {
+                        picked.push(code);
+                        b.classList.add('selected');
+                        b.setAttribute('aria-pressed', 'true');
+                    } else {
+                        summary.textContent = 'Bạn chỉ được chọn tối đa ' + max + ' ghế. Bỏ chọn một ghế để đổi.';
+                        return;
+                    }
+                    render();
+                });
+            });
+            render();
+        })();
+    </script>
+}

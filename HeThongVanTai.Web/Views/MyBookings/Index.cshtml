@@ -1,0 +1,110 @@
+﻿@model HeThongVanTai.Web.Models.ViewModels.DatVe.MyBookingsViewModel
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@{
+    ViewData["Title"] = "Vé của tôi";
+    var result = Model.Result;
+    var totalPages = result.PageSize <= 0 ? 0 : (int)Math.Ceiling(result.Total / (double)result.PageSize);
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/dat-ve.css" asp-append-version="true" />
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 fw-bold mb-0">Vé của tôi</h1>
+        <a class="btn btn-outline-primary" asp-controller="Tickets" asp-action="Lookup">Tra cứu vé</a>
+    </div>
+
+    @if (result.Items.Count == 0)
+    {
+        <div class="alert alert-info">
+            Bạn chưa có đặt vé nào. <a asp-controller="Trips" asp-action="Search">Tìm chuyến</a> để đặt vé đầu tiên.
+        </div>
+    }
+
+    @foreach (var b in result.Items)
+    {
+        var active = b.Tickets.Where(t => t.Status == "Active").ToList();
+        var firstDepart = active.Where(t => t.DepartAt.HasValue).Select(t => t.DepartAt!.Value)
+        .DefaultIfEmpty(DateTime.MaxValue).Min();
+        var canCancel = active.Count > 0 &&
+        (b.Status == "Holding" || (b.Status == "Paid" && firstDepart > DateTime.Now));
+        var canChange = b.Status == "Holding" || b.Status == "Paid";
+
+        <div class="card card-vt mb-3">
+            <div class="card-body">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                    <div>
+                        <span class="fw-bold">@b.Code</span>
+                        <span class="pill @DatVeHelpers.BookingStatusClass(b.Status) ms-2">@DatVeHelpers.BookingStatusText(b.Status)</span>
+                        @if (b.CreatedAt.HasValue)
+                        {
+                            <div class="small text-muted">Đặt lúc @b.CreatedAt.Value.ToString("HH:mm dd/MM/yyyy")</div>
+                        }
+                    </div>
+                    <div class="fs-5 fw-bold">@DatVeHelpers.Money(b.TotalAmount)</div>
+                </div>
+
+                @foreach (var t in b.Tickets)
+                {
+                    var canChangeTicket = canChange && t.Status == "Active" && t.DepartAt.HasValue
+                    && t.DepartAt.Value - DateTime.Now >= TimeSpan.FromHours(2);
+                    <div class="border-top py-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div>
+                            <div>@t.Route @(t.DepartAt.HasValue ? "- " + t.DepartAt.Value.ToString("HH:mm dd/MM/yyyy") : "")</div>
+                            <div class="small text-muted">
+                                Ghế <strong>@t.SeatCode</strong>, @t.PassengerName, @DatVeHelpers.Money(t.Price)
+                                - @DatVeHelpers.TicketStatusText(t.Status)
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            @if (b.Status == "Paid" && t.Status == "Active")
+                            {
+                                <a class="btn btn-sm btn-outline-primary" asp-controller="Tickets" asp-action="Detail" asp-route-code="@t.TicketCode">Xem vé QR</a>
+                            }
+                            @if (canChangeTicket)
+                            {
+                                <a class="btn btn-sm btn-outline-primary" asp-controller="MyBookings" asp-action="Change"
+                                   asp-route-ticketId="@t.Id" asp-route-tripId="@t.TripId" asp-route-seat="@t.SeatCode">Đổi ghế</a>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (b.Status == "Holding" || canCancel)
+                {
+                    <div class="border-top pt-3 mt-1 d-flex flex-wrap gap-2">
+                        @if (b.Status == "Holding")
+                        {
+                            <a class="btn btn-primary" asp-controller="Bookings" asp-action="Pay" asp-route-id="@b.Id">Thanh toán</a>
+                        }
+                        @if (canCancel)
+                        {
+                            <a class="btn btn-outline-primary" asp-controller="MyBookings" asp-action="Cancel" asp-route-id="@b.Id">Hủy đặt vé</a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @if (totalPages > 1)
+    {
+        <nav aria-label="Phân trang">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(result.Page <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@(result.Page - 1)">Trước</a>
+                </li>
+                @for (var p = Math.Max(1, result.Page - 2); p <= Math.Min(totalPages, result.Page + 2); p++)
+                {
+                    <li class="page-item @(p == result.Page ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@p">@p</a>
+                    </li>
+                }
+                <li class="page-item @(result.Page >= totalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@(result.Page + 1)">Sau</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>

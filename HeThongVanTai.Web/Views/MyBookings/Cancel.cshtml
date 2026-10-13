@@ -1,0 +1,59 @@
+﻿@model HeThongVanTai.Web.Models.ViewModels.DatVe.CancelViewModel
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@{
+    ViewData["Title"] = "Hủy đặt vé";
+    var b = Model.Booking;
+    var p = Model.Preview;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/dat-ve.css" asp-append-version="true" />
+}
+
+<div class="container py-4" style="max-width: 720px;">
+    <h1 class="h3 fw-bold mb-3">Hủy đặt vé @b.Code</h1>
+
+    <div class="card card-vt p-4 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span>Trạng thái</span>
+            <span class="pill @DatVeHelpers.BookingStatusClass(b.Status)">@DatVeHelpers.BookingStatusText(b.Status)</span>
+        </div>
+        @foreach (var t in b.Tickets.Where(t => t.Status == "Active"))
+        {
+            <div class="d-flex justify-content-between border-top py-1">
+                <span>Ghế @t.SeatCode - @t.PassengerName</span><span>@DatVeHelpers.Money(t.Price)</span>
+            </div>
+        }
+        <div class="d-flex justify-content-between fw-bold border-top pt-2">
+            <span>Tổng đã đặt</span><span>@DatVeHelpers.Money(b.TotalAmount)</span>
+        </div>
+    </div>
+
+    @if (!p.CanCancel)
+    {
+        <div class="alert alert-warning">@(p.Reason ?? "Không thể hủy đặt vé này.")</div>
+        <a class="btn btn-outline-primary" asp-action="Index">Quay lại</a>
+    }
+    else
+    {
+        <div class="card card-vt p-4 mb-3">
+            <h2 class="h5">Số tiền được hoàn</h2>
+            @if (b.Status == "Paid")
+            {
+                <div class="fs-4 fw-bold">@DatVeHelpers.Money(p.RefundAmount) <span class="fs-6 text-muted">(@p.RefundRate.ToString("P0"))</span></div>
+            }
+            else
+            {
+                <div>Đặt vé chưa thanh toán nên không có khoản nào cần hoàn.</div>
+            }
+            <div class="small text-muted mt-2">
+                Chính sách hoàn tiền theo thời điểm hủy trước giờ khởi hành: từ 24 giờ trở lên hoàn 100%,
+                từ 12 đến dưới 24 giờ hoàn 70%, từ 2 đến dưới 12 giờ hoàn 50%, dưới 2 giờ không hoàn.
+            </div>
+        </div>
+
+        <form method="post" asp-controller="MyBookings" asp-action="CancelConfirmed" asp-route-id="@b.Id" class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Xác nhận hủy</button>
+            <a class="btn btn-outline-primary" asp-action="Index">Giữ lại vé</a>
+        </form>
+    }
+</div>
