@@ -28,6 +28,9 @@ public class BookingService
         b.TotalAmount,
         b.DiscountAmount,
         b.HoldExpiresAt,
+        b.ContactPhone,
+        b.NeedTransfer,
+        b.TransferAddress,
         Tickets = b.Tickets.Select(t => new { t.Id, t.TicketCode, t.TripId, t.SeatCode, t.PassengerName, t.Price, t.Status })
     };
 
@@ -121,8 +124,17 @@ public class BookingService
                    ?? throw new ServiceException(404, "Chuyến không tồn tại.");
         if (trip.Status != "Open" || trip.DepartAt <= now)
             throw new ServiceException(400, "Chuyến đã đóng hoặc đã khởi hành.");
-        if (!await _db.Customers.AnyAsync(c => c.Id == dto.CustomerId))
-            throw new ServiceException(400, "Khách hàng không tồn tại.");
+        var customer = await _db.Customers.FirstOrDefaultAsync(c => c.Id == dto.CustomerId)
+                       ?? throw new ServiceException(400, "Khách hàng không tồn tại.");
+
+        // Liên hệ và trung chuyển
+        var contactPhone = dto.ContactPhone?.Trim();
+        if (string.IsNullOrWhiteSpace(contactPhone))
+            throw new ServiceException(400, "Vui lòng nhập số điện thoại liên hệ.");
+        var transferAddress = dto.TransferAddress?.Trim();
+        if (dto.NeedTransfer && string.IsNullOrWhiteSpace(transferAddress))
+            throw new ServiceException(400, "Vui lòng nhập địa chỉ trung chuyển.");
+        if (!dto.NeedTransfer) transferAddress = null;
 
         var seats = dto.Seats
             .Select(s => new { Code = s.SeatCode.Trim().ToUpperInvariant(), s.PassengerName })
@@ -169,6 +181,9 @@ public class BookingService
             DiscountAmount = discount,
             PromotionId = promo?.Id,
             TotalAmount = subtotal - discount,
+            ContactPhone = contactPhone,
+            NeedTransfer = dto.NeedTransfer,
+            TransferAddress = transferAddress,
             Tickets = seats.Select(s => new Ticket
             {
                 TripId = trip.Id,
@@ -179,6 +194,8 @@ public class BookingService
                 Status = "Active"
             }).ToList()
         };
+
+        if (string.IsNullOrWhiteSpace(customer.Phone)) customer.Phone = contactPhone;
 
         await using var tx = await _db.Database.BeginTransactionAsync();
         _db.Bookings.Add(booking);
@@ -373,10 +390,24 @@ public class BookingService
                        t.Price,
                        BookingCode = t.Booking.Code,
                        BookingStatus = t.Booking.Status,
+                       BookingCreatedAt = t.Booking.CreatedAt,
                        Customer = t.Booking.Customer.FullName,
+                       t.Booking.ContactPhone,
+                       t.Booking.NeedTransfer,
+                       t.Booking.TransferAddress,
                        Route = t.Trip.BusRoute.Name,
+                       FromStation = t.Trip.BusRoute.FromStation.Name,
+                       FromAddress = t.Trip.BusRoute.FromStation.Address,
+                       ToStation = t.Trip.BusRoute.ToStation.Name,
+                       ToAddress = t.Trip.BusRoute.ToStation.Address,
+                       DistanceKm = t.Trip.BusRoute.DistanceKm,
+                       DurationMin = t.Trip.BusRoute.DurationMin,
                        t.Trip.DepartAt,
-                       Plate = t.Trip.Vehicle.Plate
+                       t.Trip.ArriveAt,
+                       Plate = t.Trip.Vehicle.Plate,
+                       VehicleType = t.Trip.Vehicle.VehicleType.Name,
+                       DriverName = t.Trip.Driver.FullName,
+                       DriverPhone = t.Trip.Driver.Phone
                    })
                    .FirstOrDefaultAsync()
                ?? throw new ServiceException(404, "Không tìm thấy vé.");
@@ -398,6 +429,9 @@ public class BookingService
                        b.HoldExpiresAt,
                        b.CreatedAt,
                        Customer = b.Customer.FullName,
+                       b.ContactPhone,
+                       b.NeedTransfer,
+                       b.TransferAddress,
                        Tickets = b.Tickets.Select(t => new
                        {
                            t.Id,
@@ -459,7 +493,8 @@ public class BookingService
         {
             var k = keyword.Trim();
             q = q.Where(b => b.Code.Contains(k) || b.Customer.FullName.Contains(k)
-                          || (b.Customer.Phone != null && b.Customer.Phone.Contains(k)));
+                          || (b.Customer.Phone != null && b.Customer.Phone.Contains(k))
+                          || (b.ContactPhone != null && b.ContactPhone.Contains(k)));
         }
         if (fromDate.HasValue)
         {
@@ -494,7 +529,9 @@ public class BookingService
                 b.CreatedAt,
                 b.HoldExpiresAt,
                 Customer = b.Customer.FullName,
-                Phone = b.Customer.Phone,
+                Phone = b.ContactPhone ?? b.Customer.Phone,
+                b.NeedTransfer,
+                b.TransferAddress,
                 Seats = b.Tickets.Count(t => t.Status != "Cancelled")
             })
             .ToListAsync();
@@ -550,6 +587,9 @@ public class BookingService
                 b.DiscountAmount,
                 b.CreatedAt,
                 b.HoldExpiresAt,
+                b.ContactPhone,
+                b.NeedTransfer,
+                b.TransferAddress,
                 Tickets = b.Tickets.Select(t => new
                 {
                     t.Id,
@@ -589,6 +629,7 @@ public class BookingService
         // Sai mã hay sai thông tin liên hệ đều trả cùng một lỗi, không cho đoán mã đặt vé
         return await DetailQuery(_db.Bookings.AsNoTracking().Where(b => b.Code == c
                        && (b.Customer.Phone == k
+                           || b.ContactPhone == k
                            || (b.Customer.Email != null && b.Customer.Email.ToLower() == kLower))))
                    .FirstOrDefaultAsync()
                ?? throw new ServiceException(404, "Không tìm thấy đặt vé khớp với mã và thông tin liên hệ.");
@@ -605,6 +646,9 @@ public class BookingService
             HoldExpiresAt = b.HoldExpiresAt,
             CreatedAt = b.CreatedAt,
             Customer = b.Customer.FullName,
+            ContactPhone = b.ContactPhone,
+            NeedTransfer = b.NeedTransfer,
+            TransferAddress = b.TransferAddress,
             Tickets = b.Tickets.Select(t => new TicketDetailDto
             {
                 Id = t.Id,
@@ -617,7 +661,15 @@ public class BookingService
                 FromStation = t.Trip.BusRoute.FromStation.Name,
                 ToStation = t.Trip.BusRoute.ToStation.Name,
                 DepartAt = t.Trip.DepartAt,
-                Plate = t.Trip.Vehicle.Plate
+                ArriveAt = t.Trip.ArriveAt,
+                Plate = t.Trip.Vehicle.Plate,
+                VehicleType = t.Trip.Vehicle.VehicleType.Name,
+                FromAddress = t.Trip.BusRoute.FromStation.Address,
+                ToAddress = t.Trip.BusRoute.ToStation.Address,
+                DistanceKm = t.Trip.BusRoute.DistanceKm,
+                DurationMin = t.Trip.BusRoute.DurationMin,
+                DriverName = t.Trip.Driver.FullName,
+                DriverPhone = t.Trip.Driver.Phone
             }).ToList(),
             Payments = b.Payments.OrderBy(p => p.Id).Select(p => new PaymentDetailDto
             {

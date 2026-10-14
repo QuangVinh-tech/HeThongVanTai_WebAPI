@@ -34,6 +34,13 @@ public static class DatVeHelpers
         _ => status
     };
 
+    public static string Duration(int minutes)
+    {
+        if (minutes <= 0) return "-";
+        var h = minutes / 60; var m = minutes % 60;
+        return h > 0 ? (m > 0 ? $"{h} giờ {m} phút" : $"{h} giờ") : $"{m} phút";
+    }
+
     public static string PaymentMethodText(string method) => method switch
     {
         "Cash" => "Tiền mặt",

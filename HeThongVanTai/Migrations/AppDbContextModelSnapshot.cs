@@ -37,6 +37,10 @@ namespace HeThongVanTai.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("ContactPhone")
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
 
@@ -45,6 +49,9 @@ namespace HeThongVanTai.Migrations
 
                     b.Property<DateTime?>("HoldExpiresAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("NeedTransfer")
+                        .HasColumnType("bit");
 
                     b.Property<int?>("PromotionId")
                         .HasColumnType("int");
@@ -55,6 +62,10 @@ namespace HeThongVanTai.Migrations
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(12,0)");
+
+                    b.Property<string>("TransferAddress")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.HasKey("Id");
 

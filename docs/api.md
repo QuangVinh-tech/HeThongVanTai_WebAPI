@@ -85,7 +85,7 @@ Cách tính doanh thu: tiền đã thu (`Paid`) trừ tiền đã hoàn (`Refund
 
 | Phương thức | Đường dẫn | Quyền | Mô tả |
 |---|---|---|---|
-| POST | `/api/bookings` | Đăng nhập | Đặt vé, giữ ghế (hết hạn sau `Booking:HoldMinutes`), áp mã khuyến mãi. |
+| POST | `/api/bookings` | Đăng nhập | Đặt vé, giữ ghế (hết hạn sau `Booking:HoldMinutes`), áp mã khuyến mãi. Body cần thêm `contactPhone` (bắt buộc, 10 số), `needTransfer` (true/false) và `transferAddress` (bắt buộc khi `needTransfer` = true, tối đa 300 ký tự). |
 | GET | `/api/bookings` | Admin, Seller | Danh sách đặt vé (lọc, sắp xếp, phân trang). |
 | GET | `/api/bookings/{id}` | Đăng nhập | Chi tiết booking. |
 | GET | `/api/bookings/by-code/{code}` | Mọi người | Tra cứu booking theo mã. |

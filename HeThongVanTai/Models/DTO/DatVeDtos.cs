@@ -23,6 +23,15 @@ public class CreateBookingDto
     [Range(1, int.MaxValue)] public int TripId { get; set; }
     [Required, MinLength(1)] public List<SeatDto> Seats { get; set; } = new();
     public string? PromoCode { get; set; }
+
+    [Required(ErrorMessage = "Vui lòng nhập số điện thoại liên hệ.")]
+    [RegularExpression(@"^0\d{9}$", ErrorMessage = "SĐT gồm 10 số, bắt đầu bằng 0")]
+    public string? ContactPhone { get; set; }
+
+    public bool NeedTransfer { get; set; }
+
+    [MaxLength(300, ErrorMessage = "Địa chỉ trung chuyển tối đa 300 ký tự.")]
+    public string? TransferAddress { get; set; }
 }
 
 public class ChangeTicketDto

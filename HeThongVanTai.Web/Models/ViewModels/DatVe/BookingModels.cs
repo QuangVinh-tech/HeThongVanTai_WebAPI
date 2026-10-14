@@ -25,6 +25,9 @@ public class BookingDto
     public DateTime? HoldExpiresAt { get; set; }
     public DateTime? CreatedAt { get; set; }
     public string? Customer { get; set; }
+    public string? ContactPhone { get; set; }
+    public bool NeedTransfer { get; set; }
+    public string? TransferAddress { get; set; }
     public List<BookingTicketDto> Tickets { get; set; } = new();
 }
 
@@ -61,6 +64,9 @@ public class CreateBookingForm
     public string? PromoCode { get; set; }
     public string? CustomerName { get; set; }    // nhân viên bán tại quầy
     public string? CustomerPhone { get; set; }
+    public string? ContactPhone { get; set; }     // SĐT liên hệ (khách tự đặt)
+    public bool NeedTransfer { get; set; }        // có đăng ký trung chuyển không
+    public string? TransferAddress { get; set; }  // địa chỉ đón khi trung chuyển
     public List<PassengerInput> Passengers { get; set; } = new();
 }
 

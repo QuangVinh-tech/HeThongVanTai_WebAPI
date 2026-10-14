@@ -57,6 +57,28 @@ public class BookingsController : Controller
             return View(vm);
         }
 
+        // Trung chuyển và số điện thoại liên hệ
+        var transferAddress = form.TransferAddress?.Trim();
+        if (form.NeedTransfer && string.IsNullOrWhiteSpace(transferAddress))
+        {
+            ModelState.AddModelError("", "Bạn đã chọn trung chuyển, vui lòng nhập địa chỉ trung chuyển.");
+            return View(vm);
+        }
+        if (transferAddress != null && transferAddress.Length > 300)
+        {
+            ModelState.AddModelError("", "Địa chỉ trung chuyển tối đa 300 ký tự.");
+            return View(vm);
+        }
+        if (!form.NeedTransfer) transferAddress = null;
+
+        // Bán tại quầy dùng SĐT của khách; khách tự đặt nhập SĐT liên hệ
+        var contactPhone = (IsStaff ? form.CustomerPhone : form.ContactPhone)?.Trim();
+        if (string.IsNullOrWhiteSpace(contactPhone) || !System.Text.RegularExpressions.Regex.IsMatch(contactPhone, @"^0\d{9}$"))
+        {
+            ModelState.AddModelError("", "Vui lòng nhập số điện thoại liên hệ gồm 10 số, bắt đầu bằng 0.");
+            return View(vm);
+        }
+
         // Bán vé tại quầy: xác định khách theo họ tên và số điện thoại
         var customerId = 0;
         if (IsStaff)
@@ -75,7 +97,10 @@ public class BookingsController : Controller
             tripId = form.TripId,
             customerId,   // khách thường: API tự lấy theo tài khoản đăng nhập
             seats = form.Passengers.Select(p => new { seatCode = p.SeatCode, passengerName = p.Name!.Trim() }).ToList(),
-            promoCode = string.IsNullOrWhiteSpace(form.PromoCode) ? null : form.PromoCode.Trim()
+            promoCode = string.IsNullOrWhiteSpace(form.PromoCode) ? null : form.PromoCode.Trim(),
+            contactPhone,
+            needTransfer = form.NeedTransfer,
+            transferAddress
         };
 
         var res = await _api.PostAsync<BookingDto>("api/bookings", body);
