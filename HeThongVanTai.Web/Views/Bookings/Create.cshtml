@@ -45,6 +45,21 @@
                     </div>
                 }
 
+                @if (!Model.IsStaff)
+                {
+                    <h2 class="h5 mb-3">Thông tin liên hệ</h2>
+                    <div class="mb-4">
+                        <label class="form-label small" for="ContactPhone">Số điện thoại liên hệ <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                            <input type="tel" class="form-control" id="ContactPhone" name="ContactPhone"
+                                   value="@Model.Form.ContactPhone" pattern="0[0-9]{9}" maxlength="10" inputmode="numeric"
+                                   placeholder="Ví dụ: 0901234567" title="10 số, bắt đầu bằng 0" required />
+                        </div>
+                        <div class="form-text">Nhà xe dùng số này để liên hệ khi cần. Bạn cũng dùng số này để tra cứu vé.</div>
+                    </div>
+                }
+
                 <h2 class="h5 mb-3">Hành khách</h2>
                 @for (var i = 0; i < Model.Form.Passengers.Count; i++)
                 {
@@ -55,6 +70,30 @@
                                value="@Model.Form.Passengers[i].Name" maxlength="100" required />
                     </div>
                 }
+
+                <h2 class="h5 mt-2 mb-3">Trung chuyển</h2>
+                <div class="transfer-option mb-3 @(Model.Form.NeedTransfer ? "is-on" : "")" id="transferBox">
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" role="switch" id="NeedTransfer" name="NeedTransfer"
+                               value="true" @(Model.Form.NeedTransfer ? "checked" : "") />
+                        <input type="hidden" name="NeedTransfer" value="false" />
+                        <label class="form-check-label fw-semibold" for="NeedTransfer">
+                            <i class="bi bi-bus-front me-1"></i>Đăng ký trung chuyển (xe đón tại địa chỉ của bạn)
+                        </label>
+                    </div>
+                    <div class="small text-muted mt-1">Tích chọn nếu bạn muốn nhà xe đón tại địa chỉ riêng thay vì tự ra bến.</div>
+
+                    <div id="transferAddressWrap" class="mt-3" @(Model.Form.NeedTransfer ? "" : "hidden")>
+                        <label class="form-label small" for="TransferAddress">Địa chỉ trung chuyển <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                            <input type="text" class="form-control" id="TransferAddress" name="TransferAddress"
+                                   value="@Model.Form.TransferAddress" maxlength="300"
+                                   placeholder="Số nhà, đường, phường/xã, quận/huyện" />
+                        </div>
+                        <div class="form-text">Nhập địa chỉ cụ thể để tài xế đón đúng nơi.</div>
+                    </div>
+                </div>
 
                 <h2 class="h5 mt-2 mb-3">Mã giảm giá</h2>
                 <div class="input-group mb-1">
@@ -92,6 +131,22 @@
 
 @section Scripts {
     <script>
+        (function () {
+            var sw = document.getElementById('NeedTransfer');
+            var wrap = document.getElementById('transferAddressWrap');
+            var box = document.getElementById('transferBox');
+            var addr = document.getElementById('TransferAddress');
+            function syncTransfer() {
+                var on = sw.checked;
+                wrap.hidden = !on;
+                box.classList.toggle('is-on', on);
+                addr.required = on;
+                if (on) addr.focus();
+            }
+            sw.addEventListener('change', syncTransfer);
+            addr.required = sw.checked;
+        })();
+
         (function () {
             var subtotal = @Model.Subtotal.ToString(CultureInfo.InvariantCulture);
             var promo = document.getElementById('promo');

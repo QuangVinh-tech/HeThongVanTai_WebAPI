@@ -18,4 +18,9 @@ public class Booking
     [Column(TypeName = "decimal(12,0)")] public decimal DiscountAmount { get; set; }
     public int? PromotionId { get; set; }
     public Promotion? Promotion { get; set; }
+
+    // Thông tin liên hệ và trung chuyển (đón tại địa chỉ khách)
+    [MaxLength(15)] public string? ContactPhone { get; set; }
+    public bool NeedTransfer { get; set; }
+    [MaxLength(300)] public string? TransferAddress { get; set; }
 }

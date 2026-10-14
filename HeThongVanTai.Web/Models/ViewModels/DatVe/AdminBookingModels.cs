@@ -29,6 +29,8 @@ public class AdminBookingItem
     public DateTime? HoldExpiresAt { get; set; }
     public string? Customer { get; set; }
     public string? Phone { get; set; }
+    public bool NeedTransfer { get; set; }
+    public string? TransferAddress { get; set; }
     public int Seats { get; set; }
 }
 

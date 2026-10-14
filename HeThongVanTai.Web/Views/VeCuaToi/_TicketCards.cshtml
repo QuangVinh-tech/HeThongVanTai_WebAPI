@@ -1,37 +1,109 @@
 @using HeThongVanTai.Web.Models.ViewModels.VeKhach
 @model BookingDetail
-@* Danh sách vé của một đặt vé. Mã QR chỉ hiện khi đặt vé đã thanh toán và vé còn hiệu lực. *@
+@* Danh sách vé của một đặt vé, mỗi vé là một thẻ đầy đủ thông tin. Mã QR chỉ hiện khi đặt vé đã thanh toán và vé còn hiệu lực. *@
 <div class="row g-3">
     @foreach (var t in Model.Tickets)
     {
         var active = t.Status == "Active";
         var showQr = active && Model.Status == "Paid";
-        <div class="col-12 col-lg-6">
-            <div class="card card-vt ticket-card h-100 @(active ? "" : "ticket-off")">
-                <div class="p-3 d-flex gap-3">
-                    <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between align-items-start gap-2">
-                            <div class="ticket-route">@t.FromStation <i class="bi bi-arrow-right"></i> @t.ToStation</div>
-                            <span class="pill @(active ? "pill-ok" : "pill-bad")">@VeLabels.Ticket(t.Status)</span>
-                        </div>
-                        <dl class="ticket-info mb-0 mt-2">
-                            <dt>Khởi hành</dt><dd>@VeLabels.Time(t.DepartAt)</dd>
-                            <dt>Ghế</dt><dd>@t.SeatCode</dd>
-                            <dt>Hành khách</dt><dd>@(string.IsNullOrWhiteSpace(t.PassengerName) ? "-" : t.PassengerName)</dd>
-                            <dt>Biển số xe</dt><dd>@t.Plate</dd>
-                            <dt>Giá vé</dt><dd>@VeLabels.Money(t.Price)</dd>
-                            <dt>Mã vé</dt><dd class="fw-semibold">@t.TicketCode</dd>
-                        </dl>
+        var arrive = t.ArriveAt ?? (t.DurationMin > 0 ? t.DepartAt.AddMinutes(t.DurationMin) : (DateTime?)null);
+        var crossDay = arrive.HasValue && arrive.Value.Date != t.DepartAt.Date;
+        <div class="col-12 col-xl-6">
+            <div class="vt-ticket @(active ? "" : "is-off")">
+                <div class="vt-ticket-head">
+                    <div>
+                        <div class="vt-route">@t.FromStation <i class="bi bi-arrow-right"></i> @t.ToStation</div>
+                        <div class="vt-code">Mã vé @t.TicketCode</div>
                     </div>
-                    @if (showQr)
-                    {
-                        <div class="ticket-qr text-center">
+                    <span class="pill @(active ? "pill-ok" : "pill-bad")">@VeLabels.Ticket(t.Status)</span>
+                </div>
+
+                <div class="vt-ticket-body">
+                    <div class="vt-ticket-main">
+                        <div class="vt-timeline">
+                            <div class="vt-stop">
+                                <div class="vt-time">@t.DepartAt.ToString("HH:mm")</div>
+                                <div class="vt-date">@t.DepartAt.ToString("dd/MM/yyyy")</div>
+                                <div class="vt-station">@t.FromStation</div>
+                                @if (!string.IsNullOrWhiteSpace(t.FromAddress))
+                                {
+                                    <div class="vt-addr">@t.FromAddress</div>
+                                }
+                            </div>
+                            <div class="vt-mid">
+                                <i class="bi bi-bus-front"></i>
+                                <div class="vt-line"></div>
+                                <span>@VeLabels.Duration(t.DurationMin)</span>
+                                @if (t.DistanceKm > 0)
+                                {
+                                    <span>@t.DistanceKm km</span>
+                                }
+                            </div>
+                            <div class="vt-stop vt-end">
+                                <div class="vt-time">@(arrive.HasValue ? arrive.Value.ToString("HH:mm") : "--:--")</div>
+                                <div class="vt-date">@(arrive.HasValue ? arrive.Value.ToString("dd/MM/yyyy") : "Dự kiến")@(crossDay ? " (hôm sau)" : "")</div>
+                                <div class="vt-station">@t.ToStation</div>
+                                @if (!string.IsNullOrWhiteSpace(t.ToAddress))
+                                {
+                                    <div class="vt-addr">@t.ToAddress</div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="vt-grid">
+                            <div class="vt-field"><div class="vt-label">Số ghế</div><div class="vt-value is-big">@t.SeatCode</div></div>
+                            <div class="vt-field"><div class="vt-label">Giá vé</div><div class="vt-value is-big">@VeLabels.Money(t.Price)</div></div>
+                            <div class="vt-field"><div class="vt-label">Hành khách</div><div class="vt-value">@(string.IsNullOrWhiteSpace(t.PassengerName) ? "-" : t.PassengerName)</div></div>
+                            <div class="vt-field"><div class="vt-label">Biển số xe</div><div class="vt-value">@t.Plate</div></div>
+                            @if (!string.IsNullOrWhiteSpace(t.VehicleType))
+                            {
+                                <div class="vt-field"><div class="vt-label">Loại xe</div><div class="vt-value">@t.VehicleType</div></div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(t.DriverName))
+                            {
+                                <div class="vt-field">
+                                    <div class="vt-label">Tài xế</div>
+                                    <div class="vt-value">@(t.DriverName + (string.IsNullOrWhiteSpace(t.DriverPhone) ? "" : " · " + t.DriverPhone))</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="vt-ticket-stub">
+                        @if (showQr)
+                        {
                             <img src="@Url.Action("Qr", "TraCuuVe", new { ticketCode = t.TicketCode })"
                                  alt="Mã QR của vé @t.TicketCode" width="120" height="120" loading="lazy" />
-                            <div class="small text-muted mt-1">Đưa mã này khi lên xe</div>
-                        </div>
-                    }
+                            <div>
+                                <div class="vt-stub-code">@t.TicketCode</div>
+                                <div class="vt-stub-note">Đưa mã này khi lên xe</div>
+                            </div>
+                        }
+                        else
+                        {
+                            <i class="bi bi-qr-code vt-stub-lock"></i>
+                            <div>
+                                <div class="vt-stub-code">@t.TicketCode</div>
+                                <div class="vt-stub-note">@(active ? "Mã QR hiện sau khi thanh toán" : "Vé không còn hiệu lực")</div>
+                            </div>
+                        }
+                    </div>
                 </div>
+
+                @if (Model.NeedTransfer && !string.IsNullOrWhiteSpace(Model.TransferAddress))
+                {
+                    <div class="vt-foot">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <div><strong>Trung chuyển:</strong> @Model.TransferAddress</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="vt-foot is-muted">
+                        <i class="bi bi-person-walking"></i>
+                        <div>Không đăng ký trung chuyển, hành khách tự ra bến.</div>
+                    </div>
+                }
             </div>
         </div>
     }

@@ -108,7 +108,14 @@
                     {
                         <tr>
                             <td class="fw-semibold">@b.Code</td>
-                            <td>@b.Customer<div class="small text-muted">@b.Phone</div></td>
+                            <td>
+                                @b.Customer
+                                <div class="small text-muted">@b.Phone</div>
+                                @if (b.NeedTransfer)
+                                {
+                                    <div class="small" title="@b.TransferAddress"><span class="pill pill-warn">Trung chuyển</span></div>
+                                }
+                            </td>
                             <td class="text-end">@b.Seats</td>
                             <td class="text-end">@DatVeHelpers.Money(b.TotalAmount)</td>
                             <td><span class="pill @DatVeHelpers.BookingStatusClass(b.Status)">@DatVeHelpers.BookingStatusText(b.Status)</span></td>

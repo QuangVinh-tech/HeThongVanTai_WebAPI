@@ -12,6 +12,7 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/ve-khach.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ticket.css" asp-append-version="true" />
 }
 
 <div class="container py-4">
@@ -93,6 +94,20 @@
                                             }
                                         </div>
                                     </div>
+                                }
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(b.ContactPhone) || b.NeedTransfer)
+                        {
+                            <div class="small text-muted mt-3 d-flex flex-wrap gap-3">
+                                @if (!string.IsNullOrWhiteSpace(b.ContactPhone))
+                                {
+                                    <span><i class="bi bi-telephone me-1"></i>@b.ContactPhone</span>
+                                }
+                                @if (b.NeedTransfer)
+                                {
+                                    <span><i class="bi bi-geo-alt-fill me-1"></i>Trung chuyển: @b.TransferAddress</span>
                                 }
                             </div>
                         }

@@ -38,6 +38,9 @@ public class BookingDetailDto
     public DateTime? HoldExpiresAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public string Customer { get; set; } = "";
+    public string? ContactPhone { get; set; }
+    public bool NeedTransfer { get; set; }
+    public string? TransferAddress { get; set; }
     public List<TicketDetailDto> Tickets { get; set; } = new();
     public List<PaymentDetailDto> Payments { get; set; } = new();
 }
@@ -54,7 +57,15 @@ public class TicketDetailDto
     public string FromStation { get; set; } = "";
     public string ToStation { get; set; } = "";
     public DateTime DepartAt { get; set; }
+    public DateTime? ArriveAt { get; set; }
     public string Plate { get; set; } = "";
+    public string? VehicleType { get; set; }
+    public string? FromAddress { get; set; }
+    public string? ToAddress { get; set; }
+    public int DistanceKm { get; set; }
+    public int DurationMin { get; set; }
+    public string? DriverName { get; set; }
+    public string? DriverPhone { get; set; }
 }
 
 public class PaymentDetailDto

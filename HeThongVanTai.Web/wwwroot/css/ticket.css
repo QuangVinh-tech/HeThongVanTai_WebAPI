@@ -1,0 +1,119 @@
+/* Thẻ vé và vé điện tử dùng chung (Vé của tôi, Tra cứu, Chi tiết vé, Kết quả thanh toán). Màu lấy từ site.css */
+
+/* ===== Khối chọn trung chuyển trong form đặt vé ===== */
+.transfer-option {
+    border: 1.5px dashed var(--vt-secondary);
+    border-radius: 12px;
+    padding: .9rem 1rem;
+    background: var(--vt-soft);
+    transition: background .15s ease, border-color .15s ease;
+}
+.transfer-option.is-on { background: var(--vt-tint); border-style: solid; border-color: var(--vt-primary); }
+.transfer-option .form-check-input:checked { background-color: var(--vt-primary); border-color: var(--vt-primary); }
+
+/* ===== Thẻ vé ===== */
+.vt-ticket {
+    position: relative;
+    background: #FFFFFF;
+    border: 1px solid var(--vt-line);
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(176, 48, 96, .08);
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+.vt-ticket.is-off { opacity: .72; }
+.vt-ticket.is-off .vt-ticket-head { background: var(--vt-sold); }
+
+.vt-ticket-head {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .5rem;
+    padding: .75rem 1rem;
+    color: #FFFFFF;
+    background: linear-gradient(135deg, var(--vt-primary) 0%, var(--vt-secondary) 100%);
+}
+.vt-ticket-head .vt-route { font-weight: 700; font-size: 1.02rem; display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
+.vt-ticket-head .vt-code { font-size: .8rem; letter-spacing: .08em; opacity: .95; }
+.vt-ticket-head .pill { background: #FFFFFF; }
+
+.vt-ticket-body { display: flex; gap: 1rem; padding: 1rem; flex: 1 1 auto; }
+.vt-ticket-main { flex: 1 1 auto; min-width: 0; }
+.vt-ticket-stub {
+    flex: 0 0 auto; width: 140px; text-align: center;
+    border-left: 2px dashed var(--vt-line); padding-left: 1rem;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .35rem;
+}
+.vt-ticket-stub img { width: 120px; height: 120px; border: 1px solid var(--vt-line); border-radius: 10px; padding: 5px; background: #FFFFFF; }
+.vt-ticket-stub .vt-stub-code { font-weight: 700; letter-spacing: .06em; color: var(--vt-primary); font-size: .85rem; word-break: break-all; }
+.vt-ticket-stub .vt-stub-note { font-size: .75rem; color: var(--vt-muted); line-height: 1.25; }
+.vt-ticket-stub .vt-stub-lock { font-size: 2rem; color: var(--vt-sold); }
+
+/* Đường đi: giờ đi, thời gian, giờ đến */
+.vt-timeline { display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: .75rem; margin-bottom: .9rem; }
+.vt-stop .vt-time { font-size: 1.45rem; font-weight: 700; line-height: 1.1; color: var(--vt-primary); font-variant-numeric: tabular-nums; }
+.vt-stop .vt-date { font-size: .78rem; color: var(--vt-muted); }
+.vt-stop .vt-station { font-weight: 600; margin-top: .25rem; color: var(--vt-text); }
+.vt-stop .vt-addr { font-size: .8rem; color: var(--vt-muted); }
+.vt-stop.vt-end { text-align: right; }
+.vt-mid { display: flex; flex-direction: column; align-items: center; padding-top: .35rem; color: var(--vt-muted); font-size: .75rem; white-space: nowrap; }
+.vt-mid .vt-line { width: 70px; height: 0; border-top: 2px dotted var(--vt-secondary); position: relative; margin: .3rem 0; }
+.vt-mid i { color: var(--vt-primary); font-size: 1.1rem; }
+
+/* Lưới thông tin */
+.vt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem 1rem; }
+.vt-field .vt-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--vt-muted); font-weight: 600; }
+.vt-field .vt-value { font-size: .93rem; font-weight: 600; color: var(--vt-text); word-break: break-word; }
+.vt-field .vt-value.is-big { font-size: 1.25rem; color: var(--vt-primary); }
+
+/* Dải trung chuyển cuối thẻ */
+.vt-foot {
+    border-top: 2px dashed var(--vt-line); padding: .6rem 1rem; font-size: .85rem;
+    background: var(--vt-soft); display: flex; gap: .5rem; align-items: flex-start;
+}
+.vt-foot i { color: var(--vt-primary); margin-top: .1rem; }
+.vt-foot.is-muted { color: var(--vt-muted); }
+
+/* Thẻ thông tin đặt vé (liên hệ, trung chuyển) */
+.vt-info-card { border: 1px solid var(--vt-line); border-radius: 14px; background: #FFFFFF; }
+.vt-info-row { display: flex; gap: .75rem; padding: .6rem 0; border-top: 1px solid var(--vt-line); }
+.vt-info-row:first-of-type { border-top: 0; }
+.vt-info-row .vt-ic {
+    flex: 0 0 auto; width: 36px; height: 36px; border-radius: 10px;
+    background: var(--vt-tint); color: var(--vt-primary);
+    display: flex; align-items: center; justify-content: center; font-size: 1.05rem;
+}
+.vt-info-row .vt-k { font-size: .75rem; color: var(--vt-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.vt-info-row .vt-v { font-weight: 600; word-break: break-word; }
+
+/* ===== Vé điện tử (một vé) ===== */
+.eticket2 { max-width: 760px; margin: 0 auto; }
+.eticket2 .vt-ticket { height: auto; box-shadow: 0 6px 24px rgba(176, 48, 96, .14); }
+.eticket2 .vt-ticket-head { padding: 1rem 1.25rem; }
+.eticket2 .vt-ticket-head .vt-code { font-size: 1.1rem; font-weight: 700; }
+.eticket2 .vt-ticket-body { padding: 1.25rem; }
+.eticket2 .vt-ticket-stub { width: 200px; }
+.eticket2 .vt-ticket-stub img { width: 170px; height: 170px; }
+.eticket2 .vt-section-title { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--vt-primary); margin: 1rem 0 .5rem; }
+.eticket2 .vt-watermark {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-18deg);
+    font-size: 2.6rem; font-weight: 800; letter-spacing: .12em; color: rgba(200, 30, 58, .16);
+    border: 5px solid rgba(200, 30, 58, .16); border-radius: 12px; padding: .1rem 1rem; pointer-events: none; white-space: nowrap;
+}
+
+@media (max-width: 767.98px) {
+    .vt-ticket-body { flex-direction: column; }
+    .vt-ticket-stub { width: auto; border-left: 0; border-top: 2px dashed var(--vt-line); padding: .9rem 0 0; flex-direction: row; justify-content: center; gap: 1rem; text-align: left; }
+    .eticket2 .vt-ticket-stub { width: auto; }
+    .eticket2 .vt-ticket-stub img { width: 140px; height: 140px; }
+}
+@media (max-width: 479.98px) {
+    .vt-timeline { grid-template-columns: 1fr; }
+    .vt-mid { flex-direction: row; gap: .5rem; padding-top: 0; }
+    .vt-mid .vt-line { width: 40px; }
+    .vt-stop.vt-end { text-align: left; }
+}
+
+@media print {
+    .vt-ticket, .eticket2 .vt-ticket { box-shadow: none; }
+    .vt-ticket-head { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

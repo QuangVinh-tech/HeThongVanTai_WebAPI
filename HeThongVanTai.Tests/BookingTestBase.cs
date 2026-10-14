@@ -174,6 +174,7 @@ public abstract class BookingTestBase : IDisposable
         CustomerId = MainCustomer.Id,
         TripId = trip.Id,
         PromoCode = promo,
+        ContactPhone = "0901234567",
         Seats = seats.Select(s => new Models.DTO.SeatDto { SeatCode = s, PassengerName = "Khách " + s }).ToList()
     };
 

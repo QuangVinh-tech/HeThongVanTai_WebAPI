@@ -10,6 +10,7 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/ve-khach.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ticket.css" asp-append-version="true" />
 }
 
 <div class="container py-4">
@@ -31,10 +32,13 @@
 
     <div class="row g-3 mt-1">
         <div class="col-12 col-lg-6">
+            <partial name="~/Views/VeCuaToi/_BookingInfo.cshtml" model="b" />
+        </div>
+        <div class="col-12 col-lg-6">
             <div class="card card-vt p-3 h-100">
                 <h2 class="h6">Thanh toán</h2>
                 <dl class="ticket-info mb-2">
-                    <dt>Đặt lúc</dt><dd>@VeLabels.Time(b.CreatedAt)</dd>
+                    <dt>Số vé</dt><dd>@b.Tickets.Count(t => t.Status == "Active")</dd>
                     @if (b.DiscountAmount > 0)
                     {
                         <dt>Giảm giá</dt><dd>-@VeLabels.Money(b.DiscountAmount)</dd>

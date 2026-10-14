@@ -28,6 +28,60 @@ public class BookingServiceTests : BookingTestBase
     }
 
     [Fact]
+    public async Task DatVe_LuuSoDienThoaiVaTrungChuyen()
+    {
+        var dto = NewBookingDto(MainTrip, null, "A1");
+        dto.NeedTransfer = true;
+        dto.TransferAddress = "  12 Nguyễn Huệ, Quận 1  ";
+
+        var (id, _) = await Svc().CreateAsync(dto);
+
+        Refresh();
+        var b = Db.Bookings.Single(x => x.Id == id);
+        Assert.Equal("0901234567", b.ContactPhone);
+        Assert.True(b.NeedTransfer);
+        Assert.Equal("12 Nguyễn Huệ, Quận 1", b.TransferAddress);
+    }
+
+    [Fact]
+    public async Task DatVe_KhongTrungChuyen_BoQuaDiaChi()
+    {
+        var dto = NewBookingDto(MainTrip, null, "A1");
+        dto.NeedTransfer = false;
+        dto.TransferAddress = "địa chỉ thừa";
+
+        var (id, _) = await Svc().CreateAsync(dto);
+
+        Refresh();
+        var b = Db.Bookings.Single(x => x.Id == id);
+        Assert.False(b.NeedTransfer);
+        Assert.Null(b.TransferAddress);
+    }
+
+    [Fact]
+    public async Task DatVe_TrungChuyenNhungThieuDiaChi_Tra400()
+    {
+        var dto = NewBookingDto(MainTrip, null, "A1");
+        dto.NeedTransfer = true;
+        dto.TransferAddress = "   ";
+
+        var ex = await Assert.ThrowsAsync<ServiceException>(() => Svc().CreateAsync(dto));
+
+        Assert.Equal(400, ex.Status);
+    }
+
+    [Fact]
+    public async Task DatVe_ThieuSoDienThoai_Tra400()
+    {
+        var dto = NewBookingDto(MainTrip, null, "A1");
+        dto.ContactPhone = null;
+
+        var ex = await Assert.ThrowsAsync<ServiceException>(() => Svc().CreateAsync(dto));
+
+        Assert.Equal(400, ex.Status);
+    }
+
+    [Fact]
     public async Task DatVe_GheDaCoNguoiDat_Tra409()
     {
         AddBooking(MainTrip, "Holding", 100_000m, "A1");
