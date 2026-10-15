@@ -1,3 +1,4 @@
+using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Models.DTO;
 using HeThongVanTai.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -13,12 +14,15 @@ public class BookingsController : ControllerBase
 
     private bool IsStaff => User.IsInRole("Admin") || User.IsInRole("Seller");
 
+    // Kế toán chỉ được xem (để đối soát), không đặt, hủy hay đổi vé
+    private bool CanView => IsStaff || User.IsInRole("Accountant");
+
     private IActionResult Deny() =>
         StatusCode(403, new { message = "Bạn không có quyền với đặt vé này." });
 
-    private async Task<bool> CanAccessBookingAsync(int bookingId)
+    private async Task<bool> CanAccessBookingAsync(int bookingId, bool viewOnly = false)
     {
-        if (IsStaff) return true;
+        if (IsStaff || (viewOnly && CanView)) return true;
         var uid = UserClaims.UserId(User);
         return uid != null && await _svc.IsOwnerAsync(bookingId, uid);
     }
@@ -36,7 +40,7 @@ public class BookingsController : ControllerBase
             vehicleTypeId, minPrice, maxPrice, tickets, sort, page, pageSize));
 
     // Đặt vé: khách thường lấy hồ sơ từ token; Admin/Seller (bán tại quầy) gửi customerId trong body
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminSellerCustomer)]
     [HttpPost("api/bookings")]
     public async Task<IActionResult> Create(CreateBookingDto dto)
     {
@@ -50,11 +54,11 @@ public class BookingsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id }, body);
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminSellerCustomer + "," + AppRoles.Accountant)]
     [HttpGet("api/bookings/{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        if (!await CanAccessBookingAsync(id)) return Deny();
+        if (!await CanAccessBookingAsync(id, viewOnly: true)) return Deny();
         return Ok(await _svc.GetAsync(id));
     }
 
@@ -64,7 +68,7 @@ public class BookingsController : ControllerBase
     public async Task<IActionResult> GetByCode(string code) => Ok(await _svc.GetByCodeAsync(code));
 
     // "Vé của tôi"
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminSellerCustomer)]
     [HttpGet("api/bookings/mine")]
     public async Task<IActionResult> Mine([FromQuery] int page = 1, [FromQuery] int pageSize = 10,
         [FromQuery] string? status = null)
@@ -75,7 +79,7 @@ public class BookingsController : ControllerBase
     }
 
     // Chi tiết một đặt vé của chính mình (vé, thanh toán); không xem được đặt vé của người khác
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminSellerCustomer)]
     [HttpGet("api/bookings/mine/{code}")]
     public async Task<IActionResult> MineDetail(string code)
     {
@@ -90,7 +94,7 @@ public class BookingsController : ControllerBase
     public async Task<IActionResult> Lookup(LookupBookingDto dto) => Ok(await _svc.LookupAsync(dto.Code, dto.Contact));
 
     // Xem trước số tiền hoàn trước khi hủy
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminSellerCustomer)]
     [HttpGet("api/bookings/{id:int}/refund-preview")]
     public async Task<IActionResult> RefundPreview(int id)
     {
@@ -98,7 +102,7 @@ public class BookingsController : ControllerBase
         return Ok(await _svc.RefundPreviewAsync(id));
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminSellerCustomer)]
     [HttpPut("api/bookings/{id:int}/cancel")]
     public async Task<IActionResult> Cancel(int id)
     {
@@ -107,7 +111,7 @@ public class BookingsController : ControllerBase
     }
 
     // Quản trị: lọc, sắp xếp, phân trang
-    [Authorize(Roles = "Admin,Seller")]
+    [Authorize(Roles = AppRoles.AdminSellerAccountant)]
     [HttpGet("api/bookings")]
     public async Task<IActionResult> List(
         [FromQuery] string? status, [FromQuery] string? keyword,

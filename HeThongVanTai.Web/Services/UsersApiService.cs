@@ -24,8 +24,11 @@ public class UsersApiService
     public Task<ApiResult<UserItem>> GetAsync(string id) =>
         _api.GetAsync<UserItem>($"api/Users/{Uri.EscapeDataString(id)}");
 
-    public Task<ApiResult<UserItem>> UpdateRolesAsync(string id, IEnumerable<string> roles) =>
-        _api.PutAsync<UserItem>($"api/Users/{Uri.EscapeDataString(id)}/roles", new { roles = roles.ToArray() });
+    public Task<ApiResult<UserItem>> UpdateRolesAsync(string id, IEnumerable<string> roles, int? driverId = null) =>
+        _api.PutAsync<UserItem>($"api/Users/{Uri.EscapeDataString(id)}/roles", new { roles = roles.ToArray(), driverId });
+
+    public Task<ApiResult<List<DriverProfileItem>>> GetDriverProfilesAsync() =>
+        _api.GetAsync<List<DriverProfileItem>>("api/Users/driver-profiles");
 
     public Task<ApiResult<UserItem>> SetLockAsync(string id, bool locked) =>
         _api.PatchAsync<UserItem>($"api/Users/{Uri.EscapeDataString(id)}/lock", new { locked });

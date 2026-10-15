@@ -83,6 +83,13 @@ namespace HeThongVanTai.Migrations.VanTaiAuthDb
                             ConcurrencyStamp = "a0000000-0000-4000-8000-000000000005",
                             Name = "Customer",
                             NormalizedName = "CUSTOMER"
+                        },
+                        new
+                        {
+                            Id = "a0000000-0000-4000-8000-000000000006",
+                            ConcurrencyStamp = "a0000000-0000-4000-8000-000000000006",
+                            Name = "Driver",
+                            NormalizedName = "DRIVER"
                         });
                 });
 

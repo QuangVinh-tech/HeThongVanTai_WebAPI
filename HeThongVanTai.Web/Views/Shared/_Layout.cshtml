@@ -40,7 +40,19 @@
                                 <a class="nav-link" asp-controller="Reports" asp-action="Index">Báo cáo</a>
                             </li>
                         }
-                        @if (User.Identity?.IsAuthenticated == true)
+                        @if (User.IsInRole(AppRoles.Seller) && !User.IsInRole(AppRoles.Admin))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="AdminBookings" asp-action="Index">Quản lý đặt vé</a>
+                            </li>
+                        }
+                        @if (User.IsInRole(AppRoles.Driver))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="DriverTrips" asp-action="Index">Chuyến của tôi</a>
+                            </li>
+                        }
+                        @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Seller) || User.IsInRole(AppRoles.Customer))
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="VeCuaToi" asp-action="Index">Vé của tôi</a>
@@ -61,8 +73,12 @@
                                     <i class="bi bi-person-circle me-1"></i>@User.Identity.Name
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" asp-controller="VeCuaToi" asp-action="Index">Vé của tôi</a></li>
-                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Profile">Hồ sơ cá nhân</a></li>
+                                    @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Seller) || User.IsInRole(AppRoles.Customer))
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="VeCuaToi" asp-action="Index">Vé của tôi</a></li>
+                                        <li><hr class="dropdown-divider" /></li>
+                                    }
                                     <li>
                                         <form asp-controller="Account" asp-action="Logout" method="post">
                                             <button type="submit" class="dropdown-item">Đăng xuất</button>

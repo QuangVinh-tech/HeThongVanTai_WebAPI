@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using HeThongVanTai.Web.Infrastructure;
 using HeThongVanTai.Web.Models.ViewModels.VeKhach;
 using HeThongVanTai.Web.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace HeThongVanTai.Web.Controllers;
 
 // Khách đã đăng nhập xem vé của chính mình. API kiểm tra lại quyền sở hữu ở mọi lời gọi.
-[Authorize]
+[Authorize(Roles = AppRoles.AdminSellerCustomer)]
 [Route("VeCuaToi")]
 public class VeCuaToiController : Controller
 {
