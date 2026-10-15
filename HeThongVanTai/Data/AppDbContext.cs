@@ -48,6 +48,12 @@ namespace HeThongVanTai.Data
             modelBuilder.Entity<Review>()
                 .HasIndex(r => r.TripId);
 
+            // Một tài khoản chỉ liên kết với một hồ sơ tài xế
+            modelBuilder.Entity<Driver>()
+                .HasIndex(d => d.UserId)
+                .IsUnique()
+                .HasFilter("[UserId] IS NOT NULL");
+
             // Mỗi mã giao dịch SePay chỉ được gắn với một thanh toán.
             // Cho phép nhiều bản ghi Payment có giá trị null.
             modelBuilder.Entity<Payment>()

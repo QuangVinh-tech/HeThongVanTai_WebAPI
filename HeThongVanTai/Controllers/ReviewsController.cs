@@ -15,7 +15,7 @@ public class ReviewsController : ControllerBase
     public ReviewsController(AppDbContext db) => _db = db;
 
     // Khách đã đi đánh giá chuyến: 1 vé đánh giá 1 lần
-    [Authorize]
+    [Authorize(Roles = AppRoles.Customer)]
     [HttpPost("api/reviews")]
     public async Task<IActionResult> Create(CreateReviewDto dto)
     {
@@ -75,7 +75,7 @@ public class ReviewsController : ControllerBase
     }
 
     // Danh sách TicketId mình đã đánh giá, để trang "Vé của tôi" ẩn nút Đánh giá
-    [Authorize]
+    [Authorize(Roles = AppRoles.Customer)]
     [HttpGet("api/reviews/mine")]
     public async Task<IActionResult> Mine()
     {

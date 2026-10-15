@@ -1,4 +1,5 @@
-﻿using HeThongVanTai.Models.DTO;
+﻿using HeThongVanTai.Models.Domain;
+using HeThongVanTai.Models.DTO;
 using HeThongVanTai.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -32,7 +33,7 @@ public class TicketsController : ControllerBase
     }
 
     // Đổi ghế hoặc đổi chuyến: chủ vé hoặc Admin/Seller
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminSellerCustomer)]
     [HttpPut("{id:int}/change")]
     public async Task<IActionResult> Change(int id, ChangeTicketDto dto)
     {

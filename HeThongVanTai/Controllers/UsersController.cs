@@ -1,3 +1,4 @@
+using HeThongVanTai.Data;
 using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -15,20 +16,25 @@ namespace HeThongVanTai.Controllers
     public class UsersController : ControllerBase
     {
         private static readonly string[] AllRoles =
-            { AppRoles.Admin, AppRoles.Operator, AppRoles.Seller, AppRoles.Accountant, AppRoles.Customer };
+            { AppRoles.Admin, AppRoles.Operator, AppRoles.Seller, AppRoles.Accountant, AppRoles.Driver, AppRoles.Customer };
 
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly AppDbContext _db;   // hồ sơ tài xế nằm ở CSDL nghiệp vụ
         private readonly ILogger<UsersController> _logger;
 
-        public UsersController(UserManager<IdentityUser> userManager, ILogger<UsersController> logger)
+        public UsersController(UserManager<IdentityUser> userManager, AppDbContext db, ILogger<UsersController> logger)
         {
             _userManager = userManager;
+            _db = db;
             _logger = logger;
         }
 
         public class UpdateRolesDto
         {
             public string[] Roles { get; set; } = Array.Empty<string>();
+
+            // Hồ sơ tài xế để liên kết khi gán vai trò Driver (bỏ trống nếu tài khoản đã liên kết sẵn)
+            public int? DriverId { get; set; }
         }
 
         public class LockUserDto
@@ -39,17 +45,33 @@ namespace HeThongVanTai.Controllers
         private static bool IsLocked(IdentityUser u) =>
             u.LockoutEnd != null && u.LockoutEnd > DateTimeOffset.UtcNow;
 
-        private static object Shape(IdentityUser u, IEnumerable<string> roles) => new
+        private static object Shape(IdentityUser u, IEnumerable<string> roles, Driver? driver = null) => new
         {
             u.Id,
             u.Email,
             Roles = roles.OrderBy(r => r).ToList(),
-            IsLocked = IsLocked(u)
+            IsLocked = IsLocked(u),
+            DriverId = driver?.Id,
+            DriverName = driver?.FullName
         };
+
+        private Task<Driver?> FindLinkedDriverAsync(string userId) =>
+            _db.Drivers.AsNoTracking().FirstOrDefaultAsync(d => d.UserId == userId);
 
         // GET: /api/Users/roles
         [HttpGet("roles")]
         public IActionResult GetRoles() => Ok(AllRoles);
+
+        // GET: /api/Users/driver-profiles : hồ sơ tài xế để chọn khi gán vai trò Driver
+        [HttpGet("driver-profiles")]
+        public async Task<IActionResult> GetDriverProfiles()
+        {
+            var items = await _db.Drivers.AsNoTracking()
+                .OrderBy(d => d.FullName)
+                .Select(d => new { d.Id, d.FullName, d.Phone, d.LicenseNo, LinkedUserId = d.UserId })
+                .ToListAsync();
+            return Ok(items);
+        }
 
         // GET: /api/Users?keyword=&role=&page=1&pageSize=10
         [HttpGet]
@@ -80,9 +102,14 @@ namespace HeThongVanTai.Controllers
                 .Skip((page - 1) * pageSize).Take(pageSize)
                 .ToListAsync();
 
+            var userIds = users.Select(u => u.Id).ToList();
+            var links = await _db.Drivers.AsNoTracking()
+                .Where(d => d.UserId != null && userIds.Contains(d.UserId))
+                .ToDictionaryAsync(d => d.UserId!);
+
             var items = new List<object>();
             foreach (var u in users)
-                items.Add(Shape(u, await _userManager.GetRolesAsync(u)));
+                items.Add(Shape(u, await _userManager.GetRolesAsync(u), links.GetValueOrDefault(u.Id)));
 
             return Ok(new { Items = items, Total = total, Page = page, PageSize = pageSize });
         }
@@ -93,7 +120,7 @@ namespace HeThongVanTai.Controllers
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null) return NotFound(new { message = "Không tìm thấy người dùng." });
-            return Ok(Shape(user, await _userManager.GetRolesAsync(user)));
+            return Ok(Shape(user, await _userManager.GetRolesAsync(user), await FindLinkedDriverAsync(user.Id)));
         }
 
         // PUT: /api/Users/{id}/roles  body: { "roles": ["Seller", "Customer"] }
@@ -111,6 +138,22 @@ namespace HeThongVanTai.Controllers
             if (user == null) return NotFound(new { message = "Không tìm thấy người dùng." });
 
             var current = (await _userManager.GetRolesAsync(user)).ToList();
+
+            // Vai trò Tài xế phải gắn với một hồ sơ tài xế (Driver.UserId); kiểm tra trước khi đổi vai trò
+            var wantsDriver = roles.Contains(AppRoles.Driver);
+            var linked = await _db.Drivers.FirstOrDefaultAsync(d => d.UserId == user.Id);
+            Driver? targetDriver = null;
+            if (wantsDriver)
+            {
+                var driverId = dto.DriverId ?? linked?.Id;
+                if (driverId == null)
+                    return BadRequest(new { message = "Hãy chọn hồ sơ tài xế để liên kết với tài khoản Tài xế." });
+                targetDriver = await _db.Drivers.FirstOrDefaultAsync(d => d.Id == driverId);
+                if (targetDriver == null)
+                    return BadRequest(new { message = "Không tìm thấy hồ sơ tài xế đã chọn." });
+                if (targetDriver.UserId != null && targetDriver.UserId != user.Id)
+                    return BadRequest(new { message = "Hồ sơ tài xế này đã được liên kết với một tài khoản khác." });
+            }
 
             // Không để hệ thống mất quản trị viên
             if (current.Contains(AppRoles.Admin) && !roles.Contains(AppRoles.Admin))
@@ -138,9 +181,21 @@ namespace HeThongVanTai.Controllers
                     return BadRequest(new { message = string.Join(" ", removed.Errors.Select(e => e.Description)) });
             }
 
+            // Cập nhật liên kết hồ sơ tài xế: gỡ liên kết cũ trước rồi mới gán mới (chỉ mục duy nhất theo UserId)
+            if (linked != null && (!wantsDriver || linked.Id != targetDriver!.Id))
+            {
+                linked.UserId = null;
+                await _db.SaveChangesAsync();
+            }
+            if (targetDriver != null && targetDriver.UserId != user.Id)
+            {
+                targetDriver.UserId = user.Id;
+                await _db.SaveChangesAsync();
+            }
+
             _logger.LogInformation("{Admin} đổi vai trò của {Email}: {Roles}",
                 UserClaims.Email(User), user.Email, string.Join(",", roles));
-            return Ok(Shape(user, roles));
+            return Ok(Shape(user, roles, targetDriver));
         }
 
         // PATCH: /api/Users/{id}/lock  body: { "locked": true }
@@ -174,7 +229,7 @@ namespace HeThongVanTai.Controllers
 
             _logger.LogInformation("{Admin} {Action} tài khoản {Email}",
                 UserClaims.Email(User), dto.Locked ? "khóa" : "mở khóa", user.Email);
-            return Ok(Shape(user, await _userManager.GetRolesAsync(user)));
+            return Ok(Shape(user, await _userManager.GetRolesAsync(user), await FindLinkedDriverAsync(user.Id)));
         }
     }
 }

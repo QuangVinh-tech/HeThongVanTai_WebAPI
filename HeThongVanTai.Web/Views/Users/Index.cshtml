@@ -88,6 +88,10 @@
                                 {
                                     <span class="pill pill-info me-1">@RoleLabels.Of(r)</span>
                                 }
+                                @if (!string.IsNullOrWhiteSpace(u.DriverName))
+                                {
+                                    <div class="small text-muted mt-1"><i class="bi bi-person-badge me-1"></i>Hồ sơ: @u.DriverName</div>
+                                }
                             </td>
                             <td>
                                 @if (u.IsLocked)

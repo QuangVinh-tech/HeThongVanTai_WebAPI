@@ -15,6 +15,15 @@ namespace HeThongVanTai.Models.DTO
         [Required] public string Password { get; set; } = "";
     }
 
+    public class ChangePasswordDTO
+    {
+        [Required(ErrorMessage = "Vui lòng nhập mật khẩu hiện tại.")]
+        public string CurrentPassword { get; set; } = "";
+
+        [Required(ErrorMessage = "Vui lòng nhập mật khẩu mới.")]
+        public string NewPassword { get; set; } = "";
+    }
+
     public class LoginResponseDTO
     {
         public string JwtToken { get; set; } = "";

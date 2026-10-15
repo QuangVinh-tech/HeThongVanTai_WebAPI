@@ -13,5 +13,10 @@ namespace HeThongVanTai.Models.Domain
         public DateTime? LicenseExpiry { get; set; }
         public string Status { get; set; } = "Active";
         public string? AvatarUrl { get; set; }
+
+        // Id tài khoản đăng nhập (AspNetUsers.Id) của tài xế; null nếu tài xế chưa có tài khoản.
+        // Chỉ đặt qua trang Người dùng của Admin, không nhận từ client khi tạo hoặc sửa hồ sơ.
+        [System.ComponentModel.DataAnnotations.MaxLength(450)]
+        public string? UserId { get; set; }
     }
 }

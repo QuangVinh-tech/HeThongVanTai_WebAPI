@@ -13,7 +13,7 @@ Tài liệu API: [docs/api.md](docs/api.md). Quy ước riêng của project Web
 
 - **Khách hàng:** đăng ký, đăng nhập, tìm chuyến, chọn ghế, đặt vé, thanh toán, vé điện tử QR, tra cứu vé, hủy hoặc đổi vé, đánh giá chuyến đi.
 - **Quản trị:** Tổng quan (chỉ số, biểu đồ doanh thu, cảnh báo), Bến xe, Tuyến đường, Loại xe và sơ đồ ghế, Người dùng và vai trò, Báo cáo doanh thu (xuất Excel), quản lý xe, tài xế, chuyến xe, khuyến mãi.
-- **Vai trò:** `Admin`, `Operator` (điều hành), `Seller` (bán vé), `Accountant` (kế toán), `Customer` (khách hàng).
+- **Vai trò:** `Admin`, `Operator` (điều hành), `Seller` (bán vé), `Accountant` (kế toán), `Driver` (tài xế, liên kết với hồ sơ tài xế qua `Driver.UserId`), `Customer` (khách hàng).
 
 ## Yêu cầu
 

@@ -6,7 +6,7 @@
 
 - **Xác thực:** JWT. Đăng nhập tại `POST /api/Auth/Login`, lấy `jwtToken`, gửi kèm mọi lời gọi: `Authorization: Bearer <token>`. Token sống 60 phút.
 - **Mặc định phải đăng nhập.** API công khai được ghi rõ `[AllowAnonymous]` (cột Quyền ghi "Mọi người").
-- **Vai trò:** `Admin`, `Operator`, `Seller`, `Accountant`, `Customer`. Vai trò nằm trong token, nên đổi vai trò có hiệu lực ở lần đăng nhập sau.
+- **Vai trò:** `Admin`, `Operator`, `Seller`, `Accountant`, `Driver` (tài xế), `Customer`. Vai trò nằm trong token, nên đổi vai trò có hiệu lực ở lần đăng nhập sau.
 - **Lỗi nghiệp vụ** trả JSON `{ "message": "..." }` kèm mã 400, 404 hoặc 409. Lỗi dữ liệu nhập trả 400 theo chuẩn ProblemDetails. Chưa đăng nhập: 401. Không đủ quyền: 403.
 - **Ngày giờ** theo giờ máy chủ. Tham số ngày dạng `yyyy-MM-dd`.
 - **Phân trang:** tên tham số và dạng kết quả khác nhau giữa các API. Người dùng, báo cáo, đặt vé dùng `page`, `pageSize`; xe, tài xế, chuyến xe dùng `pageNumber`, `pageSize`, `sortBy`, `isAscending`. Xem Swagger để biết chính xác từng API.
@@ -22,6 +22,7 @@
 | POST | `/api/Auth/resend-otp` | Mọi người | Body `{ email }`. Gửi lại mã, tối thiểu 60 giây một lần (429 nếu gửi dồn). Luôn trả cùng một thông báo. |
 | POST | `/api/Auth/Login` | Mọi người | Đăng nhập, trả `{ jwtToken }`. Tài khoản bị khóa hoặc chưa xác thực email trả 403. |
 | GET | `/api/Auth/me` | Đăng nhập | Email và vai trò của token hiện tại. |
+| POST | `/api/Auth/change-password` | Đăng nhập (mọi vai trò) | Đổi mật khẩu của chính mình. Body `{ currentPassword, newPassword }`. Sai mật khẩu hiện tại, mật khẩu mới trùng mật khẩu cũ hoặc không đạt quy tắc thì trả 400 kèm `message`. Mật khẩu không được ghi vào log. |
 
 ## Người dùng – `/api/Users` (chỉ Admin)
 
@@ -29,8 +30,9 @@
 |---|---|---|
 | GET | `/api/Users/roles` | Danh sách vai trò trong hệ thống. |
 | GET | `/api/Users?keyword=&role=&page=1&pageSize=10` | Danh sách, tìm theo email, lọc theo vai trò, phân trang (tối đa 50/trang). |
-| GET | `/api/Users/{id}` | Một người dùng. |
-| PUT | `/api/Users/{id}/roles` | Đổi vai trò. Body `{ "roles": ["Seller"] }`. Ít nhất 1 vai trò; không bỏ Admin của chính mình hoặc Admin cuối cùng. |
+| GET | `/api/Users/driver-profiles` | Danh sách hồ sơ tài xế (kèm `linkedUserId`) để chọn khi gán vai trò Driver. |
+| GET | `/api/Users/{id}` | Một người dùng (kèm `driverId`, `driverName` nếu đã liên kết hồ sơ tài xế). |
+| PUT | `/api/Users/{id}/roles` | Đổi vai trò. Body `{ "roles": ["Seller"] }`; vai trò `Driver` cần thêm `"driverId"` (hồ sơ tài xế chưa liên kết tài khoản khác), bỏ vai trò Driver thì gỡ liên kết. Ít nhất 1 vai trò; không bỏ Admin của chính mình hoặc Admin cuối cùng. |
 | PATCH | `/api/Users/{id}/lock` | Khóa hoặc mở khóa. Body `{ "locked": true }`. Không tự khóa mình, không khóa Admin cuối cùng. |
 
 ## Tổng quan và báo cáo
@@ -85,8 +87,8 @@ Cách tính doanh thu: tiền đã thu (`Paid`) trừ tiền đã hoàn (`Refund
 
 | Phương thức | Đường dẫn | Quyền | Mô tả |
 |---|---|---|---|
-| POST | `/api/bookings` | Đăng nhập | Đặt vé, giữ ghế (hết hạn sau `Booking:HoldMinutes`), áp mã khuyến mãi. Body cần thêm `contactPhone` (bắt buộc, 10 số), `needTransfer` (true/false) và `transferAddress` (bắt buộc khi `needTransfer` = true, tối đa 300 ký tự). |
-| GET | `/api/bookings` | Admin, Seller | Danh sách đặt vé (lọc, sắp xếp, phân trang). |
+| POST | `/api/bookings` | Customer, Seller, Admin | Đặt vé, giữ ghế (hết hạn sau `Booking:HoldMinutes`), áp mã khuyến mãi. Body cần thêm `contactPhone` (bắt buộc, 10 số), `needTransfer` (true/false) và `transferAddress` (bắt buộc khi `needTransfer` = true, tối đa 300 ký tự). |
+| GET | `/api/bookings` | Admin, Seller, Accountant | Danh sách đặt vé (lọc, sắp xếp, phân trang). |
 | GET | `/api/bookings/{id}` | Đăng nhập | Chi tiết booking. |
 | GET | `/api/bookings/by-code/{code}` | Mọi người | Tra cứu booking theo mã. |
 | GET | `/api/bookings/mine` | Đăng nhập | Booking của chính mình; tham số `page`, `pageSize`, `status` (Holding, Paid, Cancelled, Expired). |

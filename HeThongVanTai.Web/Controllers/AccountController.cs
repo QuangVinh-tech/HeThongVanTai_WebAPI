@@ -87,6 +87,14 @@ public class AccountController : Controller
         {
             return RedirectToAction("Index", "Reports");
         }
+        if (info.Principal.IsInRole(AppRoles.Seller))
+        {
+            return RedirectToAction("Index", "AdminBookings");   // /Admin/Bookings
+        }
+        if (info.Principal.IsInRole(AppRoles.Driver))
+        {
+            return RedirectToAction("Index", "DriverTrips");     // /Driver/Trips
+        }
         return RedirectToAction("Index", "Home");
     }
 
@@ -183,6 +191,54 @@ public class AccountController : Controller
         _logger.LogInformation("Đăng xuất Web: {Email}", Safe(User.Identity?.Name));
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return RedirectToAction("Index", "Home");
+    }
+
+    // Hồ sơ cá nhân: mọi tài khoản đã đăng nhập
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> Profile() => View(await BuildProfileAsync(new ChangePasswordViewModel()));
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword([Bind(Prefix = "Password")] ChangePasswordViewModel model)
+    {
+        if (!ModelState.IsValid)
+            return View("Profile", await BuildProfileAsync(new ChangePasswordViewModel()));
+
+        // Chỉ ghi email, không ghi mật khẩu
+        var result = await _api.PostAsync<MessageResponse>("api/Auth/change-password",
+            new { currentPassword = model.CurrentPassword, newPassword = model.NewPassword });
+
+        if (!result.Ok)
+        {
+            _logger.LogWarning("Đổi mật khẩu Web thất bại: {Email} (API trả {Status})", Safe(User.Identity?.Name), result.Status);
+            ModelState.AddModelError(string.Empty, result.Error ?? "Không đổi được mật khẩu. Vui lòng thử lại.");
+            return View("Profile", await BuildProfileAsync(new ChangePasswordViewModel()));
+        }
+
+        _logger.LogInformation("Đổi mật khẩu Web thành công: {Email}", Safe(User.Identity?.Name));
+        TempData["Success"] = "Đã đổi mật khẩu thành công.";
+        return RedirectToAction(nameof(Profile));
+    }
+
+    // Lấy email và vai trò từ API (/api/Auth/me); nếu API lỗi thì dùng thông tin trong cookie đăng nhập
+    private async Task<ProfileViewModel> BuildProfileAsync(ChangePasswordViewModel password)
+    {
+        var vm = new ProfileViewModel { Password = password };
+        var me = await _api.GetAsync<MeResponse>("api/Auth/me");
+        if (me.Ok && me.Data != null)
+        {
+            vm.Email = me.Data.Email ?? User.Identity?.Name;
+            vm.Roles = me.Data.Roles;
+        }
+        else
+        {
+            vm.Email = User.Identity?.Name;
+            vm.Roles = User.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
+            vm.LoadError = "Chưa lấy được thông tin mới nhất từ máy chủ, đang hiển thị thông tin lúc đăng nhập.";
+        }
+        return vm;
     }
 
     [AllowAnonymous]

@@ -42,7 +42,9 @@ public class UsersController : Controller
             TempData["Error"] = result.Error ?? "Không tìm thấy người dùng.";
             return RedirectToAction(nameof(Index));
         }
-        return View(ToForm(result.Data));
+        var form = ToForm(result.Data);
+        await LoadDriverProfilesAsync(form);
+        return View(form);
     }
 
     [HttpPost("{id}/Roles")]
@@ -56,14 +58,21 @@ public class UsersController : Controller
         if (selected.Count == 0)
         {
             ModelState.AddModelError(string.Empty, "Phải chọn ít nhất một vai trò.");
-            return await ShowRolesWithError(id, selected);
+            return await ShowRolesWithError(id, selected, model.DriverId);
         }
 
-        var result = await _svc.UpdateRolesAsync(id, selected);
+        // Vai trò Tài xế bắt buộc chọn hồ sơ tài xế để liên kết
+        if (selected.Contains(AppRoles.Driver) && model.DriverId is null or 0)
+        {
+            ModelState.AddModelError(string.Empty, "Hãy chọn hồ sơ tài xế để liên kết với tài khoản Tài xế.");
+            return await ShowRolesWithError(id, selected, model.DriverId);
+        }
+
+        var result = await _svc.UpdateRolesAsync(id, selected, selected.Contains(AppRoles.Driver) ? model.DriverId : null);
         if (!result.Ok)
         {
             ModelState.AddModelError(string.Empty, result.Error ?? "Không lưu được vai trò. Vui lòng thử lại.");
-            return await ShowRolesWithError(id, selected);
+            return await ShowRolesWithError(id, selected, model.DriverId);
         }
 
         _logger.LogInformation("{Admin} đổi vai trò người dùng {UserId}: {Roles}",
@@ -96,7 +105,7 @@ public class UsersController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    private async Task<IActionResult> ShowRolesWithError(string id, List<string> selected)
+    private async Task<IActionResult> ShowRolesWithError(string id, List<string> selected, int? driverId)
     {
         var current = await _svc.GetAsync(id);
         if (!current.Ok || current.Data == null)
@@ -106,7 +115,23 @@ public class UsersController : Controller
         }
         var form = ToForm(current.Data);
         form.SelectedRoles = selected;   // giữ nguyên lựa chọn người dùng vừa chọn
+        form.DriverId = driverId ?? form.DriverId;
+        await LoadDriverProfilesAsync(form);
         return View("Roles", form);
+    }
+
+    // Danh sách hồ sơ tài xế còn trống hoặc đang liên kết với chính tài khoản này
+    private async Task LoadDriverProfilesAsync(UserRolesForm form)
+    {
+        var profiles = await _svc.GetDriverProfilesAsync();
+        if (!profiles.Ok || profiles.Data == null)
+        {
+            ViewData["DriverProfilesError"] = profiles.Error ?? "Không tải được danh sách hồ sơ tài xế.";
+            return;
+        }
+        form.DriverProfiles = profiles.Data
+            .Where(d => d.LinkedUserId == null || d.LinkedUserId == form.Id)
+            .ToList();
     }
 
     private UserRolesForm ToForm(UserItem user) => new()
@@ -114,6 +139,7 @@ public class UsersController : Controller
         Id = user.Id,
         Email = user.Email,
         IsSelf = string.Equals(user.Email, User.Identity?.Name, StringComparison.OrdinalIgnoreCase),
-        SelectedRoles = user.Roles.ToList()
+        SelectedRoles = user.Roles.ToList(),
+        DriverId = user.DriverId
     };
 }

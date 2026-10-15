@@ -29,6 +29,31 @@
             </div>
         }
 
+        <div id="driverProfileBox" class="mt-3 p-3 rounded-3" style="background: var(--vt-soft);" hidden>
+            <label class="form-label small mb-1" for="DriverId">Hồ sơ tài xế liên kết <span class="text-danger">*</span></label>
+            <select id="DriverId" name="DriverId" class="form-select">
+                <option value="">Chọn hồ sơ tài xế</option>
+                @foreach (var d in Model.DriverProfiles)
+                {
+                    <option value="@d.Id" selected="@(Model.DriverId == d.Id)">
+                        @d.FullName@(string.IsNullOrWhiteSpace(d.Phone) ? "" : " - " + d.Phone)@(string.IsNullOrWhiteSpace(d.LicenseNo) ? "" : " (GPLX " + d.LicenseNo + ")")
+                    </option>
+                }
+            </select>
+            @if (ViewData["DriverProfilesError"] is string dpErr)
+            {
+                <div class="small text-danger mt-1">@dpErr</div>
+            }
+            else if (Model.DriverProfiles.Count == 0)
+            {
+                <div class="small text-muted mt-1">Chưa có hồ sơ tài xế trống. Hãy tạo hồ sơ ở trang Tài xế trước.</div>
+            }
+            else
+            {
+                <div class="form-text">Tài xế chỉ thấy chuyến được phân công cho hồ sơ này. Mỗi hồ sơ chỉ liên kết một tài khoản.</div>
+            }
+        </div>
+
         @if (Model.IsSelf)
         {
             <p class="small text-muted mt-3 mb-0">Đây là tài khoản của bạn: không thể tự bỏ vai trò Quản trị viên.</p>
@@ -41,3 +66,17 @@
         </div>
     </form>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var cb = document.getElementById('role-Driver');
+            var box = document.getElementById('driverProfileBox');
+            var sel = document.getElementById('DriverId');
+            if (!cb || !box) return;
+            function sync() { box.hidden = !cb.checked; sel.required = cb.checked; }
+            cb.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
+}

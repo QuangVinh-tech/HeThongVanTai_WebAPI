@@ -112,7 +112,7 @@ public class PromotionsController : ControllerBase
     }
 
     // Khách xem trước số tiền giảm (phải đăng nhập)
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminSellerCustomer)]
     [HttpPost("validate")]
     public async Task<IActionResult> ValidateCode(ValidatePromoDto dto)
     {

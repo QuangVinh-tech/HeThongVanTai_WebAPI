@@ -29,6 +29,9 @@
                        asp-controller="VehicleTypes" asp-action="Index">
                         <i class="bi bi-grid-3x3-gap me-2"></i>Loại xe và ghế
                     </a>
+                }
+                @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Seller))
+                {
                     <a class="nav-link @(currentController == "AdminBookings" ? "active" : "")"
                        asp-controller="AdminBookings" asp-action="Index">
                         <i class="bi bi-ticket-perforated me-2"></i>Đặt vé
@@ -49,20 +52,23 @@
                     </a>
                 }
 
-                <a class="nav-link @(currentController == "AdminTrips" ? "active" : "")"
-                   asp-controller="AdminTrips" asp-action="Index">
-                    <i class="bi bi-bus-front me-2"></i>Chuyến xe
-                </a>
+                @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Operator))
+                {
+                    <a class="nav-link @(currentController == "AdminTrips" ? "active" : "")"
+                       asp-controller="AdminTrips" asp-action="Index">
+                        <i class="bi bi-bus-front me-2"></i>Chuyến xe
+                    </a>
 
-                <a class="nav-link @(currentController == "Vehicles" ? "active" : "")"
-                   asp-controller="Vehicles" asp-action="Index">
-                    <i class="bi bi-bus-front me-2"></i>Xe
-                </a>
+                    <a class="nav-link @(currentController == "Vehicles" ? "active" : "")"
+                       asp-controller="Vehicles" asp-action="Index">
+                        <i class="bi bi-bus-front me-2"></i>Xe
+                    </a>
 
-                <a class="nav-link @(currentController == "Drivers" ? "active" : "")"
-                   asp-controller="Drivers" asp-action="Index">
-                    <i class="bi bi-person-badge me-2"></i>Tài xế
-                </a>
+                    <a class="nav-link @(currentController == "Drivers" ? "active" : "")"
+                       asp-controller="Drivers" asp-action="Index">
+                        <i class="bi bi-person-badge me-2"></i>Tài xế
+                    </a>
+                }
 
                 @if (User.IsInRole(AppRoles.Admin))
                 {

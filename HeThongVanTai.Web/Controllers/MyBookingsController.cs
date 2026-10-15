@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace HeThongVanTai.Web.Controllers;
 
 /// <summary>Vé của tôi: lịch sử, hủy vé, đổi ghế (/Account/MyBookings). Phải đăng nhập.</summary>
-[Authorize]
+[Authorize(Roles = AppRoles.AdminSellerCustomer)]
 [Route("Account/MyBookings")]
 public class MyBookingsController : Controller
 {

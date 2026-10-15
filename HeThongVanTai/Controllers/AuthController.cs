@@ -197,7 +197,50 @@ namespace HeThongVanTai.Controllers
             Roles = User.FindAll(ClaimTypes.Role).Select(r => r.Value)
         });
 
+        // POST: /api/Auth/change-password  body: { "currentPassword": "...", "newPassword": "..." }
+        // Mọi vai trò đã đăng nhập đổi được mật khẩu của chính mình; phải nhập đúng mật khẩu cũ.
+        // Không ghi mật khẩu (cũ hay mới) vào log.
+        [Authorize]
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO dto)
+        {
+            var userId = UserClaims.UserId(User);
+            var user = userId == null ? null : await _userManager.FindByIdAsync(userId);
+            if (user == null) return Unauthorized();
+
+            if (dto.NewPassword == dto.CurrentPassword)
+                return BadRequest(new { message = "Mật khẩu mới phải khác mật khẩu hiện tại." });
+
+            var result = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
+            if (!result.Succeeded)
+            {
+                if (result.Errors.Any(e => e.Code == "PasswordMismatch"))
+                {
+                    _logger.LogWarning("Đổi mật khẩu thất bại (sai mật khẩu hiện tại): {Email}", user.Email);
+                    return BadRequest(new { message = "Mật khẩu hiện tại không đúng." });
+                }
+
+                _logger.LogWarning("Đổi mật khẩu thất bại (mật khẩu mới không hợp lệ): {Email}", user.Email);
+                return BadRequest(new { message = string.Join(" ", result.Errors.Select(PasswordErrorText)) });
+            }
+
+            _logger.LogInformation("Đổi mật khẩu thành công: {Email}", user.Email);
+            return Ok(new { message = "Đã đổi mật khẩu." });
+        }
+
         // ---------- hàm phụ ----------
+
+        // Việt hóa các lỗi mật khẩu thường gặp của Identity
+        private static string PasswordErrorText(IdentityError e) => e.Code switch
+        {
+            "PasswordTooShort" => "Mật khẩu mới quá ngắn (tối thiểu 6 ký tự).",
+            "PasswordRequiresDigit" => "Mật khẩu mới phải có ít nhất một chữ số.",
+            "PasswordRequiresLower" => "Mật khẩu mới phải có ít nhất một chữ thường.",
+            "PasswordRequiresUpper" => "Mật khẩu mới phải có ít nhất một chữ hoa.",
+            "PasswordRequiresNonAlphanumeric" => "Mật khẩu mới phải có ít nhất một ký tự đặc biệt.",
+            "PasswordRequiresUniqueChars" => "Mật khẩu mới có quá ít ký tự khác nhau.",
+            _ => e.Description
+        };
 
         private static string CooldownKey(string email) => "otp-resend:" + email.Trim().ToLowerInvariant();
 

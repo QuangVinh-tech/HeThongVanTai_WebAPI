@@ -1,4 +1,5 @@
 ﻿
+using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Models.DTO;
 using HeThongVanTai.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -79,7 +80,7 @@ public class PaymentsController : ControllerBase
     // Tạo thanh toán.
     // Khách: chỉ tạo thanh toán cho đặt vé của chính mình.
     // Nhân viên: được tạo thanh toán theo quyền hệ thống.
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminSellerCustomer)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] PayDto dto)
     {
@@ -139,7 +140,7 @@ public class PaymentsController : ControllerBase
     }
 
     // Nhân viên có quyền xác nhận thanh toán thủ công.
-    [Authorize(Roles = "Admin,Seller,Accountant")]
+    [Authorize(Roles = AppRoles.AdminSellerAccountant)]
     [HttpPut("{id:int}/confirm")]
     public async Task<IActionResult> Confirm(int id)
     {
@@ -158,7 +159,7 @@ public class PaymentsController : ControllerBase
     }
 
     // Tra cứu thanh toán của một đặt vé.
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminSellerCustomer + "," + AppRoles.Accountant)]
     [HttpGet("booking/{bookingId:int}")]
     public async Task<IActionResult> ByBooking(int bookingId)
     {
