@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using HeThongVanTai.Data;
 using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Models.DTO;
+using HeThongVanTai.Services.Audit;
 
 namespace HeThongVanTai.Controllers
 {
@@ -14,9 +15,12 @@ namespace HeThongVanTai.Controllers
     {
         private readonly AppDbContext _context;
 
-        public DanhMucController(AppDbContext context)
+        private readonly IAuditService? _audit;
+
+        public DanhMucController(AppDbContext context, IAuditService? audit = null)
         {
             _context = context;
+            _audit = audit;
         }
 
         [AllowAnonymous]
@@ -147,6 +151,7 @@ namespace HeThongVanTai.Controllers
 
             _context.BusRoutes.Add(route);
             await _context.SaveChangesAsync();
+            await _audit.AuditAsync("Create", "BusRoute", route.Id, $"Thêm tuyến {route.Name}");
             return CreatedAtAction(nameof(GetBusRouteById), new { id = route.Id }, route);
         }
 
@@ -166,6 +171,7 @@ namespace HeThongVanTai.Controllers
             route.DurationMin = dto.DurationMin;
 
             await _context.SaveChangesAsync();
+            await _audit.AuditAsync("Update", "BusRoute", route.Id, $"Sửa tuyến {route.Name}");
             return Ok(route);
         }
 
@@ -181,6 +187,7 @@ namespace HeThongVanTai.Controllers
 
             _context.BusRoutes.Remove(route);
             await _context.SaveChangesAsync();
+            await _audit.AuditAsync("Delete", "BusRoute", id, $"Xóa tuyến {route.Name}");
             return Ok(new { message = "Đã xóa tuyến đường thành công." });
         }
     }

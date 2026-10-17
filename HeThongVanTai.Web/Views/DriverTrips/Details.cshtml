@@ -1,0 +1,96 @@
+﻿@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@using HeThongVanTai.Web.Models.ViewModels.TaiXeChuyen
+@model DriverTripDetail
+@{
+    ViewData["Title"] = "Chi tiết chuyến";
+    var canStart = Model.Status is "Open" or "Delayed";
+    var canDelay = Model.Status is "Open" or "Delayed";
+    var canComplete = Model.Status == "Running";
+}
+
+<div class="container py-4">
+    <a class="small" asp-action="Index"><i class="bi bi-arrow-left"></i> Quay lại danh sách</a>
+
+    <div class="card card-vt p-3 mt-2 mb-3">
+        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+            <h1 class="h5 mb-0">@Model.RouteName</h1>
+            <span class="pill @TripStatusHelper.Class(Model.Status)">@TripStatusHelper.Text(Model.Status)</span>
+        </div>
+        <div class="small text-muted mb-2">@Model.FromStation → @Model.ToStation</div>
+        <div class="row g-2">
+            <div class="col-12 col-md-4"><i class="bi bi-clock me-1"></i>Khởi hành: @Model.DepartAt.ToString("HH:mm dd/MM/yyyy")</div>
+            <div class="col-12 col-md-4"><i class="bi bi-flag me-1"></i>Dự kiến đến: @(Model.ArriveAt?.ToString("HH:mm dd/MM/yyyy") ?? "-")</div>
+            <div class="col-12 col-md-4"><i class="bi bi-bus-front me-1"></i>Xe @Model.VehiclePlate (@Model.TotalSeats ghế)</div>
+        </div>
+
+        @if (canStart || canDelay || canComplete)
+        {
+            <hr />
+            <div class="d-flex flex-wrap gap-2 align-items-start">
+                @if (canStart)
+                {
+                    <form asp-action="Start" asp-route-id="@Model.Id" method="post" data-confirm="Bắt đầu chuyến này?">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-play-fill me-1"></i>Bắt đầu chuyến</button>
+                    </form>
+                }
+                @if (canComplete)
+                {
+                    <form asp-action="Complete" asp-route-id="@Model.Id" method="post" data-confirm="Xác nhận đã hoàn thành chuyến?">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Hoàn thành chuyến</button>
+                    </form>
+                }
+                @if (canDelay)
+                {
+                    <form asp-action="Delay" asp-route-id="@Model.Id" method="post" class="d-flex flex-wrap gap-2 align-items-end"
+                          data-confirm="Báo trễ chuyến này? Chuyến sẽ tạm ngừng bán vé.">
+                        <div>
+                            <label class="form-label small mb-1" for="newDepartAt">Giờ khởi hành mới</label>
+                            <input id="newDepartAt" name="newDepartAt" type="datetime-local" class="form-control form-control-sm" required />
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary btn-sm">Báo trễ</button>
+                    </form>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="card card-vt">
+        <div class="p-3 border-bottom fw-semibold">Danh sách hành khách (@Model.Passengers.Count)</div>
+        @if (Model.Passengers.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">Chưa có hành khách nào đặt vé chuyến này.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-vt align-middle mb-0">
+                    <thead><tr><th>Ghế</th><th>Hành khách</th><th>Mã vé</th><th>Soát vé</th></tr></thead>
+                    <tbody>
+                        @foreach (var p in Model.Passengers)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@p.SeatCode</td>
+                                <td>@(string.IsNullOrWhiteSpace(p.PassengerName) ? "-" : p.PassengerName)</td>
+                                <td>@p.TicketCode</td>
+                                <td>
+                                    @if (p.Status == "CheckedIn")
+                                    {
+                                        <span class="pill pill-ok">Đã lên xe</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="pill pill-info">Chưa lên xe</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ConfirmDeleteScript" />
+}

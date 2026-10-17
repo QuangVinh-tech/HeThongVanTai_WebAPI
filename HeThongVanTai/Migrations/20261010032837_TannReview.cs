@@ -5,18 +5,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace HeThongVanTai.Migrations
 {
-    /// <inheritdoc />
     public partial class TannReview : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "ImageUrl",
-                table: "Vehicles",
-                type: "nvarchar(max)",
-                nullable: true);
-
             migrationBuilder.AddColumn<string>(
                 name: "AvatarUrl",
                 table: "Drivers",
@@ -76,7 +68,6 @@ namespace HeThongVanTai.Migrations
                 column: "TripId");
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
@@ -84,10 +75,6 @@ namespace HeThongVanTai.Migrations
 
             migrationBuilder.DropTable(
                 name: "Reviews");
-
-            migrationBuilder.DropColumn(
-                name: "ImageUrl",
-                table: "Vehicles");
 
             migrationBuilder.DropColumn(
                 name: "AvatarUrl",

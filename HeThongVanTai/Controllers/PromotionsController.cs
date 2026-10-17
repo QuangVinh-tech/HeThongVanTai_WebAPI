@@ -2,6 +2,7 @@
 using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Models.DTO;
 using HeThongVanTai.Services;
+using HeThongVanTai.Services.Audit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,12 @@ namespace HeThongVanTai.Controllers;
 public class PromotionsController : ControllerBase
 {
     private readonly AppDbContext _db;
-    public PromotionsController(AppDbContext db) => _db = db;
+    private readonly IAuditService? _audit;
+    public PromotionsController(AppDbContext db, IAuditService? audit = null)
+    {
+        _db = db;
+        _audit = audit;
+    }
 
     private static string? Validate(SavePromotionDto dto)
     {
@@ -55,6 +61,7 @@ public class PromotionsController : ControllerBase
         };
         _db.Promotions.Add(p);
         await _db.SaveChangesAsync();
+        await _audit.AuditAsync("Create", "Promotion", p.Id, $"Thêm mã khuyến mãi {p.Code}");
         return StatusCode(201, p);
     }
 
@@ -83,6 +90,7 @@ public class PromotionsController : ControllerBase
         p.EndAt = dto.EndAt;
         p.UsageLimit = dto.UsageLimit;
         await _db.SaveChangesAsync();
+        await _audit.AuditAsync("Update", "Promotion", p.Id, $"Sửa mã khuyến mãi {p.Code}");
         return NoContent();
     }
 
@@ -94,6 +102,7 @@ public class PromotionsController : ControllerBase
         if (p is null) return NotFound();
         p.IsActive = value;
         await _db.SaveChangesAsync();
+        await _audit.AuditAsync("Update", "Promotion", p.Id, $"{(value ? "Bật" : "Tắt")} mã khuyến mãi {p.Code}");
         return NoContent();
     }
 
@@ -108,6 +117,7 @@ public class PromotionsController : ControllerBase
 
         _db.Promotions.Remove(p);
         await _db.SaveChangesAsync();
+        await _audit.AuditAsync("Delete", "Promotion", id, $"Xóa mã khuyến mãi {p.Code}");
         return NoContent();
     }
 

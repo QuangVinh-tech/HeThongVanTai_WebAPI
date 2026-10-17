@@ -55,13 +55,14 @@ namespace HeThongVanTai.Controllers
                 .CountAsync(t => t.Status != "Cancelled" && t.Booking.Status == "Paid"
                                  && t.Booking.CreatedAt >= today && t.Booking.CreatedAt < tomorrow);
 
-            // Chuyến đang chạy: đã khởi hành, chưa đến nơi, chưa hủy/hoàn thành
+            // Chuyến đang chạy: tài xế đã bấm bắt đầu (Running), hoặc đã quá giờ khởi hành mà chưa đến nơi, chưa hủy/hoàn thành
             var activeTrips = await _db.Trips.AsNoTracking()
-                .Where(t => t.Status != "Cancelled" && t.Status != "Completed" && t.DepartAt <= now)
-                .Select(t => new { t.DepartAt, t.ArriveAt, t.BusRoute.DurationMin })
+                .Where(t => t.Status == "Running"
+                            || (t.Status != "Cancelled" && t.Status != "Completed" && t.DepartAt <= now))
+                .Select(t => new { t.Status, t.DepartAt, t.ArriveAt, t.BusRoute.DurationMin })
                 .ToListAsync();
-            var runningTrips = activeTrips.Count(t =>
-                (t.ArriveAt ?? t.DepartAt.AddMinutes(t.DurationMin)) >= now);
+            var runningTrips = activeTrips.Count(t => t.Status == "Running"
+                || (t.ArriveAt ?? t.DepartAt.AddMinutes(t.DurationMin)) >= now);
 
             // Tỉ lệ lấp đầy: ghế đã đặt / tổng ghế của các chuyến khởi hành trong hôm nay
             var todayTrips = await _db.Trips.AsNoTracking()

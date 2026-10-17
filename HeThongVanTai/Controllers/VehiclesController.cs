@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using HeThongVanTai.Data;
 using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Models.DTO;
+using HeThongVanTai.Services.Audit;
 
 namespace HeThongVanTai.Controllers
 {
@@ -17,9 +18,12 @@ namespace HeThongVanTai.Controllers
     {
         private readonly AppDbContext _context;
 
-        public VehiclesController(AppDbContext context)
+        private readonly IAuditService? _audit;
+
+        public VehiclesController(AppDbContext context, IAuditService? audit = null)
         {
             _context = context;
+            _audit = audit;
         }
 
         [HttpGet]
@@ -131,6 +135,7 @@ namespace HeThongVanTai.Controllers
 
             _context.Vehicles.Add(vehicle);
             await _context.SaveChangesAsync();
+            await _audit.AuditAsync("Create", "Vehicle", vehicle.Id, $"Thêm xe {vehicle.Plate}");
             return CreatedAtAction(nameof(GetById), new { id = vehicle.Id }, vehicle);
         }
 
@@ -154,6 +159,7 @@ namespace HeThongVanTai.Controllers
                 vehicle.ImageUrl = dto.ImageUrl;
 
             await _context.SaveChangesAsync();
+            await _audit.AuditAsync("Update", "Vehicle", vehicle.Id, $"Sửa xe {vehicle.Plate} (trạng thái {vehicle.Status})");
             return Ok(vehicle);
         }
 
@@ -169,6 +175,7 @@ namespace HeThongVanTai.Controllers
 
             _context.Vehicles.Remove(vehicle);
             await _context.SaveChangesAsync();
+            await _audit.AuditAsync("Delete", "Vehicle", id, $"Xóa xe {vehicle.Plate}");
             return Ok(new { message = "Đã xóa xe thành công." });
         }
 

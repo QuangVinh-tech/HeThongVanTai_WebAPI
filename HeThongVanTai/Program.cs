@@ -10,6 +10,7 @@ using HeThongVanTai.Data;
 using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Repositories;
 using HeThongVanTai.Services;
+using HeThongVanTai.Services.Audit;
 using HeThongVanTai.Services.Email;
 using Serilog;
 
@@ -62,9 +63,8 @@ builder.Services.AddDbContext<VanTaiAuthDbContext>(options =>
 // Dich vu dat ve / thanh toan (phan cua Tan)
 builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<PaymentService>();
-builder.Services.Configure<ShippingOptions>(builder.Configuration.GetSection("Shipping"));
-builder.Services.AddScoped<ShipmentService>();
 builder.Services.AddHostedService<HoldExpiryService>();
+builder.Services.AddScoped<IAuditService, AuditService>();   // nhật ký thao tác (việc 42)
 
 // Auth (phan cua Vinh)
 builder.Services.AddMemoryCache();
@@ -77,7 +77,6 @@ builder.Services.AddIdentityCore<IdentityUser>()
     .AddTokenProvider<DataProtectorTokenProvider<IdentityUser>>("VanTai")
     .AddEntityFrameworkStores<VanTaiAuthDbContext>()
     .AddDefaultTokenProviders();
-
 
 builder.Services.Configure<IdentityOptions>(option =>
 {

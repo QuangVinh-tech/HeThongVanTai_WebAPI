@@ -26,550 +26,550 @@ namespace HeThongVanTai.Migrations
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("Booking", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Code")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<int>("CustomerId")
-                        .HasColumnType("int");
+                b.Property<int>("CustomerId")
+                    .HasColumnType("int");
 
-                    b.Property<decimal>("DiscountAmount")
-                        .HasColumnType("decimal(12,0)");
+                b.Property<decimal>("DiscountAmount")
+                    .HasColumnType("decimal(12,0)");
 
-                    b.Property<DateTime?>("HoldExpiresAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime?>("HoldExpiresAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<int?>("PromotionId")
-                        .HasColumnType("int");
+                b.Property<int?>("PromotionId")
+                    .HasColumnType("int");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Status")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("decimal(12,0)");
+                b.Property<decimal>("TotalAmount")
+                    .HasColumnType("decimal(12,0)");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("CustomerId");
+                b.HasIndex("CustomerId");
 
-                    b.HasIndex("PromotionId");
+                b.HasIndex("PromotionId");
 
-                    b.ToTable("Bookings");
-                });
+                b.ToTable("Bookings");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.BusRoute", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("DistanceKm")
-                        .HasColumnType("int");
+                b.Property<int>("DistanceKm")
+                    .HasColumnType("int");
 
-                    b.Property<int>("DurationMin")
-                        .HasColumnType("int");
+                b.Property<int>("DurationMin")
+                    .HasColumnType("int");
 
-                    b.Property<int>("FromStationId")
-                        .HasColumnType("int");
+                b.Property<int>("FromStationId")
+                    .HasColumnType("int");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Name")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ToStationId")
-                        .HasColumnType("int");
+                b.Property<int>("ToStationId")
+                    .HasColumnType("int");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("FromStationId");
+                b.HasIndex("FromStationId");
 
-                    b.HasIndex("ToStationId");
+                b.HasIndex("ToStationId");
 
-                    b.ToTable("BusRoutes");
-                });
+                b.ToTable("BusRoutes");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.Customer", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Email")
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("FullName")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Phone")
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Phone")
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("UserId")
+                    .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.ToTable("Customers");
-                });
+                b.ToTable("Customers");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.Driver", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("FullName")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("LicenseClass")
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("LicenseClass")
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("LicenseExpiry")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime?>("LicenseExpiry")
+                    .HasColumnType("datetime2");
 
-                    b.Property<string>("LicenseNo")
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("LicenseNo")
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Phone")
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Phone")
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Status")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.ToTable("Drivers");
-                });
+                b.ToTable("Drivers");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.Payment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(12,0)");
+                b.Property<decimal>("Amount")
+                    .HasColumnType("decimal(12,0)");
 
-                    b.Property<int>("BookingId")
-                        .HasColumnType("int");
+                b.Property<int>("BookingId")
+                    .HasColumnType("int");
 
-                    b.Property<string>("Method")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Method")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("PaidAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime?>("PaidAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Status")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("BookingId");
+                b.HasIndex("BookingId");
 
-                    b.ToTable("Payments");
-                });
+                b.ToTable("Payments");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.Promotion", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                b.Property<string>("Code")
+                    .IsRequired()
+                    .HasMaxLength(30)
+                    .HasColumnType("nvarchar(30)");
 
-                    b.Property<string>("DiscountType")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                b.Property<string>("DiscountType")
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .HasColumnType("nvarchar(10)");
 
-                    b.Property<DateTime>("EndAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("EndAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                b.Property<bool>("IsActive")
+                    .HasColumnType("bit");
 
-                    b.Property<decimal?>("MaxDiscount")
-                        .HasColumnType("decimal(12,0)");
+                b.Property<decimal?>("MaxDiscount")
+                    .HasColumnType("decimal(12,0)");
 
-                    b.Property<decimal>("MinOrder")
-                        .HasColumnType("decimal(12,0)");
+                b.Property<decimal>("MinOrder")
+                    .HasColumnType("decimal(12,0)");
 
-                    b.Property<DateTime>("StartAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("StartAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<int?>("UsageLimit")
-                        .HasColumnType("int");
+                b.Property<int?>("UsageLimit")
+                    .HasColumnType("int");
 
-                    b.Property<int>("UsedCount")
-                        .HasColumnType("int");
+                b.Property<int>("UsedCount")
+                    .HasColumnType("int");
 
-                    b.Property<decimal>("Value")
-                        .HasColumnType("decimal(12,0)");
+                b.Property<decimal>("Value")
+                    .HasColumnType("decimal(12,0)");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("Code")
-                        .IsUnique();
+                b.HasIndex("Code")
+                    .IsUnique();
 
-                    b.ToTable("Promotions");
-                });
+                b.ToTable("Promotions");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.SeatTemplate", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("Floor")
-                        .HasColumnType("int");
+                b.Property<int>("Floor")
+                    .HasColumnType("int");
 
-                    b.Property<string>("SeatCode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("SeatCode")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("VehicleTypeId")
-                        .HasColumnType("int");
+                b.Property<int>("VehicleTypeId")
+                    .HasColumnType("int");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("VehicleTypeId");
+                b.HasIndex("VehicleTypeId");
 
-                    b.ToTable("SeatTemplates");
-                });
+                b.ToTable("SeatTemplates");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.Station", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Address")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                b.Property<string>("Address")
+                    .HasMaxLength(255)
+                    .HasColumnType("nvarchar(255)");
 
-                    b.Property<string>("City")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                b.Property<string>("City")
+                    .HasMaxLength(100)
+                    .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                b.Property<string>("Name")
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnType("nvarchar(100)");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.ToTable("Stations");
-                });
+                b.ToTable("Stations");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.Ticket", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("BookingId")
-                        .HasColumnType("int");
+                b.Property<int>("BookingId")
+                    .HasColumnType("int");
 
-                    b.Property<string>("PassengerName")
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("PassengerName")
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(12,0)");
+                b.Property<decimal>("Price")
+                    .HasColumnType("decimal(12,0)");
 
-                    b.Property<string>("SeatCode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                b.Property<string>("SeatCode")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Status")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TicketCode")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                b.Property<string>("TicketCode")
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .HasColumnType("nvarchar(20)");
 
-                    b.Property<int>("TripId")
-                        .HasColumnType("int");
+                b.Property<int>("TripId")
+                    .HasColumnType("int");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("BookingId");
+                b.HasIndex("BookingId");
 
-                    b.HasIndex("TicketCode")
-                        .IsUnique()
-                        .HasFilter("[TicketCode] <> ''");
+                b.HasIndex("TicketCode")
+                    .IsUnique()
+                    .HasFilter("[TicketCode] <> ''");
 
-                    b.HasIndex("TripId", "SeatCode")
-                        .IsUnique()
-                        .HasFilter("[Status] <> 'Cancelled'");
+                b.HasIndex("TripId", "SeatCode")
+                    .IsUnique()
+                    .HasFilter("[Status] <> 'Cancelled'");
 
-                    b.ToTable("Tickets");
-                });
+                b.ToTable("Tickets");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.Trip", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("ArriveAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime?>("ArriveAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<int>("BusRouteId")
-                        .HasColumnType("int");
+                b.Property<int>("BusRouteId")
+                    .HasColumnType("int");
 
-                    b.Property<DateTime>("DepartAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("DepartAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<int>("DriverId")
-                        .HasColumnType("int");
+                b.Property<int>("DriverId")
+                    .HasColumnType("int");
 
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(12,0)");
+                b.Property<decimal>("Price")
+                    .HasColumnType("decimal(12,0)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Status")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("VehicleId")
-                        .HasColumnType("int");
+                b.Property<int>("VehicleId")
+                    .HasColumnType("int");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("BusRouteId");
+                b.HasIndex("BusRouteId");
 
-                    b.HasIndex("DriverId");
+                b.HasIndex("DriverId");
 
-                    b.HasIndex("VehicleId");
+                b.HasIndex("VehicleId");
 
-                    b.ToTable("Trips");
-                });
+                b.ToTable("Trips");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.Vehicle", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("InsuranceExpiry")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime?>("InsuranceExpiry")
+                    .HasColumnType("datetime2");
 
-                    b.Property<string>("Plate")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Plate")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("RegistrationExpiry")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime?>("RegistrationExpiry")
+                    .HasColumnType("datetime2");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Status")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("VehicleTypeId")
-                        .HasColumnType("int");
+                b.Property<int>("VehicleTypeId")
+                    .HasColumnType("int");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("VehicleTypeId");
+                b.HasIndex("VehicleTypeId");
 
-                    b.ToTable("Vehicles");
-                });
+                b.ToTable("Vehicles");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.VehicleType", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Name")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("SeatCount")
-                        .HasColumnType("int");
+                b.Property<int>("SeatCount")
+                    .HasColumnType("int");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.ToTable("VehicleTypes");
-                });
+                b.ToTable("VehicleTypes");
+            });
 
             modelBuilder.Entity("Booking", b =>
-                {
-                    b.HasOne("HeThongVanTai.Models.Domain.Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("HeThongVanTai.Models.Domain.Customer", "Customer")
+                    .WithMany()
+                    .HasForeignKey("CustomerId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.HasOne("HeThongVanTai.Models.Domain.Promotion", "Promotion")
-                        .WithMany()
-                        .HasForeignKey("PromotionId");
+                b.HasOne("HeThongVanTai.Models.Domain.Promotion", "Promotion")
+                    .WithMany()
+                    .HasForeignKey("PromotionId");
 
-                    b.Navigation("Customer");
+                b.Navigation("Customer");
 
-                    b.Navigation("Promotion");
-                });
+                b.Navigation("Promotion");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.BusRoute", b =>
-                {
-                    b.HasOne("HeThongVanTai.Models.Domain.Station", "FromStation")
-                        .WithMany()
-                        .HasForeignKey("FromStationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("HeThongVanTai.Models.Domain.Station", "FromStation")
+                    .WithMany()
+                    .HasForeignKey("FromStationId")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.HasOne("HeThongVanTai.Models.Domain.Station", "ToStation")
-                        .WithMany()
-                        .HasForeignKey("ToStationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                b.HasOne("HeThongVanTai.Models.Domain.Station", "ToStation")
+                    .WithMany()
+                    .HasForeignKey("ToStationId")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("FromStation");
+                b.Navigation("FromStation");
 
-                    b.Navigation("ToStation");
-                });
+                b.Navigation("ToStation");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.Payment", b =>
-                {
-                    b.HasOne("Booking", "Booking")
-                        .WithMany("Payments")
-                        .HasForeignKey("BookingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("Booking", "Booking")
+                    .WithMany("Payments")
+                    .HasForeignKey("BookingId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("Booking");
-                });
+                b.Navigation("Booking");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.SeatTemplate", b =>
-                {
-                    b.HasOne("HeThongVanTai.Models.Domain.VehicleType", "VehicleType")
-                        .WithMany("SeatTemplates")
-                        .HasForeignKey("VehicleTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("HeThongVanTai.Models.Domain.VehicleType", "VehicleType")
+                    .WithMany("SeatTemplates")
+                    .HasForeignKey("VehicleTypeId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("VehicleType");
-                });
+                b.Navigation("VehicleType");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.Ticket", b =>
-                {
-                    b.HasOne("Booking", "Booking")
-                        .WithMany("Tickets")
-                        .HasForeignKey("BookingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("Booking", "Booking")
+                    .WithMany("Tickets")
+                    .HasForeignKey("BookingId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.HasOne("HeThongVanTai.Models.Domain.Trip", "Trip")
-                        .WithMany("Tickets")
-                        .HasForeignKey("TripId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                b.HasOne("HeThongVanTai.Models.Domain.Trip", "Trip")
+                    .WithMany("Tickets")
+                    .HasForeignKey("TripId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("Booking");
+                b.Navigation("Booking");
 
-                    b.Navigation("Trip");
-                });
+                b.Navigation("Trip");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.Trip", b =>
-                {
-                    b.HasOne("HeThongVanTai.Models.Domain.BusRoute", "BusRoute")
-                        .WithMany("Trips")
-                        .HasForeignKey("BusRouteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("HeThongVanTai.Models.Domain.BusRoute", "BusRoute")
+                    .WithMany("Trips")
+                    .HasForeignKey("BusRouteId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.HasOne("HeThongVanTai.Models.Domain.Driver", "Driver")
-                        .WithMany()
-                        .HasForeignKey("DriverId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                b.HasOne("HeThongVanTai.Models.Domain.Driver", "Driver")
+                    .WithMany()
+                    .HasForeignKey("DriverId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.HasOne("HeThongVanTai.Models.Domain.Vehicle", "Vehicle")
-                        .WithMany()
-                        .HasForeignKey("VehicleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                b.HasOne("HeThongVanTai.Models.Domain.Vehicle", "Vehicle")
+                    .WithMany()
+                    .HasForeignKey("VehicleId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("BusRoute");
+                b.Navigation("BusRoute");
 
-                    b.Navigation("Driver");
+                b.Navigation("Driver");
 
-                    b.Navigation("Vehicle");
-                });
+                b.Navigation("Vehicle");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.Vehicle", b =>
-                {
-                    b.HasOne("HeThongVanTai.Models.Domain.VehicleType", "VehicleType")
-                        .WithMany()
-                        .HasForeignKey("VehicleTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("HeThongVanTai.Models.Domain.VehicleType", "VehicleType")
+                    .WithMany()
+                    .HasForeignKey("VehicleTypeId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("VehicleType");
-                });
+                b.Navigation("VehicleType");
+            });
 
             modelBuilder.Entity("Booking", b =>
-                {
-                    b.Navigation("Payments");
+            {
+                b.Navigation("Payments");
 
-                    b.Navigation("Tickets");
-                });
+                b.Navigation("Tickets");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.BusRoute", b =>
-                {
-                    b.Navigation("Trips");
-                });
+            {
+                b.Navigation("Trips");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.Trip", b =>
-                {
-                    b.Navigation("Tickets");
-                });
+            {
+                b.Navigation("Tickets");
+            });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.VehicleType", b =>
-                {
-                    b.Navigation("SeatTemplates");
-                });
+            {
+                b.Navigation("SeatTemplates");
+            });
 #pragma warning restore 612, 618
         }
     }

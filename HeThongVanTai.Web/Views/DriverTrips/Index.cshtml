@@ -1,12 +1,58 @@
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@using HeThongVanTai.Web.Models.ViewModels.TaiXeChuyen
+@model DriverTripsModel
 @{
     ViewData["Title"] = "Chuyến của tôi";
 }
 
 <div class="container py-4">
-    <h1 class="h4 mb-3">Chuyến của tôi</h1>
-    <div class="card card-vt p-4 text-center">
-        <i class="bi bi-bus-front fs-1" style="color: var(--vt-primary);"></i>
-        <p class="mb-1 fw-semibold mt-2">Xin chào @User.Identity?.Name</p>
-        <p class="text-muted mb-0">Danh sách chuyến được phân công cho bạn sẽ hiển thị ở đây.</p>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h1 class="h4 mb-0">Chuyến của tôi</h1>
+            <div class="small text-muted">Xin chào @(Model.DriverName ?? User.Identity?.Name)</div>
+        </div>
+        <div class="btn-group" role="group" aria-label="Phạm vi">
+            <a class="btn btn-sm @(!Model.IncludePast ? "btn-primary" : "btn-outline-primary")" asp-action="Index" asp-route-includePast="false">Sắp tới</a>
+            <a class="btn btn-sm @(Model.IncludePast ? "btn-primary" : "btn-outline-primary")" asp-action="Index" asp-route-includePast="true">Tất cả</a>
+        </div>
     </div>
+
+    @if (Model.NotLinked)
+    {
+        <div class="alert alert-warning">
+            Tài khoản của bạn chưa được liên kết với hồ sơ tài xế. Hãy nhờ quản trị viên liên kết ở trang Người dùng.
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <div class="alert alert-danger">@Model.Error</div>
+    }
+    else if (Model.Items.Count == 0)
+    {
+        <div class="card card-vt p-4 text-center text-muted">
+            <i class="bi bi-bus-front fs-1" style="color: var(--vt-primary);"></i>
+            <p class="mb-0 mt-2">@(Model.IncludePast ? "Bạn chưa được phân công chuyến nào." : "Hiện chưa có chuyến sắp tới nào được phân công cho bạn.")</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var t in Model.Items)
+            {
+                <div class="col-12 col-md-6">
+                    <div class="card card-vt h-100 p-3">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div class="fw-semibold">@t.RouteName</div>
+                            <span class="pill @TripStatusHelper.Class(t.Status)">@TripStatusHelper.Text(t.Status)</span>
+                        </div>
+                        <div class="small text-muted mb-1">@t.FromStation → @t.ToStation</div>
+                        <div class="mb-1"><i class="bi bi-clock me-1"></i>@t.DepartAt.ToString("HH:mm dd/MM/yyyy")</div>
+                        <div class="mb-1"><i class="bi bi-bus-front me-1"></i>Xe @t.VehiclePlate</div>
+                        <div class="mb-3"><i class="bi bi-people me-1"></i>@t.BookedSeats/@t.TotalSeats ghế đã đặt</div>
+                        <a class="btn btn-primary mt-auto" asp-action="Details" asp-route-id="@t.Id">Xem chi tiết</a>
+                    </div>
+                </div>
+            }
+        </div>
+    }
 </div>
