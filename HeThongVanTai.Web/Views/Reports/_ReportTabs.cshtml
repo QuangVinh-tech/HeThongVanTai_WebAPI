@@ -1,0 +1,38 @@
+@model string
+@{
+    // Model là khóa của báo cáo đang xem: route, day, month, vehicle, driver, seller, debt, recon
+    var tabs = new[]
+    {
+        (Key: "route", Label: "Theo tuyến"),
+        (Key: "day", Label: "Theo ngày"),
+        (Key: "month", Label: "Theo tháng"),
+        (Key: "vehicle", Label: "Theo xe"),
+        (Key: "driver", Label: "Theo tài xế"),
+        (Key: "seller", Label: "Theo nhân viên bán"),
+        (Key: "debt", Label: "Công nợ"),
+        (Key: "recon", Label: "Đối soát chuyển khoản")
+    };
+}
+<ul class="nav report-tabs flex-wrap mb-3">
+    @foreach (var t in tabs)
+    {
+        <li class="nav-item">
+            @if (t.Key == "route")
+            {
+                <a class="nav-link @(Model == t.Key ? "active" : "")" asp-controller="Reports" asp-action="Index">@t.Label</a>
+            }
+            else if (t.Key == "debt")
+            {
+                <a class="nav-link @(Model == t.Key ? "active" : "")" asp-controller="Reports" asp-action="Debt">@t.Label</a>
+            }
+            else if (t.Key == "recon")
+            {
+                <a class="nav-link @(Model == t.Key ? "active" : "")" asp-controller="Reports" asp-action="Reconciliation">@t.Label</a>
+            }
+            else
+            {
+                <a class="nav-link @(Model == t.Key ? "active" : "")" asp-controller="Reports" asp-action="Revenue" asp-route-by="@t.Key">@t.Label</a>
+            }
+        </li>
+    }
+</ul>

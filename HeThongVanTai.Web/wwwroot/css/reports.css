@@ -6,3 +6,17 @@
 .pagination-vt .page-link { color: var(--vt-primary); border-color: var(--vt-line); }
 .pagination-vt .page-item.active .page-link { background: var(--vt-primary); border-color: var(--vt-primary); color: #FFFFFF; }
 .pagination-vt .page-item.disabled .page-link { color: var(--vt-sold); }
+
+/* ===== Báo cáo mở rộng (việc 34) ===== */
+.report-tabs { gap: .35rem; }
+.report-tabs .nav-link { color: var(--vt-primary); border: 1px solid var(--vt-line); border-radius: 999px; padding: .3rem .85rem; font-size: .9rem; background: #FFFFFF; }
+.report-tabs .nav-link:hover { background: var(--vt-tint); }
+.report-tabs .nav-link.active { background: var(--vt-primary); border-color: var(--vt-primary); color: #FFFFFF; }
+.chart-card { padding: 1rem; margin-bottom: 1rem; }
+.chart-box { position: relative; height: 320px; }
+.report-sub { font-size: .8rem; color: var(--vt-muted); }
+.aging-ok { color: #1E7B3A; }
+.aging-warn { color: #B26A00; }
+.aging-bad { color: #C81E3A; font-weight: 600; }
+.recon-issue td { background: #FFF6E5; }
+.recon-issue-text { color: #B26A00; font-size: .85rem; }

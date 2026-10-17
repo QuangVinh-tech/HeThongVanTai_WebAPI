@@ -76,7 +76,7 @@ public class CreateTripForm
     public int VehicleId { get; set; }
     public int DriverId { get; set; }
     public DateTime? DepartAt { get; set; }
-    public DateTime? ArriveAt { get; set; }      // bỏ trống thì API tự tính theo thời gian tuyến
+    public DateTime? ArriveAt { get; set; }
     public decimal Price { get; set; }
 }
 
@@ -96,6 +96,8 @@ public static class TripStatusHelper
         "Open" => "Mở bán",
         "Delayed" => "Hoãn",
         "Cancelled" => "Đã hủy",
+        "Running" => "Đang chạy",
+        "Completed" => "Đã hoàn thành",
         _ => status
     };
 
@@ -104,6 +106,7 @@ public static class TripStatusHelper
         "Open" => "pill-ok",
         "Delayed" => "pill-warn",
         "Cancelled" => "pill-bad",
+        "Running" => "pill-info",
         _ => "pill-info"
     };
 }

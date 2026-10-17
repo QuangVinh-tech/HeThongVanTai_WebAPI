@@ -23,4 +23,7 @@ public class Booking
     [MaxLength(15)] public string? ContactPhone { get; set; }
     public bool NeedTransfer { get; set; }
     [MaxLength(300)] public string? TransferAddress { get; set; }
+
+    // Email nhân viên bán (Seller, Admin) khi bán tại quầy; null nếu khách tự đặt. Dùng cho báo cáo doanh thu theo nhân viên.
+    [MaxLength(256)] public string? SoldBy { get; set; }
 }

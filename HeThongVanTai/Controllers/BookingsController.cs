@@ -50,7 +50,8 @@ public class BookingsController : ControllerBase
             if (uid == null) return Unauthorized();
             dto.CustomerId = await _svc.GetOrCreateCustomerIdAsync(uid, UserClaims.Email(User));
         }
-        var (id, body) = await _svc.CreateAsync(dto);
+        // Nhân viên bán tại quầy thì ghi lại người bán để báo cáo doanh thu theo nhân viên
+        var (id, body) = await _svc.CreateAsync(dto, IsStaff ? UserClaims.Email(User) : null);
         return CreatedAtAction(nameof(GetById), new { id }, body);
     }
 

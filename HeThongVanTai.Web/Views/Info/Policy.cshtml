@@ -1,0 +1,31 @@
+﻿@model HeThongVanTai.Web.Models.ViewModels.CaiDat.PublicSettings
+@{
+    ViewData["Title"] = "Chính sách";
+    var tiers = Model.RefundTiers.OrderByDescending(t => t.HoursBefore).ToList();
+}
+
+<div class="container py-4" style="max-width: 760px;">
+    <h1 class="h3 fw-bold mb-3">Chính sách đặt vé và hoàn tiền</h1>
+
+    <h2 class="h5 mt-4">Giữ chỗ</h2>
+    <p>Sau khi chọn ghế và đặt vé, ghế được giữ cho bạn trong <strong>@Model.HoldMinutes phút</strong>. Hết thời gian này mà chưa thanh toán thì ghế được mở bán lại.</p>
+
+    <h2 class="h5 mt-4">Hoàn tiền khi hủy vé</h2>
+    <table class="table table-sm" style="max-width: 460px;">
+        <thead><tr><th>Hủy khi còn</th><th>Hoàn</th></tr></thead>
+        <tbody>
+            @foreach (var t in tiers)
+            {
+                <tr>
+                    <td>@(t.HoursBefore == 0 ? "Trước giờ khởi hành" : $"Từ {t.HoursBefore} giờ trở lên")</td>
+                    <td>@t.RatePercent%</td>
+                </tr>
+            }
+            @if (tiers.Count > 0 && tiers[^1].HoursBefore > 0)
+            {
+                <tr><td>Ít hơn @tiers[^1].HoursBefore giờ</td><td>0%</td></tr>
+            }
+        </tbody>
+    </table>
+    <p class="small text-muted">Thời gian tính đến giờ khởi hành của chuyến. Chuyến đã khởi hành không được hủy.</p>
+</div>

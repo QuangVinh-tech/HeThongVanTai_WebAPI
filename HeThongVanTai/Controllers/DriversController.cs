@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using HeThongVanTai.Data;
 using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Models.DTO;
+using HeThongVanTai.Services.Audit;
 
 namespace HeThongVanTai.Controllers
 {
@@ -17,9 +18,12 @@ namespace HeThongVanTai.Controllers
     {
         private readonly AppDbContext _context;
 
-        public DriversController(AppDbContext context)
+        private readonly IAuditService? _audit;
+
+        public DriversController(AppDbContext context, IAuditService? audit = null)
         {
             _context = context;
+            _audit = audit;
         }
 
         [HttpGet]
@@ -112,6 +116,7 @@ namespace HeThongVanTai.Controllers
 
             _context.Drivers.Add(driver);
             await _context.SaveChangesAsync();
+            await _audit.AuditAsync("Create", "Driver", driver.Id, $"Thêm tài xế {driver.FullName}");
             return CreatedAtAction(nameof(GetById), new { id = driver.Id }, driver);
         }
 
@@ -137,6 +142,7 @@ namespace HeThongVanTai.Controllers
                 driver.AvatarUrl = dto.AvatarUrl;
 
             await _context.SaveChangesAsync();
+            await _audit.AuditAsync("Update", "Driver", driver.Id, $"Sửa tài xế {driver.FullName} (trạng thái {driver.Status})");
             return Ok(driver);
         }
 
@@ -152,6 +158,7 @@ namespace HeThongVanTai.Controllers
 
             _context.Drivers.Remove(driver);
             await _context.SaveChangesAsync();
+            await _audit.AuditAsync("Delete", "Driver", id, $"Xóa tài xế {driver.FullName}");
             return Ok(new { message = "Đã xóa tài xế thành công." });
         }
 

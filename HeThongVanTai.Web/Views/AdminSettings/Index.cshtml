@@ -1,0 +1,123 @@
+﻿@model HeThongVanTai.Web.Models.ViewModels.CaiDat.SettingsForm
+@{
+    ViewData["Title"] = "Cài đặt hệ thống";
+    Layout = "_AdminLayout";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h4 mb-0">@ViewData["Title"]</h1>
+</div>
+
+@if (TempData["Success"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (ViewData["Error"] is string loadError)
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+
+<form method="post" asp-action="Index" class="card card-vt p-4" style="max-width: 820px;">
+    @if (ViewData.ModelState.TryGetValue("", out var general) && general.Errors.Count > 0)
+    {
+        <div class="alert alert-danger">
+            @foreach (var e in general.Errors)
+            {
+                <div>@e.ErrorMessage</div>
+            }
+        </div>
+    }
+
+    <h2 class="h6 fw-bold">Đặt vé</h2>
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <label class="form-label small" asp-for="HoldMinutes">Thời gian giữ ghế (phút, 1 - 120)</label>
+            <input asp-for="HoldMinutes" type="number" min="1" max="120" class="form-control" />
+            <span asp-validation-for="HoldMinutes" class="text-danger small"></span>
+        </div>
+    </div>
+
+    <h2 class="h6 fw-bold">Chính sách hoàn tiền khi hủy vé</h2>
+    <p class="small text-muted mb-2">
+        Hủy khi còn từ số giờ này trở lên thì được hoàn theo tỉ lệ. Còn ít hơn mốc thấp nhất thì không hoàn.
+        Hủy càng sát giờ chạy thì tỉ lệ hoàn không được cao hơn. Tối đa 10 mốc.
+    </p>
+    <table class="table table-sm align-middle" style="max-width: 520px;">
+        <thead>
+            <tr><th>Còn từ (giờ)</th><th>Hoàn (%)</th><th style="width:60px"></th></tr>
+        </thead>
+        <tbody id="tiers">
+            @for (var i = 0; i < Model.Tiers.Count; i++)
+            {
+                <tr>
+                    <td><input type="number" min="0" max="720" class="form-control form-control-sm" name="Tiers[@i].HoursBefore" value="@Model.Tiers[i].HoursBefore" /></td>
+                    <td><input type="number" min="0" max="100" class="form-control form-control-sm" name="Tiers[@i].RatePercent" value="@Model.Tiers[i].RatePercent" /></td>
+                    <td><button type="button" class="btn btn-sm btn-outline-danger js-remove" title="Xóa mốc">&times;</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div class="mb-4">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="addTier">Thêm mốc</button>
+    </div>
+
+    <h2 class="h6 fw-bold">Thông tin công ty (hiện ở chân trang, trang Liên hệ, Chính sách)</h2>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label small" asp-for="CompanyName">Tên công ty</label>
+            <input asp-for="CompanyName" class="form-control" maxlength="100" />
+            <span asp-validation-for="CompanyName" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small" asp-for="Hotline">Hotline</label>
+            <input asp-for="Hotline" class="form-control" maxlength="30" />
+            <span asp-validation-for="Hotline" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small" asp-for="Email">Email</label>
+            <input asp-for="Email" type="email" class="form-control" maxlength="256" />
+            <span asp-validation-for="Email" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small" asp-for="LogoUrl">Đường dẫn logo (http(s) hoặc bắt đầu bằng /)</label>
+            <input asp-for="LogoUrl" class="form-control" maxlength="500" />
+            <span asp-validation-for="LogoUrl" class="text-danger small"></span>
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary px-4">Lưu cài đặt</button>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        (function () {
+            var body = document.getElementById('tiers');
+            var form = body.closest('form');
+            function reindex() {
+                Array.prototype.forEach.call(body.rows, function (row, i) {
+                    row.cells[0].firstElementChild.name = 'Tiers[' + i + '].HoursBefore';
+                    row.cells[1].firstElementChild.name = 'Tiers[' + i + '].RatePercent';
+                });
+            }
+            document.getElementById('addTier').addEventListener('click', function () {
+                if (body.rows.length >= 10) { alert('Tối đa 10 mốc hoàn tiền.'); return; }
+                var tr = document.createElement('tr');
+                tr.innerHTML =
+                    '<td><input type="number" min="0" max="720" class="form-control form-control-sm" /></td>' +
+                    '<td><input type="number" min="0" max="100" class="form-control form-control-sm" /></td>' +
+                    '<td><button type="button" class="btn btn-sm btn-outline-danger js-remove" title="Xóa mốc">&times;</button></td>';
+                body.appendChild(tr);
+                reindex();
+            });
+            body.addEventListener('click', function (e) {
+                var btn = e.target.closest('.js-remove');
+                if (!btn) return;
+                btn.closest('tr').remove();
+                reindex();
+            });
+            form.addEventListener('submit', reindex);
+        })();
+    </script>
+}

@@ -9,7 +9,13 @@ namespace HeThongVanTai.Web.Controllers;
 public class InfoController : Controller
 {
     private readonly DanhMucApiService _danhMuc;
-    public InfoController(DanhMucApiService danhMuc) => _danhMuc = danhMuc;
+    private readonly SettingsApiService _site;
+
+    public InfoController(DanhMucApiService danhMuc, SettingsApiService site)
+    {
+        _danhMuc = danhMuc;
+        _site = site;
+    }
 
     public async Task<IActionResult> Schedule()
     {
@@ -27,7 +33,7 @@ public class InfoController : Controller
         return View(stations.Ok && stations.Data != null ? stations.Data : new List<StationItem>());
     }
 
-    public IActionResult Contact() => View();
-    public IActionResult Policy() => View();
+    public async Task<IActionResult> Contact() => View(await _site.GetPublicAsync());
+    public async Task<IActionResult> Policy() => View(await _site.GetPublicAsync());
     public IActionResult Careers() => View();
 }

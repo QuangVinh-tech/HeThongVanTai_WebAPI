@@ -1,0 +1,103 @@
+﻿using System.Security.Claims;
+using System.Security.Cryptography;
+using HeThongVanTai.Models.Domain;
+using HeThongVanTai.Models.DTO;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+
+namespace HeThongVanTai.Services;
+
+// Service ném lỗi này, filter đổi thành HTTP 400/404/409 + {"message": "..."}
+public class ServiceException : Exception
+{
+    public int Status { get; }
+    public ServiceException(int status, string message) : base(message) => Status = status;
+}
+
+public class ServiceExceptionFilter : IExceptionFilter
+{
+    private readonly ILogger<ServiceExceptionFilter> _logger;
+    public ServiceExceptionFilter(ILogger<ServiceExceptionFilter> logger) => _logger = logger;
+
+    public void OnException(ExceptionContext context)
+    {
+        if (context.Exception is ServiceException ex)
+        {
+            _logger.LogWarning("Nghiệp vụ bị từ chối ({Status}) tại {Path}: {Message}",
+                ex.Status, context.HttpContext.Request.Path.Value, ex.Message);
+            context.Result = new ObjectResult(new { message = ex.Message }) { StatusCode = ex.Status };
+            context.ExceptionHandled = true;
+        }
+    }
+}
+
+public static class Rules
+{
+    // Mốc hoàn tiền mặc định: >=24h: 100%, 12-24h: 70%, 2-12h: 50%, <2h: 0%.
+    // Admin đổi được ở trang Cài đặt hệ thống (bảng SystemSettings).
+    public static readonly IReadOnlyList<RefundTierDto> DefaultRefundTiers = new[]
+    {
+        new RefundTierDto { HoursBefore = 24, RatePercent = 100 },
+        new RefundTierDto { HoursBefore = 12, RatePercent = 70 },
+        new RefundTierDto { HoursBefore = 2, RatePercent = 50 }
+    };
+
+    // Hủy khi còn từ HoursBefore giờ trở lên thì hoàn RatePercent %; còn ít hơn mốc thấp nhất thì không hoàn.
+    public static decimal RefundRate(DateTime departAt, DateTime now, IEnumerable<RefundTierDto>? tiers)
+    {
+        var h = (departAt - now).TotalHours;
+        foreach (var t in (tiers ?? DefaultRefundTiers).OrderByDescending(x => x.HoursBefore))
+            if (h >= t.HoursBefore) return t.RatePercent / 100m;
+        return 0m;
+    }
+
+    public static decimal RefundRate(DateTime departAt, DateTime now) => RefundRate(departAt, now, DefaultRefundTiers);
+
+    // Trả về số tiền giảm; nếu mã không dùng được thì error != null
+    public static decimal Discount(Promotion p, decimal subtotal, DateTime now, out string? error)
+    {
+        error = null;
+        if (!p.IsActive) { error = "Mã giảm giá đã bị vô hiệu hóa."; return 0; }
+        if (now < p.StartAt || now > p.EndAt) { error = "Mã giảm giá chưa có hiệu lực hoặc đã hết hạn."; return 0; }
+        if (subtotal < p.MinOrder) { error = $"Đơn tối thiểu {p.MinOrder:N0}đ mới dùng được mã này."; return 0; }
+        if (p.UsageLimit.HasValue && p.UsedCount >= p.UsageLimit.Value) { error = "Mã giảm giá đã hết lượt sử dụng."; return 0; }
+
+        var d = p.DiscountType == "Percent" ? Math.Round(subtotal * p.Value / 100m, 0) : p.Value;
+        if (p.MaxDiscount.HasValue) d = Math.Min(d, p.MaxDiscount.Value);
+        return Math.Min(d, subtotal);
+    }
+
+    private const string Chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";   // bỏ I, O, 0, 1 cho khỏi nhầm
+    public static string NewTicketCode() => "VT" + RandomNumberGenerator.GetString(Chars, 8);
+    public static string NewBookingCode() => "BK" + DateTime.Now.ToString("yyMMdd") + RandomNumberGenerator.GetString(Chars, 5);
+
+    // Lỗi vi phạm unique index (SQL Server báo mã 2601 hoặc 2627)
+    public static bool IsDuplicate(DbUpdateException ex) =>
+        ex.InnerException is SqlException { Number: 2601 or 2627 };
+}
+
+// Làm sạch chuỗi do người dùng nhập trước khi đưa vào log (chống chèn xuống dòng giả dòng log)
+public static class LogText
+{
+    public static string Clean(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return "";
+        var s = value.Replace('\r', ' ').Replace('\n', ' ');
+        return s.Length > 100 ? s[..100] : s;
+    }
+}
+
+// Đọc thông tin người dùng từ token đăng nhập
+public static class UserClaims
+{
+    public static string? UserId(ClaimsPrincipal u) =>
+        u.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? u.FindFirst("sub")?.Value;
+
+    public static string? Email(ClaimsPrincipal u) =>
+        u.FindFirst(ClaimTypes.Email)?.Value
+        ?? u.FindFirst("email")?.Value
+        ?? u.FindFirst(ClaimTypes.Name)?.Value
+        ?? u.FindFirst("unique_name")?.Value;
+}

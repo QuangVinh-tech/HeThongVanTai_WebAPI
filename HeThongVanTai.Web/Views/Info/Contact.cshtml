@@ -1,0 +1,26 @@
+﻿@model HeThongVanTai.Web.Models.ViewModels.CaiDat.PublicSettings
+@{
+    ViewData["Title"] = "Liên hệ";
+}
+
+<div class="container py-4" style="max-width: 760px;">
+    <h1 class="h3 fw-bold mb-3">Liên hệ</h1>
+    <p class="text-muted">Cần hỗ trợ đặt vé, đổi hoặc hủy vé, hãy liên hệ @Model.CompanyName.</p>
+
+    <ul class="list-unstyled">
+        @if (!string.IsNullOrWhiteSpace(Model.Hotline))
+        {
+            <li class="mb-2"><i class="bi bi-telephone me-2"></i>Hotline: <strong>@Model.Hotline</strong></li>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Email))
+        {
+            <li class="mb-2"><i class="bi bi-envelope me-2"></i>Email: <a href="mailto:@Model.Email">@Model.Email</a></li>
+        }
+        <li class="mb-2"><i class="bi bi-geo-alt me-2"></i>Địa chỉ các bến xe và văn phòng: xem trang <a asp-action="Offices">Văn phòng</a>.</li>
+    </ul>
+
+    @if (string.IsNullOrWhiteSpace(Model.Hotline) && string.IsNullOrWhiteSpace(Model.Email))
+    {
+        <div class="alert alert-info">Thông tin liên hệ đang được cập nhật.</div>
+    }
+</div>

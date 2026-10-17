@@ -1,4 +1,5 @@
 @using System.Globalization
+@using System.Text.Json
 @using HeThongVanTai.Web.Models.ViewModels.Reports
 @model ReportViewModel
 @{
@@ -34,6 +35,8 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h1 class="h4 mb-0">Báo cáo doanh thu theo tuyến</h1>
 </div>
+
+<partial name="_ReportTabs" model='"route"' />
 
 <form method="get" class="filter-vt row g-2 align-items-end mb-3">
     <div class="col-6 col-md-3">
@@ -93,6 +96,20 @@
             </div>
         </div>
     </div>
+
+    @if (data.Items.Count > 0 && data.Items.Any(i => i.Revenue != 0))
+    {
+        <div class="card card-vt chart-card">
+            <div class="chart-box"><canvas id="reportChart" role="img" aria-label="Biểu đồ doanh thu theo tuyến"></canvas></div>
+            <div class="report-sub mt-2">Biểu đồ theo các dòng của trang hiện tại trong bảng bên dưới.</div>
+        </div>
+        <script id="chartData" type="application/json">@Html.Raw(JsonSerializer.Serialize(new
+        {
+            kind = "bar-h",
+            labels = data.Items.Select(i => i.RouteName),
+            values = data.Items.Select(i => i.Revenue)
+        }))</script>
+    }
 
     <div class="card card-vt">
         @if (data.Items.Count == 0)
@@ -165,4 +182,9 @@
             </ul>
         </nav>
     }
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="~/js/report-chart.js" asp-append-version="true"></script>
 }

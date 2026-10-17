@@ -1,6 +1,7 @@
 using HeThongVanTai.Data;
 using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Services;
+using HeThongVanTai.Services.Audit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -23,13 +24,16 @@ namespace HeThongVanTai.Controllers
         private readonly RefreshTokenService _refresh;
         private readonly ILogger<UsersController> _logger;
 
+        private readonly IAuditService? _audit;
+
         public UsersController(UserManager<IdentityUser> userManager, AppDbContext db,
-            RefreshTokenService refresh, ILogger<UsersController> logger)
+            RefreshTokenService refresh, ILogger<UsersController> logger, IAuditService? audit = null)
         {
             _refresh = refresh;
             _userManager = userManager;
             _db = db;
             _logger = logger;
+            _audit = audit;
         }
 
         public class UpdateRolesDto
@@ -198,6 +202,7 @@ namespace HeThongVanTai.Controllers
 
             _logger.LogInformation("{Admin} đổi vai trò của {Email}: {Roles}",
                 UserClaims.Email(User), user.Email, string.Join(",", roles));
+            await _audit.AuditAsync("ChangeRole", "UserRole", user.Id, $"Đổi vai trò của {user.Email}: {string.Join(", ", roles)}");
             return Ok(Shape(user, roles, targetDriver));
         }
 
@@ -235,6 +240,7 @@ namespace HeThongVanTai.Controllers
 
             _logger.LogInformation("{Admin} {Action} tài khoản {Email}",
                 UserClaims.Email(User), dto.Locked ? "khóa" : "mở khóa", user.Email);
+            await _audit.AuditAsync(dto.Locked ? "Lock" : "Unlock", "UserRole", user.Id, $"{(dto.Locked ? "Khóa" : "Mở khóa")} tài khoản {user.Email}");
             return Ok(Shape(user, await _userManager.GetRolesAsync(user), await FindLinkedDriverAsync(user.Id)));
         }
     }
