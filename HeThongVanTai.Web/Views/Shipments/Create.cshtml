@@ -1,0 +1,194 @@
+﻿@using HeThongVanTai.Web.Models.ViewModels.VanChuyen
+@model ShipmentForm
+@{
+    ViewData["Title"] = "Tạo đơn hàng";
+    var canDebt = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Seller);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/van-chuyen.css" asp-append-version="true" />
+}
+
+<div class="container py-4 vc-narrow">
+    <h1 class="h4 mb-3">Tạo đơn hàng mới</h1>
+
+    <form asp-action="Create" method="post" novalidate>
+        <div asp-validation-summary="All" class="alert alert-danger py-2"></div>
+
+        <div class="card card-vt p-3 mb-3">
+            <h2 class="h6 mb-2"><i class="bi bi-person me-1"></i>Thông tin người gửi</h2>
+            <div class="row g-2">
+                <div class="col-12 col-md-6">
+                    <label asp-for="SenderName" class="form-label small mb-1">Họ và tên <span class="text-danger">*</span></label>
+                    <input asp-for="SenderName" class="form-control" maxlength="100" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="SenderPhone" class="form-label small mb-1">Điện thoại <span class="text-danger">*</span></label>
+                    <input asp-for="SenderPhone" class="form-control" maxlength="10" inputmode="numeric" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="FromStationId" class="form-label small mb-1">Bến gửi <span class="text-danger">*</span></label>
+                    <select asp-for="FromStationId" class="form-select">
+                        <option value="0">-- Chọn bến gửi --</option>
+                        @foreach (var s in Model.Stations)
+                        {
+                            <option value="@s.Id">@s.Name@(string.IsNullOrWhiteSpace(s.City) ? "" : " - " + s.City)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="PickupMode" class="form-label small mb-1">Hình thức nhận hàng</label>
+                    <select asp-for="PickupMode" class="form-select">
+                        <option value="Door">Nhận tận nơi (theo địa chỉ người gửi)</option>
+                        <option value="Station">Gửi tại bến</option>
+                    </select>
+                </div>
+                <div class="col-12" id="senderAddrBox">
+                    <label asp-for="SenderAddress" class="form-label small mb-1">Địa chỉ nhận hàng <span class="text-danger">*</span></label>
+                    <input asp-for="SenderAddress" class="form-control" maxlength="300" placeholder="Số nhà, tên đường, phường/xã, quận/huyện" />
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-vt p-3 mb-3">
+            <h2 class="h6 mb-2"><i class="bi bi-person-check me-1"></i>Thông tin người nhận</h2>
+            <div class="row g-2">
+                <div class="col-12 col-md-6">
+                    <label asp-for="ReceiverName" class="form-label small mb-1">Họ và tên <span class="text-danger">*</span></label>
+                    <input asp-for="ReceiverName" class="form-control" maxlength="100" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="ReceiverPhone" class="form-label small mb-1">Điện thoại <span class="text-danger">*</span></label>
+                    <input asp-for="ReceiverPhone" class="form-control" maxlength="10" inputmode="numeric" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="ToStationId" class="form-label small mb-1">Bến nhận <span class="text-danger">*</span></label>
+                    <select asp-for="ToStationId" class="form-select">
+                        <option value="0">-- Chọn bến nhận --</option>
+                        @foreach (var s in Model.Stations)
+                        {
+                            <option value="@s.Id">@s.Name@(string.IsNullOrWhiteSpace(s.City) ? "" : " - " + s.City)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="DeliveryMode" class="form-label small mb-1">Hình thức giao hàng</label>
+                    <select asp-for="DeliveryMode" class="form-select">
+                        <option value="Door">Giao tận nơi (theo địa chỉ người nhận)</option>
+                        <option value="Station">Nhận tại bến</option>
+                    </select>
+                </div>
+                <div class="col-12" id="receiverAddrBox">
+                    <label asp-for="ReceiverAddress" class="form-label small mb-1">Địa chỉ giao hàng <span class="text-danger">*</span></label>
+                    <input asp-for="ReceiverAddress" class="form-control" maxlength="300" placeholder="Số nhà, tên đường, phường/xã, quận/huyện" />
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-vt p-3 mb-3">
+            <h2 class="h6 mb-2"><i class="bi bi-box-seam me-1"></i>Thông tin kiện hàng</h2>
+            <div class="row g-2 mb-3">
+                <div class="col-12 col-md-6">
+                    <label asp-for="ServiceType" class="form-label small mb-1">Loại dịch vụ</label>
+                    <select asp-for="ServiceType" class="form-select">
+                        <option value="Standard">Tiêu chuẩn</option>
+                        <option value="Express">Hỏa tốc</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="DeclaredValue" class="form-label small mb-1">Giá trị hàng hóa (đ)</label>
+                    <input asp-for="DeclaredValue" type="number" min="0" step="1000" class="form-control" />
+                </div>
+            </div>
+            <partial name="_ParcelsEditor" model="Model.Parcels" />
+        </div>
+
+        <div class="card card-vt p-3 mb-3">
+            <h2 class="h6 mb-2"><i class="bi bi-journal-text me-1"></i>Ghi chú</h2>
+            <textarea asp-for="Note" class="form-control" rows="3" maxlength="500" placeholder="Nhập nội dung ghi chú"></textarea>
+        </div>
+
+        <div class="card card-vt p-3 mb-3">
+            <h2 class="h6 mb-3"><i class="bi bi-cash-coin me-1"></i>Thông tin thanh toán</h2>
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <div class="small text-muted mb-1">Người trả cước</div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" asp-for="FeePayer" value="Sender" id="payS" />
+                        <label class="form-check-label" for="payS">Người gửi</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" asp-for="FeePayer" value="Receiver" id="payR" />
+                        <label class="form-check-label" for="payR">Người nhận</label>
+                    </div>
+                    @if (canDebt)
+                    {
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" asp-for="FeePayer" value="Debt" id="payD" />
+                            <label class="form-check-label" for="payD">Ghi nợ</label>
+                        </div>
+                    }
+
+                    <label asp-for="PromoCode" class="form-label small mt-3 mb-1">Mã khuyến mãi</label>
+                    <div class="input-group">
+                        <input asp-for="PromoCode" class="form-control text-uppercase" maxlength="30" autocomplete="off" />
+                        <button type="button" class="btn btn-primary" id="btnPromo">Áp dụng</button>
+                    </div>
+                    <div class="small text-muted mt-2">Phương thức thanh toán: <strong>Tiền mặt</strong></div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="fee-box">
+                        <div class="fee-row"><span>Phí dịch vụ</span><strong id="fFee">0 đ</strong></div>
+                        <div class="fee-row"><span>Khuyến mãi</span><strong id="fDiscount">0 đ</strong></div>
+                        <div class="fee-row fee-total"><span>Tổng thanh toán</span><span id="fTotal">0 đ</span></div>
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="btnQuote">Tính cước</button>
+                        <div id="quoteError" class="small text-danger mt-2 d-none"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="small text-muted">Bằng việc nhấn lưu đơn hàng, bạn xác nhận cước sẽ được hệ thống tính lại khi lưu.</p>
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary px-5">Lưu đơn hàng</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="~/js/van-chuyen.js" asp-append-version="true"></script>
+    <script>
+        const $ = id => document.getElementById(id);
+
+        // Ẩn ô địa chỉ khi chọn gửi/nhận tại bến
+        function toggleAddr() {
+            $('senderAddrBox').classList.toggle('d-none', $('PickupMode').value !== 'Door');
+            $('receiverAddrBox').classList.toggle('d-none', $('DeliveryMode').value !== 'Door');
+        }
+        $('PickupMode').addEventListener('change', toggleAddr);
+        $('DeliveryMode').addEventListener('change', toggleAddr);
+        toggleAddr();
+
+        async function doQuote() {
+            const err = $('quoteError');
+            err.classList.add('d-none');
+            const body = {
+                fromStationId: parseInt($('FromStationId').value, 10) || 0,
+                toStationId: parseInt($('ToStationId').value, 10) || 0,
+                serviceType: $('ServiceType').value,
+                pickupMode: $('PickupMode').value,
+                deliveryMode: $('DeliveryMode').value,
+                declaredValue: parseFloat($('DeclaredValue').value) || 0,
+                promoCode: $('PromoCode').value.trim() || null,
+                parcels: VanChuyen.gatherParcels()
+            };
+            const r = await VanChuyen.quote(body);
+            if (!r.ok) { err.textContent = r.message; err.classList.remove('d-none'); return; }
+            $('fFee').textContent = VanChuyen.money(r.data.shippingFee);
+            $('fDiscount').textContent = '- ' + VanChuyen.money(r.data.discount);
+            $('fTotal').textContent = VanChuyen.money(r.data.total);
+        }
+        $('btnQuote').addEventListener('click', doQuote);
+        $('btnPromo').addEventListener('click', doQuote);
+    </script>
+}

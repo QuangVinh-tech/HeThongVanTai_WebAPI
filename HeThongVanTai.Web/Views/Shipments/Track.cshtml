@@ -1,0 +1,54 @@
+﻿@using HeThongVanTai.Web.Models.ViewModels.VanChuyen
+@model TrackPageModel
+@{
+    ViewData["Title"] = "Tra cứu đơn hàng";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/van-chuyen.css" asp-append-version="true" />
+}
+
+<div class="container py-4 vc-narrow">
+    <h1 class="h4 mb-1">Tra cứu đơn hàng</h1>
+    <p class="small text-muted">Không cần đăng nhập. Nhập mã vận đơn (ví dụ VC261016ABCDE).</p>
+
+    <form method="get" asp-action="Track" class="card card-vt p-3 mb-3">
+        <div class="input-group">
+            <input name="code" value="@Model.Code" class="form-control text-uppercase" placeholder="Nhập mã vận đơn hàng để tra cứu..." autocomplete="off" maxlength="20" />
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i>Tra cứu đơn</button>
+        </div>
+    </form>
+
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <div class="alert alert-danger">@Model.Error</div>
+    }
+
+    @if (Model.Result != null)
+    {
+        var t = Model.Result;
+        <div class="card card-vt p-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <h2 class="h5 mb-0">Đơn hàng @t.Code</h2>
+                <span class="pill @VanChuyenHelpers.StatusClass(t.Status)">@VanChuyenHelpers.StatusText(t.Status)</span>
+            </div>
+            <div class="row g-2 small mb-3">
+                <div class="col-12 col-md-6"><span class="text-muted">Tuyến:</span> <strong>@t.From &rarr; @t.To</strong></div>
+                <div class="col-12 col-md-6"><span class="text-muted">Dịch vụ:</span> @VanChuyenHelpers.ServiceText(t.ServiceType)</div>
+                <div class="col-12 col-md-6"><span class="text-muted">Người nhận:</span> @t.ReceiverName (@t.ReceiverPhone)</div>
+                <div class="col-12 col-md-6"><span class="text-muted">Tạo lúc:</span> @t.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+            </div>
+
+            <h3 class="h6">Hành trình</h3>
+            <ul class="timeline mt-2">
+                @foreach (var l in t.Logs.OrderByDescending(x => x.At))
+                {
+                    <li>
+                        <div class="fw-semibold">@VanChuyenHelpers.StatusText(l.Status)</div>
+                        <div class="small text-muted">@l.At.ToString("dd/MM/yyyy HH:mm")@(string.IsNullOrWhiteSpace(l.Note) ? "" : " · " + l.Note)</div>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+</div>

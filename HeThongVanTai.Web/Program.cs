@@ -36,6 +36,7 @@ builder.Services.AddScoped<UsersApiService>();
 builder.Services.AddScoped<ReportsApiService>();
 builder.Services.AddScoped<VeKhachApiService>();
 builder.Services.AddScoped<XeTaiXeApiService>();   // Xe, Tài xế (Admin/Vehicles, Admin/Drivers)
+builder.Services.AddScoped<VanChuyenApiService>();   // Vận chuyển hàng hóa
 
 // Tài khoản nhận chuyển khoản để tạo mã QR (mục "BankTransfer" trong appsettings.json)
 builder.Services.Configure<BankQrOptions>(builder.Configuration.GetSection("BankTransfer"));

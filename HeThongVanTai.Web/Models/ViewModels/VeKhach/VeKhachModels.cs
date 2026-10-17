@@ -161,6 +161,7 @@ public static class VeLabels
     public static string Ticket(string status) => status switch
     {
         "Active" => "Còn hiệu lực",
+        "CheckedIn" => "Đã soát vé",
         "Cancelled" => "Đã hủy",
         _ => status
     };

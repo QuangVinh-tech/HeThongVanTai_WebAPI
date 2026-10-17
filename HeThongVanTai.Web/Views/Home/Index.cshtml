@@ -18,6 +18,12 @@
 
 <div class="container search-wrap">
     <form method="get" action="/Trips/Search" class="card card-vt search-card p-4">
+        <div class="btn-group mb-3 trip-switch" role="group" aria-label="Loại vé">
+            <input type="radio" class="btn-check" name="tripType" id="oneWay" value="oneway" checked>
+            <label class="btn btn-outline-primary btn-sm" for="oneWay">Một chiều</label>
+            <input type="radio" class="btn-check" name="tripType" id="roundTrip" value="round">
+            <label class="btn btn-outline-primary btn-sm" for="roundTrip">Khứ hồi</label>
+        </div>
         <div class="row g-3 align-items-end">
             <div class="col-lg">
                 <label class="form-label small" for="fromStationId">Điểm đi</label>
@@ -47,6 +53,10 @@
             <div class="col-md-6 col-lg-2">
                 <label class="form-label small" for="date">Ngày đi</label>
                 <input type="date" class="form-control" id="date" name="date" min="@today" value="@today" required />
+            </div>
+            <div class="col-md-6 col-lg-2 d-none" id="returnWrap">
+                <label class="form-label small" for="returnDate">Ngày về</label>
+                <input type="date" class="form-control" id="returnDate" name="returnDate" min="@today" value="@today" disabled />
             </div>
             <div class="col-md-6 col-lg-2">
                 <label class="form-label small" for="tickets">Số vé</label>
@@ -135,6 +145,21 @@
 
 @section Scripts {
     <script>
+        // Tab Một chiều / Khứ hồi: chỉ gửi returnDate khi chọn khứ hồi
+        (function () {
+            var wrap = document.getElementById('returnWrap');
+            var input = document.getElementById('returnDate');
+            var dep = document.getElementById('date');
+            function sync() {
+                var round = document.getElementById('roundTrip').checked;
+                wrap.classList.toggle('d-none', !round);
+                input.disabled = !round;
+                if (round) { input.min = dep.value; if (input.value < dep.value) input.value = dep.value; }
+            }
+            document.querySelectorAll('input[name=tripType]').forEach(function (r) { r.addEventListener('change', sync); });
+            dep.addEventListener('change', sync);
+            sync();
+        })();
         document.getElementById('swapStations')?.addEventListener('click', function () {
             const a = document.getElementById('fromStationId');
             const b = document.getElementById('toStationId');

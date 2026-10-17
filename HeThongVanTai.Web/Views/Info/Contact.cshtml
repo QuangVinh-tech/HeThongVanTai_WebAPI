@@ -1,0 +1,23 @@
+﻿@{
+    ViewData["Title"] = "Liên hệ";
+}
+
+<div class="container py-4" style="max-width: 760px;">
+    <h1 class="h3 fw-bold mb-3">Liên hệ</h1>
+
+    <div class="card card-vt p-4 mb-3">
+        <div class="mb-2"><i class="bi bi-telephone-fill me-2"></i><strong>Tổng đài:</strong> 0911911911</div>
+        <div class="mb-2"><i class="bi bi-envelope-fill me-2"></i><strong>Email:</strong> Tan313431@gmail.com</div>
+        <div class="mb-2"><i class="bi bi-geo-alt-fill me-2"></i><strong>Trụ sở:</strong> Lô 9999 Ngô Quyền</div>
+        <div><i class="bi bi-clock-fill me-2"></i><strong>Giờ làm việc:</strong> 8h00 - 16h30</div>
+    </div>
+
+    <div class="card card-vt p-4">
+        <h2 class="h6 fw-bold">Cần hỗ trợ nhanh?</h2>
+        <ul class="mb-0">
+            <li>Tìm vé đã đặt: <a asp-controller="TraCuuVe" asp-action="Index">Tra cứu vé</a></li>
+            <li>Theo dõi hàng gửi: <a asp-controller="Shipments" asp-action="Track">Tra cứu đơn hàng</a></li>
+            <li>Điều kiện hủy, đổi vé: <a asp-action="Policy">Chính sách</a></li>
+        </ul>
+    </div>
+</div>

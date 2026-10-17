@@ -17,5 +17,8 @@
         public const string AdminSellerCustomer = Admin + "," + Seller + "," + Customer;
         // Xem danh sách đặt vé của mọi khách: Kế toán chỉ xem để đối soát
         public const string AdminSellerAccountant = Admin + "," + Seller + "," + Accountant;
+
+        // Soát vé tại bến hoặc trên xe
+        public const string CheckInStaff = Admin + "," + Operator + "," + Seller + "," + Driver;
     }
 }
