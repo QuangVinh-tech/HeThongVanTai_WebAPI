@@ -49,6 +49,8 @@ dotnet user-secrets set "ConnectionStrings:VanTaiAuthConnection" "<chuỗi kết
 
 Không ghi mật khẩu vào file `.json`: CI sẽ báo lỗi nếu tìm thấy `password=` trong file json.
 
+**Bảo mật đăng nhập** (mục `Auth`, `Jwt`, `Security` trong `appsettings.json` của API): sai mật khẩu 5 lần thì tạm khóa 5 phút; access token sống 15 phút và Web tự làm mới bằng refresh token (7 ngày); đăng nhập và đăng ký bị giới hạn 10 lần mỗi phút theo IP. API tính IP khách từ header `X-Forwarded-For` do Web gửi, chỉ tin proxy loopback. Khi Web và API chạy trên máy khác nhau (Docker, IIS...), thêm địa chỉ IP của máy chủ Web vào `Security:TrustedProxies`, nếu không mọi khách sẽ bị tính chung một IP.
+
 ### 3. Tạo cơ sở dữ liệu (migration)
 
 Hệ thống dùng **hai** cơ sở dữ liệu, mỗi cái một DbContext:

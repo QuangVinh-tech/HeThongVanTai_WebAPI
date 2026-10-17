@@ -4,9 +4,9 @@
 
 ## Quy ước chung
 
-- **Xác thực:** JWT. Đăng nhập tại `POST /api/Auth/Login`, lấy `jwtToken`, gửi kèm mọi lời gọi: `Authorization: Bearer <token>`. Token sống 60 phút.
+- **Xác thực:** JWT. Đăng nhập tại `POST /api/Auth/Login`, lấy `jwtToken` và `refreshToken`, gửi kèm mọi lời gọi: `Authorization: Bearer <jwtToken>`. `jwtToken` sống ngắn (mặc định 15 phút, `Jwt:AccessTokenMinutes`); hết hạn thì gọi `POST /api/Auth/refresh` để lấy cặp token mới (refresh token sống 7 ngày, `Jwt:RefreshTokenDays`, mỗi lần dùng được đổi lấy token mới). Tài khoản bị khóa hoặc bị xóa thì `jwtToken` cũ bị từ chối ngay (401).
 - **Mặc định phải đăng nhập.** API công khai được ghi rõ `[AllowAnonymous]` (cột Quyền ghi "Mọi người").
-- **Vai trò:** `Admin`, `Operator`, `Seller`, `Accountant`, `Driver` (tài xế), `Customer`. Vai trò nằm trong token, nên đổi vai trò có hiệu lực ở lần đăng nhập sau.
+- **Vai trò:** `Admin`, `Operator`, `Seller`, `Accountant`, `Driver` (tài xế), `Customer`. Vai trò nằm trong token, nên đổi vai trò có hiệu lực khi đăng nhập hoặc làm mới token.
 - **Lỗi nghiệp vụ** trả JSON `{ "message": "..." }` kèm mã 400, 404 hoặc 409. Lỗi dữ liệu nhập trả 400 theo chuẩn ProblemDetails. Chưa đăng nhập: 401. Không đủ quyền: 403.
 - **Ngày giờ** theo giờ máy chủ. Tham số ngày dạng `yyyy-MM-dd`.
 - **Phân trang:** tên tham số và dạng kết quả khác nhau giữa các API. Người dùng, báo cáo, đặt vé dùng `page`, `pageSize`; xe, tài xế, chuyến xe dùng `pageNumber`, `pageSize`, `sortBy`, `isAscending`. Xem Swagger để biết chính xác từng API.
@@ -17,12 +17,14 @@
 
 | Phương thức | Đường dẫn | Quyền | Mô tả |
 |---|---|---|---|
-| POST | `/api/Auth/Register` | Mọi người | Đăng ký. Người lạ luôn là `Customer`; chỉ Admin đang đăng nhập mới gán được vai trò khác. Trả `{ message, requiresVerification, emailSent }`; tự đăng ký thì phải xác thực email bằng mã OTP. Đăng ký lại email chưa xác thực sẽ đặt lại mật khẩu theo lần mới và gửi lại mã. |
+| POST | `/api/Auth/Register` | Mọi người | Đăng ký (giới hạn 10 lần mỗi phút theo IP). Người lạ luôn là `Customer`; chỉ Admin đang đăng nhập mới gán được vai trò khác. Trả `{ message, requiresVerification, emailSent }`; tự đăng ký thì phải xác thực email bằng mã OTP. Đăng ký lại email chưa xác thực sẽ đặt lại mật khẩu theo lần mới và gửi lại mã. |
 | POST | `/api/Auth/verify-email` | Mọi người | Body `{ email, code }` (mã 6 số, hiệu lực khoảng 9 phút). Sai 5 lần thì tạm khóa 5 phút (429). |
 | POST | `/api/Auth/resend-otp` | Mọi người | Body `{ email }`. Gửi lại mã, tối thiểu 60 giây một lần (429 nếu gửi dồn). Luôn trả cùng một thông báo. |
-| POST | `/api/Auth/Login` | Mọi người | Đăng nhập, trả `{ jwtToken }`. Tài khoản bị khóa hoặc chưa xác thực email trả 403. |
+| POST | `/api/Auth/Login` | Mọi người | Đăng nhập, trả `{ jwtToken, refreshToken, refreshExpiresAt }`. Sai mật khẩu 5 lần (`Auth:MaxFailedAttempts`) thì tạm khóa 5 phút (`Auth:LockoutMinutes`), trả 403 kèm số phút còn lại. Tài khoản bị admin khóa hoặc chưa xác thực email cũng trả 403. Giới hạn 10 lần mỗi phút theo IP (429, header `Retry-After`). |
+| POST | `/api/Auth/refresh` | Mọi người | Body `{ refreshToken }`. Trả cặp token mới, nạp lại vai trò; token cũ bị thu hồi. Token hết hạn, đã thu hồi hoặc tài khoản bị khóa trả 401. Dùng lại token đã đổi (ngoài 20 giây ân hạn) bị coi là nghi lộ và thu hồi mọi phiên của tài khoản. |
+| POST | `/api/Auth/logout` | Mọi người | Body `{ refreshToken }`. Thu hồi phiên; luôn trả 200. |
 | GET | `/api/Auth/me` | Đăng nhập | Email và vai trò của token hiện tại. |
-| POST | `/api/Auth/change-password` | Đăng nhập (mọi vai trò) | Đổi mật khẩu của chính mình. Body `{ currentPassword, newPassword }`. Sai mật khẩu hiện tại, mật khẩu mới trùng mật khẩu cũ hoặc không đạt quy tắc thì trả 400 kèm `message`. Mật khẩu không được ghi vào log. |
+| POST | `/api/Auth/change-password` | Đăng nhập (mọi vai trò) | Đổi mật khẩu của chính mình. Body `{ currentPassword, newPassword, refreshToken? }` (gửi `refreshToken` của phiên đang dùng để giữ phiên này, các phiên khác bị thu hồi). Sai mật khẩu hiện tại, mật khẩu mới trùng mật khẩu cũ hoặc không đạt quy tắc thì trả 400 kèm `message`. Mật khẩu không được ghi vào log. |
 
 ## Người dùng – `/api/Users` (chỉ Admin)
 

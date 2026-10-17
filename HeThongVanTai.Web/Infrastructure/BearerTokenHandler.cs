@@ -18,6 +18,14 @@ public class BearerTokenHandler : DelegatingHandler
         var context = _accessor.HttpContext;
         if (context != null)
         {
+            // API giới hạn số lần đăng nhập theo IP: chuyển địa chỉ của khách thật, không phải của máy chủ Web
+            var clientIp = context.Connection.RemoteIpAddress?.ToString();
+            if (!string.IsNullOrEmpty(clientIp))
+            {
+                request.Headers.Remove("X-Forwarded-For");
+                request.Headers.TryAddWithoutValidation("X-Forwarded-For", clientIp);
+            }
+
             var token = await context.GetTokenAsync("access_token");
             if (!string.IsNullOrEmpty(token))
             {

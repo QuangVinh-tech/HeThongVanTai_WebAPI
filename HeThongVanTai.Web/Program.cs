@@ -29,6 +29,14 @@ builder.Services.AddHttpClient<ApiClient>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 }).AddHttpMessageHandler<BearerTokenHandler>();
 
+// Client riêng (không gắn Bearer) để làm mới token trong cookie; xem TokenRefresher
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient("api-refresh", client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+
 // Service gọi API theo từng module
 builder.Services.AddScoped<DanhMucApiService>();
 builder.Services.AddScoped<DashboardApiService>();
@@ -49,6 +57,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.Name = "vantai.auth";
         options.Cookie.HttpOnly = true;
         options.SlidingExpiration = false;
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);   // cùng hạn refresh token của API; hạn thật do API quyết định
+        // Access token ngắn hạn: tự làm mới bằng refresh token, API từ chối thì đăng xuất
+        options.Events.OnValidatePrincipal = TokenRefresher.ValidateAsync;
     });
 builder.Services.AddAuthorization();
 

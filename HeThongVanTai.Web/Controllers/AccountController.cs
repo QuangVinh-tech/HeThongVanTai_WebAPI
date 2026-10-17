@@ -1,3 +1,4 @@
+using System.Globalization;
 using HeThongVanTai.Web.Infrastructure;
 using HeThongVanTai.Web.Models;
 using Microsoft.AspNetCore.Authentication;
@@ -73,8 +74,17 @@ public class AccountController : Controller
         }
 
         // Cookie sống đúng bằng hạn của token; token được cất trong cookie để gắn vào các lời gọi API
-        var properties = new AuthenticationProperties { IsPersistent = false, ExpiresUtc = info.ExpiresAt };
-        properties.StoreTokens(new[] { new AuthenticationToken { Name = "access_token", Value = jwt! } });
+        // Cookie sống bằng hạn của refresh token; access token (ngắn hạn) được làm mới tự động, xem TokenRefresher
+        var sessionEnds = result.Data?.RefreshExpiresAt ?? info.ExpiresAt;
+        var properties = new AuthenticationProperties { IsPersistent = false, ExpiresUtc = sessionEnds };
+        var storedTokens = new List<AuthenticationToken>
+        {
+            new() { Name = TokenRefresher.AccessToken, Value = jwt! },
+            new() { Name = TokenRefresher.AccessExpiresAt, Value = info.ExpiresAt.ToString("o", CultureInfo.InvariantCulture) }
+        };
+        if (!string.IsNullOrEmpty(result.Data?.RefreshToken))
+            storedTokens.Add(new AuthenticationToken { Name = TokenRefresher.RefreshToken, Value = result.Data!.RefreshToken! });
+        properties.StoreTokens(storedTokens);
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, info.Principal, properties);
         _logger.LogInformation("Đăng nhập Web thành công: {Email}", Safe(model.Email));
 
@@ -189,6 +199,12 @@ public class AccountController : Controller
     public async Task<IActionResult> Logout()
     {
         _logger.LogInformation("Đăng xuất Web: {Email}", Safe(User.Identity?.Name));
+
+        // Thu hồi phiên ở API (không chặn việc đăng xuất nếu API lỗi)
+        var refreshToken = await HttpContext.GetTokenAsync(TokenRefresher.RefreshToken);
+        if (!string.IsNullOrEmpty(refreshToken))
+            await _api.PostAsync<MessageResponse>("api/Auth/logout", new { refreshToken });
+
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return RedirectToAction("Index", "Home");
     }
@@ -208,7 +224,12 @@ public class AccountController : Controller
 
         // Chỉ ghi email, không ghi mật khẩu
         var result = await _api.PostAsync<MessageResponse>("api/Auth/change-password",
-            new { currentPassword = model.CurrentPassword, newPassword = model.NewPassword });
+            new
+            {
+                currentPassword = model.CurrentPassword,
+                newPassword = model.NewPassword,
+                refreshToken = await HttpContext.GetTokenAsync(TokenRefresher.RefreshToken)   // giữ phiên này, thu hồi phiên khác
+            });
 
         if (!result.Ok)
         {

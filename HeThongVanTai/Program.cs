@@ -1,6 +1,11 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Net;
+using System.Security.Claims;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -69,6 +74,7 @@ builder.Services.AddMemoryCache();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ITokenRepository, TokenRepository>();
+builder.Services.AddScoped<RefreshTokenService>();
 
 builder.Services.AddIdentityCore<IdentityUser>()
     .AddRoles<IdentityRole>()
@@ -84,9 +90,15 @@ builder.Services.Configure<IdentityOptions>(option =>
     option.Password.RequireUppercase = false;
     option.Password.RequiredLength = 6;
     option.Password.RequiredUniqueChars = 1;
+
+    // Khóa tạm sau nhiều lần sai mật khẩu (cấu hình ở mục "Auth" trong appsettings)
+    option.Lockout.AllowedForNewUsers = true;
+    option.Lockout.MaxFailedAccessAttempts = builder.Configuration.GetValue("Auth:MaxFailedAttempts", 5);
+    option.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(builder.Configuration.GetValue("Auth:LockoutMinutes", 5));
 });
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(option =>
+{
     option.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -97,7 +109,57 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidAudience = builder.Configuration["Jwt:Audience"],
         ClockSkew = TimeSpan.Zero,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
-    });
+    };
+
+    // Kiểm tra ở mỗi request: tài khoản đã bị khóa hoặc bị xóa thì token cũ bị từ chối ngay (401),
+    // không phải chờ token hết hạn. Vai trò thì vẫn theo token (đổi vai trò có hiệu lực khi đăng nhập hoặc làm mới token).
+    option.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+            var users = context.HttpContext.RequestServices.GetRequiredService<UserManager<IdentityUser>>();
+            var user = userId == null ? null : await users.FindByIdAsync(userId);
+            if (user == null || await users.IsLockedOutAsync(user))
+                context.Fail("Tài khoản đã bị khóa hoặc không còn tồn tại.");
+        }
+    };
+});
+
+// Giới hạn số lần gọi API đăng nhập và đăng ký theo địa chỉ IP (429 khi vượt). Cấu hình ở mục "Security:AuthRateLimit".
+builder.Services.AddRateLimiter(options =>
+{
+    var permit = Math.Max(1, builder.Configuration.GetValue("Security:AuthRateLimit:PermitLimit", 10));
+    var window = Math.Max(1, builder.Configuration.GetValue("Security:AuthRateLimit:WindowSeconds", 60));
+
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = permit,
+            Window = TimeSpan.FromSeconds(window),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        }));
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            context.HttpContext.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString();
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new { message = "Bạn thao tác quá nhiều lần. Vui lòng thử lại sau ít phút." }, cancellationToken);
+    };
+});
+
+// Web gọi API qua proxy/localhost: đọc địa chỉ khách thật từ X-Forwarded-For, chỉ tin các proxy loopback
+// và địa chỉ khai báo ở "Security:TrustedProxies" (để giới hạn theo IP khách, không theo IP của máy chủ Web)
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    foreach (var ip in builder.Configuration.GetSection("Security:TrustedProxies").Get<string[]>() ?? Array.Empty<string>())
+        if (IPAddress.TryParse(ip, out var address)) options.KnownProxies.Add(address);
+});
 // Mọi API mặc định phải đăng nhập; API công khai thì ghi [AllowAnonymous] rõ ràng
 builder.Services.AddAuthorization(options =>
 {
@@ -133,10 +195,12 @@ if (app.Environment.IsDevelopment())
     }
 }
 
+app.UseForwardedHeaders();   // phải đứng đầu để các middleware sau thấy IP khách thật
 app.UseSerilogRequestLogging();   // mỗi request một dòng log (chỉ đường dẫn, không ghi body, không ghi token)
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAuthentication();   // phải đứng trước UseAuthorization
 app.UseAuthorization();
+app.UseRateLimiter();
 app.MapControllers();
 app.Run();

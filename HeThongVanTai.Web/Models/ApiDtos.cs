@@ -4,6 +4,8 @@ namespace HeThongVanTai.Web.Models;
 public class LoginResponse
 {
     public string JwtToken { get; set; } = "";
+    public string? RefreshToken { get; set; }
+    public DateTimeOffset? RefreshExpiresAt { get; set; }
 }
 
 public class MeResponse

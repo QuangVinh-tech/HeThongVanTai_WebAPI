@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
 using HeThongVanTai.Models.Domain;
@@ -29,10 +30,13 @@ namespace HeThongVanTai.Controllers
         private readonly IMemoryCache _cache;
         private readonly IConfiguration _config;
         private readonly ILogger<AuthController> _logger;
+        private readonly RefreshTokenService _refresh;
 
         public AuthController(UserManager<IdentityUser> userManager, ITokenRepository tokenRepository,
-            IEmailService email, IMemoryCache cache, IConfiguration config, ILogger<AuthController> logger)
+            IEmailService email, IMemoryCache cache, IConfiguration config, ILogger<AuthController> logger,
+            RefreshTokenService refresh)
         {
+            _refresh = refresh;
             _userManager = userManager;
             _tokenRepository = tokenRepository;
             _email = email;
@@ -41,11 +45,20 @@ namespace HeThongVanTai.Controllers
             _logger = logger;
         }
 
+        // Khóa tạm sau nhiều lần sai mật khẩu (Identity lockout): mặc định 5 lần, khóa 5 phút
+        private int MaxFailedAttempts => _config.GetValue("Auth:MaxFailedAttempts", 5);
+        private int LockoutMinutes => _config.GetValue("Auth:LockoutMinutes", 5);
+
+        // Admin khóa tài khoản bằng cách đặt LockoutEnd = MaxValue (xem UsersController)
+        private static bool IsAdminLock(IdentityUser u) =>
+            u.LockoutEnd.HasValue && u.LockoutEnd.Value > DateTimeOffset.UtcNow.AddDays(365);
+
         // Cho phép tắt bắt buộc xác thực (ví dụ máy dev chưa có SMTP): "Auth": { "RequireEmailConfirmation": false }
         private bool RequireConfirmation => _config.GetValue("Auth:RequireEmailConfirmation", true);
 
         // POST: /api/Auth/Register
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         [HttpPost("Register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDTO dto)
         {
@@ -156,36 +169,114 @@ namespace HeThongVanTai.Controllers
         }
 
         // POST: /api/Auth/Login
+        // Sai mật khẩu quá số lần cho phép thì tạm khóa tài khoản; giới hạn số lần gọi theo địa chỉ IP (policy "auth").
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Username);
-            if (user != null && await _userManager.CheckPasswordAsync(user, dto.Password))
+            if (user != null)
             {
-                // Tài khoản bị khóa không được đăng nhập (kiểm tra sau mật khẩu để không lộ tài khoản nào tồn tại)
+                if (!user.LockoutEnabled) await _userManager.SetLockoutEnabledAsync(user, true);
+
                 if (await _userManager.IsLockedOutAsync(user))
                 {
-                    _logger.LogWarning("Đăng nhập bị chặn, tài khoản đã khóa: {Email}", user.Email);
-                    return StatusCode(StatusCodes.Status403Forbidden,
-                        new { message = "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên." });
+                    if (IsAdminLock(user))
+                    {
+                        // Khóa bởi quản trị viên: chỉ nói rõ khi mật khẩu đúng (không lộ tài khoản nào tồn tại)
+                        if (await _userManager.CheckPasswordAsync(user, dto.Password))
+                        {
+                            _logger.LogWarning("Đăng nhập bị chặn, tài khoản đã khóa: {Email}", user.Email);
+                            return StatusCode(StatusCodes.Status403Forbidden,
+                                new { message = "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên." });
+                        }
+                    }
+                    else
+                    {
+                        var minutes = Math.Max(1, (int)Math.Ceiling((user.LockoutEnd!.Value - DateTimeOffset.UtcNow).TotalMinutes));
+                        _logger.LogWarning("Đăng nhập bị chặn, tài khoản tạm khóa do sai mật khẩu: {Email}", user.Email);
+                        return StatusCode(StatusCodes.Status403Forbidden, new
+                        {
+                            message = $"Tài khoản đang tạm khóa do nhập sai mật khẩu quá nhiều lần. Vui lòng thử lại sau {minutes} phút."
+                        });
+                    }
                 }
-
-                // Mật khẩu đúng nhưng chưa xác thực email
-                if (RequireConfirmation && !user.EmailConfirmed)
+                else if (await _userManager.CheckPasswordAsync(user, dto.Password))
                 {
-                    _logger.LogWarning("Đăng nhập bị chặn, chưa xác thực email: {Email}", user.Email);
-                    return StatusCode(StatusCodes.Status403Forbidden, new { message = NotConfirmedMessage });
-                }
+                    // Mật khẩu đúng nhưng chưa xác thực email
+                    if (RequireConfirmation && !user.EmailConfirmed)
+                    {
+                        _logger.LogWarning("Đăng nhập bị chặn, chưa xác thực email: {Email}", user.Email);
+                        return StatusCode(StatusCodes.Status403Forbidden, new { message = NotConfirmedMessage });
+                    }
 
-                var roles = await _userManager.GetRolesAsync(user);
-                var token = _tokenRepository.CreateJWTToken(user, roles.ToList());
-                _logger.LogInformation("Đăng nhập thành công: {Email}", user.Email);
-                return Ok(new LoginResponseDTO { JwtToken = token });
+                    await _userManager.ResetAccessFailedCountAsync(user);
+
+                    var roles = await _userManager.GetRolesAsync(user);
+                    var token = _tokenRepository.CreateJWTToken(user, roles.ToList());
+                    var refresh = await _refresh.IssueAsync(user.Id);
+                    _logger.LogInformation("Đăng nhập thành công: {Email}", user.Email);
+                    return Ok(new LoginResponseDTO
+                    {
+                        JwtToken = token,
+                        RefreshToken = refresh.Token,
+                        RefreshExpiresAt = refresh.ExpiresAt
+                    });
+                }
+                else
+                {
+                    await _userManager.AccessFailedAsync(user);
+                    if (await _userManager.IsLockedOutAsync(user))
+                    {
+                        _logger.LogWarning("Tài khoản bị tạm khóa do sai mật khẩu {Count} lần: {Email}", MaxFailedAttempts, user.Email);
+                        return StatusCode(StatusCodes.Status403Forbidden, new
+                        {
+                            message = $"Bạn đã nhập sai mật khẩu {MaxFailedAttempts} lần. Tài khoản tạm khóa {LockoutMinutes} phút."
+                        });
+                    }
+                }
             }
             // Chỉ ghi email, tuyệt đối không ghi mật khẩu hay token
             _logger.LogWarning("Đăng nhập thất bại: {Email}", LogText.Clean(dto.Username));
             return BadRequest("Username or password incorrect");
+        }
+
+        // POST: /api/Auth/refresh  body: { "refreshToken": "..." }
+        // Đổi refresh token lấy cặp token mới (access token ngắn hạn + refresh token mới). Vai trò được nạp lại ở đây.
+        [AllowAnonymous]
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshRequestDTO dto)
+        {
+            var rotated = await _refresh.RotateAsync(dto.RefreshToken);
+            if (rotated == null)
+                return Unauthorized(new { message = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại." });
+
+            var userId = rotated.Value.UserId;
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || await _userManager.IsLockedOutAsync(user) || (RequireConfirmation && !user.EmailConfirmed))
+            {
+                await _refresh.RevokeAllAsync(userId);
+                return Unauthorized(new { message = "Tài khoản không còn được phép đăng nhập." });
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var jwt = _tokenRepository.CreateJWTToken(user, roles.ToList());
+            return Ok(new LoginResponseDTO
+            {
+                JwtToken = jwt,
+                RefreshToken = rotated.Value.Token.Token,
+                RefreshExpiresAt = rotated.Value.Token.ExpiresAt
+            });
+        }
+
+        // POST: /api/Auth/logout  body: { "refreshToken": "..." }  (thu hồi phiên; luôn trả OK)
+        [AllowAnonymous]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] RefreshRequestDTO dto)
+        {
+            await _refresh.RevokeAsync(dto.RefreshToken);
+            return Ok(new { message = "Đã đăng xuất." });
         }
 
         // GET: /api/Auth/me  (để kiểm tra token đang là ai, vai trò gì)
@@ -223,6 +314,9 @@ namespace HeThongVanTai.Controllers
                 _logger.LogWarning("Đổi mật khẩu thất bại (mật khẩu mới không hợp lệ): {Email}", user.Email);
                 return BadRequest(new { message = string.Join(" ", result.Errors.Select(PasswordErrorText)) });
             }
+
+            // Đổi mật khẩu thì các phiên khác (thiết bị khác) phải đăng nhập lại; giữ phiên đang dùng
+            await _refresh.RevokeAllAsync(user.Id, dto.RefreshToken);
 
             _logger.LogInformation("Đổi mật khẩu thành công: {Email}", user.Email);
             return Ok(new { message = "Đã đổi mật khẩu." });
