@@ -13,6 +13,10 @@
         public const string AdminOperator = Admin + "," + Operator;
         public const string AdminAccountant = Admin + "," + Accountant;
 
+        // Tài xế: xem và đổi trạng thái chuyến của mình; xem danh sách hành khách
+        public const string AdminOperatorDriver = Admin + "," + Operator + "," + Driver;
+        public const string AdminOperatorSellerDriver = Admin + "," + Operator + "," + Seller + "," + Driver;
+
         // Đặt vé: Customer đặt cho mình; Seller và Admin đặt hộ khách (theo sheet Phân quyền)
         public const string AdminSellerCustomer = Admin + "," + Seller + "," + Customer;
         // Xem danh sách đặt vé của mọi khách: Kế toán chỉ xem để đối soát

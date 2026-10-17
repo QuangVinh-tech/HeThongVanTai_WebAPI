@@ -1,0 +1,44 @@
+﻿@using HeThongVanTai.Web.Models.ViewModels.KhachHang
+@model CustomerForm
+@{
+    var isNew = Model.Id == 0;
+    ViewData["Title"] = isNew ? "Thêm khách hàng" : "Sửa khách hàng";
+    Layout = "_AdminLayout";
+}
+
+<h1 class="h4 mb-3">@ViewData["Title"]</h1>
+
+<div class="card card-vt p-4 form-xe">
+    <form method="post" asp-action="@(isNew ? "Create" : "Edit")" asp-route-id="@(isNew ? (int?)null : Model.Id)">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+        <div class="mb-3">
+            <label asp-for="FullName" class="form-label"></label>
+            <input asp-for="FullName" class="form-control" maxlength="100" />
+            <span asp-validation-for="FullName" class="text-danger small"></span>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+                <label asp-for="Phone" class="form-label"></label>
+                <input asp-for="Phone" class="form-control" maxlength="10" placeholder="Ví dụ: 0912345678" />
+                <span asp-validation-for="Phone" class="text-danger small"></span>
+            </div>
+            <div class="col-12 col-md-6">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" maxlength="100" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Lưu</button>
+            <a class="btn btn-outline-primary" asp-action="Index">Quay lại</a>
+        </div>
+    </form>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/xe-tai-xe.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

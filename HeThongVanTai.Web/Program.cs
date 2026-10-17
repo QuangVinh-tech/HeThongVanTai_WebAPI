@@ -36,7 +36,10 @@ builder.Services.AddScoped<UsersApiService>();
 builder.Services.AddScoped<ReportsApiService>();
 builder.Services.AddScoped<VeKhachApiService>();
 builder.Services.AddScoped<XeTaiXeApiService>();   // Xe, Tài xế (Admin/Vehicles, Admin/Drivers)
-builder.Services.AddScoped<VanChuyenApiService>();   // Vận chuyển hàng hóa
+builder.Services.AddScoped<CustomersApiService>();     // Khách hàng (Admin/Customers)
+builder.Services.AddScoped<SchedulesApiService>();     // Lịch chạy cố định (Admin/Schedules)
+builder.Services.AddScoped<DriverTripsApiService>();   // Chuyến của tôi (Driver/Trips)
+builder.Services.AddScoped<AuditLogsApiService>();     // Nhật ký thao tác (Admin/AuditLogs)
 
 // Tài khoản nhận chuyển khoản để tạo mã QR (mục "BankTransfer" trong appsettings.json)
 builder.Services.Configure<BankQrOptions>(builder.Configuration.GetSection("BankTransfer"));

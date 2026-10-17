@@ -485,10 +485,11 @@ public class BookingServiceTests : BookingTestBase
         AddBooking(MainTrip, "Holding", 100_000m, "A1");               // chiếm 1 ghế của chuyến chính
 
 
-        var res = await Svc().SearchAsync(
+        var res = await Svc().SearchPagedAsync(
             FromStation.Id,
             ToStation.Id,
-            MainTrip.DepartAt.Date);
+            MainTrip.DepartAt.Date,
+            null, null, null, null, null, null, null, 1, 10);
 
 
         Assert.Equal(1, Prop<int>(res, "total"));
@@ -498,19 +499,21 @@ public class BookingServiceTests : BookingTestBase
         Assert.Equal(2, Prop<int>(first, "AvailableSeats"));
     }
 
-    
-[Fact]
-public async Task TimChuyen_SaiNgayHoacSaiBen_KhongCoKetQua()
-    {
-        var wrongDay = await Svc().SearchAsync(
-            FromStation.Id,
-            ToStation.Id,
-            MainTrip.DepartAt.Date.AddDays(1));
 
-        var wrongWay = await Svc().SearchAsync(
+    [Fact]
+    public async Task TimChuyen_SaiNgayHoacSaiBen_KhongCoKetQua()
+    {
+        var wrongDay = await Svc().SearchPagedAsync(
+            FromStation.Id,
+            ToStation.Id,
+            MainTrip.DepartAt.Date.AddDays(1),
+            null, null, null, null, null, null, null, 1, 10);
+
+        var wrongWay = await Svc().SearchPagedAsync(
             ToStation.Id,
             FromStation.Id,
-            MainTrip.DepartAt.Date);
+            MainTrip.DepartAt.Date,
+            null, null, null, null, null, null, null, 1, 10);
 
         Assert.Equal(0, Prop<int>(wrongDay, "total"));
         Assert.Equal(0, Prop<int>(wrongWay, "total"));

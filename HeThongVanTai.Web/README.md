@@ -60,3 +60,12 @@
 - Doanh thu = tiền đã thu trừ tiền đã hoàn, tính theo ngày thu, gom theo tuyến của chuyến trong booking. Tổng ở các thẻ tính trên toàn bộ kết quả lọc, không chỉ trang hiện tại.
 - **Xuất Excel**: nút "Xuất Excel" tải file `.xlsx` (ClosedXML) với đúng điều kiện lọc hiện tại, gồm toàn bộ dòng và dòng tổng cộng. Sau khi pull cần `dotnet restore` để tải ClosedXML.
 - Kế toán đăng nhập xong vào thẳng trang này.
+
+## Trang của Tân (giai đoạn 2, việc 38 đến 42)
+
+| Trang | Đường dẫn | Ai được vào |
+|---|---|---|
+| Khách hàng | `/Admin/Customers` | Admin, Seller |
+| Lịch chạy cố định | `/Admin/Schedules` | Admin, Operator |
+| Chuyến của tôi | `/Driver/Trips` | Driver (chuyến của mình) |
+| Nhật ký thao tác | `/Admin/AuditLogs` | Admin |

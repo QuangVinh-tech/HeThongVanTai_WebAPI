@@ -1,0 +1,164 @@
+﻿@using HeThongVanTai.Web.Models.ViewModels.LichChay
+@model ScheduleModel
+@{
+    ViewData["Title"] = "Lịch chạy cố định";
+    Layout = "_AdminLayout";
+    var f = Model.Form;
+    var vn = new System.Globalization.CultureInfo("vi-VN");
+}
+
+<div class="mb-3">
+    <h1 class="h4 mb-0">Lịch chạy cố định</h1>
+    <div class="small text-muted">Tạo nhiều chuyến cùng lúc theo tuyến, xe, tài xế, giờ xuất bến, các thứ trong tuần và khoảng ngày.</div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.LoadError))
+{
+    <div class="alert alert-danger">@Model.LoadError</div>
+}
+
+<div class="card card-vt p-4 mb-4">
+    <form method="post" id="scheduleForm">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-md-4">
+                <label asp-for="Form.BusRouteId" class="form-label"></label>
+                <select asp-for="Form.BusRouteId" class="form-select">
+                    <option value="0">-- Chọn tuyến --</option>
+                    @foreach (var r in Model.Routes)
+                    {
+                        <option value="@r.Id" selected="@(f.BusRouteId == r.Id)">@r.Name (@r.DurationMin phút)</option>
+                    }
+                </select>
+                <span asp-validation-for="Form.BusRouteId" class="text-danger small"></span>
+            </div>
+            <div class="col-12 col-md-4">
+                <label asp-for="Form.VehicleId" class="form-label"></label>
+                <select asp-for="Form.VehicleId" class="form-select">
+                    <option value="0">-- Chọn xe --</option>
+                    @foreach (var v in Model.Vehicles)
+                    {
+                        <option value="@v.Id" selected="@(f.VehicleId == v.Id)">@v.Plate (@v.SeatCount ghế)</option>
+                    }
+                </select>
+                <span asp-validation-for="Form.VehicleId" class="text-danger small"></span>
+            </div>
+            <div class="col-12 col-md-4">
+                <label asp-for="Form.DriverId" class="form-label"></label>
+                <select asp-for="Form.DriverId" class="form-select">
+                    <option value="0">-- Chọn tài xế --</option>
+                    @foreach (var d in Model.Drivers)
+                    {
+                        <option value="@d.Id" selected="@(f.DriverId == d.Id)">@d.FullName</option>
+                    }
+                </select>
+                <span asp-validation-for="Form.DriverId" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <label asp-for="Form.FromDate" class="form-label"></label>
+                <input asp-for="Form.FromDate" class="form-control" />
+                <span asp-validation-for="Form.FromDate" class="text-danger small"></span>
+            </div>
+            <div class="col-6 col-md-3">
+                <label asp-for="Form.ToDate" class="form-label"></label>
+                <input asp-for="Form.ToDate" class="form-control" />
+                <span asp-validation-for="Form.ToDate" class="text-danger small"></span>
+            </div>
+            <div class="col-6 col-md-3">
+                <label asp-for="Form.DepartureTime" class="form-label"></label>
+                <input asp-for="Form.DepartureTime" type="time" class="form-control" />
+                <span asp-validation-for="Form.DepartureTime" class="text-danger small"></span>
+            </div>
+            <div class="col-6 col-md-3">
+                <label asp-for="Form.Price" class="form-label"></label>
+                <input asp-for="Form.Price" type="number" min="0" step="1000" class="form-control" />
+                <span asp-validation-for="Form.Price" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <div class="form-label mb-1">Chạy vào các thứ (bỏ trống = chạy mọi ngày)</div>
+            <div class="d-flex flex-wrap gap-3">
+                @foreach (var d in ScheduleOptions.Days)
+                {
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="Form.DaysOfWeek" id="day@((int)d.Day)"
+                               value="@((int)d.Day)" checked="@f.DaysOfWeek.Contains(d.Day)" />
+                        <label class="form-check-label" for="day@((int)d.Day)">@d.Label</label>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-outline-primary" asp-action="Preview">
+                <i class="bi bi-eye me-1"></i>Xem trước
+            </button>
+            <button type="submit" class="btn btn-primary" asp-action="Create"
+                    disabled="@(Model.Preview == null || Model.Preview.ConflictCount > 0)">
+                <i class="bi bi-calendar-plus me-1"></i>Tạo lịch chạy
+            </button>
+        </div>
+        @if (Model.Preview == null)
+        {
+            <div class="small text-muted mt-2">Hãy bấm "Xem trước" trước, nút "Tạo lịch chạy" chỉ bật khi không có chuyến nào bị trùng.</div>
+        }
+    </form>
+</div>
+
+@if (Model.Preview != null)
+{
+    var p = Model.Preview;
+    <div class="card card-vt">
+        <div class="p-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <span class="fw-semibold">Kết quả xem trước: @p.TotalItems chuyến</span>
+            @if (p.ConflictCount == 0)
+            {
+                <span class="pill pill-ok">Không có chuyến nào bị trùng</span>
+            }
+            else
+            {
+                <span class="pill pill-bad">@p.ConflictCount chuyến có vấn đề, cần chỉnh lại</span>
+            }
+        </div>
+        <div class="table-responsive">
+            <table class="table table-vt align-middle mb-0">
+                <thead>
+                    <tr><th>Ngày</th><th>Giờ đi</th><th>Giờ đến</th><th>Kết quả</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in p.Items)
+                    {
+                        <tr>
+                            <td>@ScheduleOptions.DayLabel(row.DepartAt.DayOfWeek), @row.DepartAt.ToString("dd/MM/yyyy")</td>
+                            <td>@row.DepartAt.ToString("HH:mm")</td>
+                            <td>@row.ArriveAt.ToString("dd/MM HH:mm")</td>
+                            <td>
+                                @if (row.Ok)
+                                {
+                                    <span class="pill pill-ok">Hợp lệ</span>
+                                }
+                                else
+                                {
+                                    <span class="pill pill-bad">@row.Problem</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/xe-tai-xe.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

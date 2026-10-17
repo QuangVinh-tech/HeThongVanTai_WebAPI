@@ -1,6 +1,7 @@
 using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Models.DTO;
 using HeThongVanTai.Services;
+using HeThongVanTai.Services.Audit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,7 +11,12 @@ namespace HeThongVanTai.Controllers;
 public class BookingsController : ControllerBase
 {
     private readonly BookingService _svc;
-    public BookingsController(BookingService svc) => _svc = svc;
+    private readonly IAuditService? _audit;
+    public BookingsController(BookingService svc, IAuditService? audit = null)
+    {
+        _svc = svc;
+        _audit = audit;
+    }
 
     private bool IsStaff => User.IsInRole("Admin") || User.IsInRole("Seller");
 
@@ -107,7 +113,11 @@ public class BookingsController : ControllerBase
     public async Task<IActionResult> Cancel(int id)
     {
         if (!await CanAccessBookingAsync(id)) return Deny();
-        return Ok(await _svc.CancelAsync(id));
+        var result = await _svc.CancelAsync(id);
+        var refund = (decimal?)result.GetType().GetProperty("RefundAmount")?.GetValue(result) ?? 0m;
+        await _audit.AuditAsync(refund > 0 ? "Refund" : "Cancel", "Booking", id,
+            refund > 0 ? $"Hủy đặt vé #{id}, hoàn {refund:N0}đ" : $"Hủy đặt vé #{id}, không hoàn tiền");
+        return Ok(result);
     }
 
     // Quản trị: lọc, sắp xếp, phân trang

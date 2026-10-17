@@ -76,6 +76,53 @@ namespace HeThongVanTai.Migrations
                     b.ToTable("Bookings");
                 });
 
+            modelBuilder.Entity("HeThongVanTai.Models.Domain.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Detail")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("EntityId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("EntityType", "EntityId");
+
+                    b.ToTable("AuditLogs");
+                });
+
             modelBuilder.Entity("HeThongVanTai.Models.Domain.BusRoute", b =>
                 {
                     b.Property<int>("Id")
@@ -479,9 +526,6 @@ namespace HeThongVanTai.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
-                        .IsUnique();
-
                     b.HasIndex("FromStationId");
 
                     b.HasIndex("PromotionId");
@@ -536,7 +580,7 @@ namespace HeThongVanTai.Migrations
 
                     b.HasIndex("ShipmentId");
 
-                    b.ToTable("ShipmentItems");
+                    b.ToTable("ShipmentItem");
                 });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.ShipmentLog", b =>
@@ -817,7 +861,7 @@ namespace HeThongVanTai.Migrations
                     b.HasOne("HeThongVanTai.Models.Domain.Station", "FromStation")
                         .WithMany()
                         .HasForeignKey("FromStationId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("HeThongVanTai.Models.Domain.Promotion", "Promotion")
@@ -827,13 +871,12 @@ namespace HeThongVanTai.Migrations
                     b.HasOne("HeThongVanTai.Models.Domain.Station", "ToStation")
                         .WithMany()
                         .HasForeignKey("ToStationId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("HeThongVanTai.Models.Domain.Trip", "Trip")
                         .WithMany()
-                        .HasForeignKey("TripId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("TripId");
 
                     b.Navigation("FromStation");
 
