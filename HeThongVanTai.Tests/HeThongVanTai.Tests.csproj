@@ -9,6 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="MailKit" Version="4.18.1" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.31" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
 		<PackageReference Include="xunit" Version="2.5.3" />

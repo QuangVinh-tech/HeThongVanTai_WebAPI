@@ -32,6 +32,11 @@ public class TicketsController : ControllerBase
         return File(png, "image/png");
     }
 
+    // Soát vé: nhân viên quét mã QR hoặc nhập mã vé
+    [Authorize(Roles = AppRoles.CheckInStaff)]
+    [HttpPost("{code}/checkin")]
+    public async Task<IActionResult> CheckIn(string code) => Ok(await _svc.CheckInAsync(code));
+
     // Đổi ghế hoặc đổi chuyến: chủ vé hoặc Admin/Seller
     [Authorize(Roles = AppRoles.AdminSellerCustomer)]
     [HttpPut("{id:int}/change")]

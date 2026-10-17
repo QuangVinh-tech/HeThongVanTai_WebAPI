@@ -62,6 +62,8 @@ builder.Services.AddDbContext<VanTaiAuthDbContext>(options =>
 // Dich vu dat ve / thanh toan (phan cua Tan)
 builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<PaymentService>();
+builder.Services.Configure<ShippingOptions>(builder.Configuration.GetSection("Shipping"));
+builder.Services.AddScoped<ShipmentService>();
 builder.Services.AddHostedService<HoldExpiryService>();
 
 // Auth (phan cua Vinh)
@@ -75,6 +77,7 @@ builder.Services.AddIdentityCore<IdentityUser>()
     .AddTokenProvider<DataProtectorTokenProvider<IdentityUser>>("VanTai")
     .AddEntityFrameworkStores<VanTaiAuthDbContext>()
     .AddDefaultTokenProviders();
+
 
 builder.Services.Configure<IdentityOptions>(option =>
 {

@@ -1,0 +1,82 @@
+﻿@model HeThongVanTai.Web.Controllers.CheckInPageModel
+@{
+    ViewData["Title"] = "Soát vé";
+}
+
+<div class="container py-4" style="max-width: 720px;">
+    <h1 class="h3 fw-bold mb-1">Soát vé</h1>
+    <p class="text-muted">Quét mã QR trên vé hoặc nhập mã vé. Mỗi vé chỉ soát được một lần.</p>
+
+    @if (Model.Result != null)
+    {
+        <div class="alert alert-success">
+            <div class="fw-bold mb-1"><i class="bi bi-check-circle-fill me-1"></i>Soát vé thành công</div>
+            <div>Mã vé: <strong>@Model.Result.TicketCode</strong> · Ghế: <strong>@Model.Result.SeatCode</strong></div>
+            <div>Hành khách: @(string.IsNullOrWhiteSpace(Model.Result.PassengerName) ? "-" : Model.Result.PassengerName)</div>
+            <div>Tuyến: @Model.Result.Route · Giờ chạy: @Model.Result.DepartAt.ToString("HH:mm dd/MM/yyyy")</div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <div class="alert alert-danger"><i class="bi bi-x-circle-fill me-1"></i>@Model.Error</div>
+    }
+
+    <form method="post" asp-action="Index" id="checkinForm" class="card card-vt p-3 mb-3">
+        <label class="form-label small" for="code">Mã vé</label>
+        <div class="input-group">
+            <input name="code" id="code" value="@Model.Code" class="form-control text-uppercase"
+                   placeholder="Nhập hoặc quét mã vé" autocomplete="off" maxlength="20" />
+            <button class="btn btn-primary" type="submit">Soát vé</button>
+        </div>
+    </form>
+
+    <div class="card card-vt p-3">
+        <button type="button" id="toggleScan" class="btn btn-outline-primary">
+            <i class="bi bi-camera me-1"></i>Bật camera quét QR
+        </button>
+        <div id="reader" class="mt-3"></div>
+        <div class="small text-muted mt-2">Camera chỉ hoạt động khi mở trang bằng https hoặc localhost.</div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script>
+        var codeInput = document.getElementById('code');
+        codeInput.focus();
+        codeInput.select();
+
+        var scanner = null;
+        var toggleBtn = document.getElementById('toggleScan');
+        var label = '<i class="bi bi-camera me-1"></i>';
+
+        toggleBtn.addEventListener('click', function () {
+            if (scanner) {
+                scanner.stop().then(function () {
+                    scanner.clear();
+                    scanner = null;
+                    toggleBtn.innerHTML = label + 'Bật camera quét QR';
+                });
+                return;
+            }
+            scanner = new Html5Qrcode('reader');
+            scanner.start(
+                { facingMode: 'environment' },
+                { fps: 10, qrbox: 250 },
+                function (text) {
+                    // Quét được thì dừng camera, điền mã và gửi form
+                    scanner.stop().then(function () {
+                        codeInput.value = text.trim().toUpperCase();
+                        document.getElementById('checkinForm').submit();
+                    });
+                }
+            ).then(function () {
+                toggleBtn.innerHTML = label + 'Tắt camera';
+            }).catch(function (err) {
+                alert('Không mở được camera: ' + err);
+                scanner = null;
+            });
+        });
+    </script>
+}

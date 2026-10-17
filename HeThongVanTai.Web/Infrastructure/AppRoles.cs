@@ -1,6 +1,6 @@
 namespace HeThongVanTai.Web.Infrastructure;
 
-// Phải trùng với tên vai trò bên API (AppRoles trong project HeThongVanTai)
+// Phải trùng tên vai trò bên API (AppRoles trong project HeThongVanTai)
 public static class AppRoles
 {
     public const string Admin = "Admin";
@@ -14,4 +14,5 @@ public static class AppRoles
     public const string AdminAccountant = Admin + "," + Accountant;
     public const string AdminSeller = Admin + "," + Seller;
     public const string AdminSellerCustomer = Admin + "," + Seller + "," + Customer;
+    public const string CheckInStaff = Admin + "," + Operator + "," + Seller + "," + Driver;
 }

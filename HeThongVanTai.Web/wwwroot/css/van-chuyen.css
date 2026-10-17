@@ -1,0 +1,66 @@
+﻿.parcel-box {
+    border: 1px solid var(--vt-line);
+    border-radius: 12px;
+    background: var(--vt-soft);
+    padding: 1rem;
+    margin-bottom: .75rem;
+}
+
+.fee-box {
+    border: 1px solid var(--vt-line);
+    border-radius: 12px;
+    background: #fff;
+    padding: 1rem;
+}
+
+    .fee-box .fee-row {
+        display: flex;
+        justify-content: space-between;
+        padding: .25rem 0;
+    }
+
+    .fee-box .fee-total {
+        border-top: 1px dashed var(--vt-line);
+        margin-top: .5rem;
+        padding-top: .5rem;
+        font-weight: 700;
+        color: var(--vt-primary);
+        font-size: 1.15rem;
+    }
+
+.quote-result {
+    background: var(--vt-tint);
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 1.25rem;
+    border-left: 2px solid var(--vt-line);
+}
+
+    .timeline li {
+        position: relative;
+        padding: 0 0 1rem .75rem;
+    }
+
+        .timeline li::before {
+            content: "";
+            position: absolute;
+            left: -1.6rem;
+            top: .3rem;
+            width: .8rem;
+            height: .8rem;
+            border-radius: 50%;
+            background: var(--vt-secondary);
+        }
+
+        .timeline li:last-child::before {
+            background: var(--vt-primary);
+        }
+
+.vc-narrow {
+    max-width: 880px;
+}

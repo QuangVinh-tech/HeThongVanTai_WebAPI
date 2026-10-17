@@ -28,6 +28,19 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Home" asp-action="Index">Trang chủ</a>
                         </li>
+
+                        @* Thông tin: lịch trình, văn phòng, liên hệ, chính sách, tuyển dụng *@
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Thông tin</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" asp-controller="Info" asp-action="Schedule">Lịch trình tuyến</a></li>
+                                <li><a class="dropdown-item" asp-controller="Info" asp-action="Offices">Văn phòng và bến xe</a></li>
+                                <li><a class="dropdown-item" asp-controller="Info" asp-action="Policy">Chính sách</a></li>
+                                <li><a class="dropdown-item" asp-controller="Info" asp-action="Careers">Tuyển dụng</a></li>
+                                <li><a class="dropdown-item" asp-controller="Info" asp-action="Contact">Liên hệ</a></li>
+                            </ul>
+                        </li>
+
                         @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Operator))
                         {
                             <li class="nav-item">
@@ -40,18 +53,46 @@
                                 <a class="nav-link" asp-controller="Reports" asp-action="Index">Báo cáo</a>
                             </li>
                         }
+
                         @if (User.IsInRole(AppRoles.Seller) && !User.IsInRole(AppRoles.Admin))
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="AdminBookings" asp-action="Index">Quản lý đặt vé</a>
                             </li>
                         }
+
                         @if (User.IsInRole(AppRoles.Driver))
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="DriverTrips" asp-action="Index">Chuyến của tôi</a>
                             </li>
                         }
+
+                        @* Soát vé: Admin, Điều hành, Bán vé, Tài xế *@
+                        @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Operator)
+                        || User.IsInRole(AppRoles.Seller) || User.IsInRole(AppRoles.Driver))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="CheckIn" asp-action="Index">Soát vé</a>
+                            </li>
+                        }
+
+                        @* Gửi hàng: đứng trước (bên trái) Vé của tôi. Ai cũng thấy; mục cần đăng nhập chỉ hiện khi đã đăng nhập *@
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Gửi hàng
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" asp-controller="Shipments" asp-action="Quote">Tính cước nhanh</a></li>
+                                @if (User.Identity?.IsAuthenticated == true)
+                                {
+                                    <li><a class="dropdown-item" asp-controller="Shipments" asp-action="Create">Tạo đơn gửi hàng</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Shipments" asp-action="Mine">Đơn hàng của tôi (lịch sử)</a></li>
+                                }
+                                <li><a class="dropdown-item" asp-controller="Shipments" asp-action="Track">Tra cứu đơn hàng</a></li>
+                            </ul>
+                        </li>
+
                         @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Seller) || User.IsInRole(AppRoles.Customer))
                         {
                             <li class="nav-item">
@@ -65,6 +106,7 @@
                             </li>
                         }
                     </ul>
+
                     <ul class="navbar-nav align-items-lg-center">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
@@ -129,7 +171,11 @@
     <footer class="footer-vt py-3 mt-auto">
         <div class="container small d-flex flex-column flex-md-row justify-content-between gap-1">
             <span>&copy; 2026 VậnTải HK - Hệ thống quản lý dịch vụ vận tải hành khách</span>
-            <span><i class="bi bi-bus-front me-1"></i>Đặt vé nhanh, đi an tâm</span>
+            <span>
+                <a class="text-reset" asp-controller="Info" asp-action="Contact">Liên hệ</a> ·
+                <a class="text-reset" asp-controller="Info" asp-action="Policy">Chính sách</a> ·
+                <a class="text-reset" asp-controller="Info" asp-action="Careers">Tuyển dụng</a>
+            </span>
         </div>
     </footer>
 

@@ -269,6 +269,10 @@ public class BookingService
         if (b.Status is not ("Holding" or "Paid"))
             throw new ServiceException(400, "Không thể hủy booking ở trạng thái này.");
 
+        // Có vé đã soát (đã lên xe) thì không cho hủy
+        if (b.Tickets.Any(t => t.Status == "CheckedIn"))
+            throw new ServiceException(400, "Có vé đã được soát, không thể hủy.");
+
         var now = DateTime.Now;
         var active = b.Tickets.Where(t => t.Status != "Cancelled").ToList();
         var depart = active.Count > 0 ? active.Min(t => t.Trip.DepartAt) : now;
@@ -311,7 +315,6 @@ public class BookingService
         _logger.LogInformation("Hủy booking {BookingCode}: hoàn {RefundRate:P0} = {RefundAmount}", b.Code, rate, refund);
         return new { BookingId = b.Id, b.Status, RefundRate = rate, RefundAmount = refund };
     }
-
     // ============ Đổi vé: đổi ghế, hoặc đổi sang chuyến khác cùng tuyến ============
     public async Task<object> ChangeTicketAsync(int ticketId, ChangeTicketDto dto)
     {
@@ -412,8 +415,52 @@ public class BookingService
                    .FirstOrDefaultAsync()
                ?? throw new ServiceException(404, "Không tìm thấy vé.");
     }
+    // Soát vé: Active -> CheckedIn. Mỗi vé chỉ soát được một lần.
+    public async Task<object> CheckInAsync(string ticketCode)
+    {
+        const int OpenBeforeHours = 3;   // mở soát vé trước giờ chạy
+        const int CloseAfterHours = 6;   // đóng soát vé sau giờ chạy
 
-        
+        var code = (ticketCode ?? "").Trim().ToUpperInvariant();
+        var t = await _db.Tickets.AsNoTracking()
+                    .Include(x => x.Booking)
+                    .Include(x => x.Trip).ThenInclude(tr => tr.BusRoute)
+                    .FirstOrDefaultAsync(x => x.TicketCode == code)
+                ?? throw new ServiceException(404, "Không tìm thấy vé.");
+
+        if (t.Status == "CheckedIn")
+            throw new ServiceException(400, "Vé này đã được soát trước đó.");
+        if (t.Status != "Active")
+            throw new ServiceException(400, "Vé không còn hiệu lực (đã hủy).");
+        if (t.Booking.Status != "Paid")
+            throw new ServiceException(400, "Vé chưa thanh toán nên chưa thể lên xe.");
+        if (t.Trip.Status == "Cancelled")
+            throw new ServiceException(400, "Chuyến xe đã bị hủy.");
+
+        var now = DateTime.Now;
+        if (now < t.Trip.DepartAt.AddHours(-OpenBeforeHours))
+            throw new ServiceException(400, $"Chưa đến giờ soát vé (mở trước giờ chạy {OpenBeforeHours} giờ).");
+        if (now > t.Trip.DepartAt.AddHours(CloseAfterHours))
+            throw new ServiceException(400, "Chuyến đã kết thúc, không thể soát vé.");
+
+        // Cập nhật có điều kiện để hai người quét cùng lúc thì chỉ một người thành công
+        var updated = await _db.Tickets
+            .Where(x => x.Id == t.Id && x.Status == "Active")
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.Status, "CheckedIn"));
+        if (updated == 0)
+            throw new ServiceException(400, "Vé này đã được soát trước đó.");
+
+        return new
+        {
+            t.TicketCode,
+            t.SeatCode,
+            t.PassengerName,
+            Route = t.Trip.BusRoute.Name,
+            t.Trip.DepartAt
+        };
+    }
+
+
     public async Task<object> GetByCodeAsync(string code)
     {
         var c = code.Trim().ToUpperInvariant();
