@@ -35,6 +35,32 @@ public class RegisterViewModel
     public string ConfirmPassword { get; set; } = "";
 }
 
+public class ForgotPasswordViewModel
+{
+    [Required(ErrorMessage = "Vui lòng nhập email")]
+    [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+    [Display(Name = "Email")]
+    public string Email { get; set; } = "";
+}
+
+public class ResetPasswordViewModel
+{
+    public string Email { get; set; } = "";
+    public string Token { get; set; } = "";
+
+    [Required(ErrorMessage = "Vui lòng nhập mật khẩu mới")]
+    [MinLength(6, ErrorMessage = "Mật khẩu mới tối thiểu 6 ký tự")]
+    [DataType(DataType.Password)]
+    [Display(Name = "Mật khẩu mới")]
+    public string NewPassword { get; set; } = "";
+
+    [Required(ErrorMessage = "Vui lòng nhập lại mật khẩu mới")]
+    [Compare(nameof(NewPassword), ErrorMessage = "Mật khẩu nhập lại không khớp")]
+    [DataType(DataType.Password)]
+    [Display(Name = "Nhập lại mật khẩu mới")]
+    public string ConfirmPassword { get; set; } = "";
+}
+
 public class ChangePasswordViewModel
 {
     [Required(ErrorMessage = "Vui lòng nhập mật khẩu hiện tại")]

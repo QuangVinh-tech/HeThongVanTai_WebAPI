@@ -1,0 +1,58 @@
+﻿@using HeThongVanTai.Web.Models.ViewModels.DanhMuc
+@model List<RouteItem>
+@{
+    ViewData["Title"] = "Lịch trình tuyến";
+    var today = DateTime.Today.ToString("yyyy-MM-dd");
+}
+
+<div class="container py-4">
+    <h1 class="h3 fw-bold mb-1">Lịch trình tuyến</h1>
+    <p class="text-muted">Các tuyến đang khai thác. Bấm "Xem chuyến" để xem giờ chạy và giá vé theo ngày.</p>
+
+    @if (ViewData["Error"] is string err && !string.IsNullOrEmpty(err))
+    {
+            <div class="alert alert-danger">@err</div>
+    }
+
+    <div class="card card-vt">
+        @if (Model.Count == 0)
+        {
+                <div class="p-4 text-center text-muted">Chưa có tuyến nào.</div>
+        }
+        else
+        {
+                <div class="table-responsive">
+                    <table class="table table-vt table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tuyến</th>
+                                <th>Bến đi</th>
+                                <th>Bến đến</th>
+                                <th class="text-end">Quãng đường</th>
+                                <th class="text-end">Thời gian</th>
+                                <th class="text-end"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var r in Model)
+                        {
+                            var h = r.DurationMin / 60;
+                            var m = r.DurationMin % 60;
+                                    <tr>
+                                        <td class="fw-semibold">@(r.FromCity ?? r.FromStationName) &rarr; @(r.ToCity ?? r.ToStationName)</td>
+                                        <td>@r.FromStationName</td>
+                                        <td>@r.ToStationName</td>
+                                        <td class="text-end">@r.DistanceKm km</td>
+                                        <td class="text-end">@(h > 0 ? $"{h} giờ" : "")@(m > 0 ? $" {m} phút" : "")</td>
+                                        <td class="text-end">
+                                            <a class="btn btn-sm btn-primary"
+                                               href="/Trips/Search?fromStationId=@r.FromStationId&toStationId=@r.ToStationId&date=@today&tickets=1">Xem chuyến</a>
+                                        </td>
+                                    </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+        }
+    </div>
+</div>

@@ -27,6 +27,21 @@ namespace HeThongVanTai.Models.DTO
         public string? RefreshToken { get; set; }
     }
 
+    public class ForgotPasswordDTO
+    {
+        [Required(ErrorMessage = "Vui lòng nhập email.")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
+        public string Email { get; set; } = "";
+    }
+
+    public class ResetPasswordDTO
+    {
+        [Required] public string Email { get; set; } = "";
+        [Required] public string Token { get; set; } = "";
+        [Required(ErrorMessage = "Vui lòng nhập mật khẩu mới.")]
+        public string NewPassword { get; set; } = "";
+    }
+
     public class LoginResponseDTO
     {
         public string JwtToken { get; set; } = "";

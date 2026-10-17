@@ -1,0 +1,161 @@
+﻿@using HeThongVanTai.Web.Models.ViewModels.VanChuyen
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@model ShipmentDetailViewModel
+@{
+    var s = Model.Shipment!;
+    ViewData["Title"] = "Đơn hàng " + s.Code;
+    Layout = "_AdminLayout";
+
+    var canOperate = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Operator);
+    var canCollect = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Seller);
+    var next = VanChuyenHelpers.NextStatuses(s.Status);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/van-chuyen.css" asp-append-version="true" />
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <a asp-action="Index" class="small">&larr; Danh sách đơn hàng</a>
+        <h1 class="h4 mb-0">Đơn hàng @s.Code</h1>
+    </div>
+    <span class="pill @VanChuyenHelpers.StatusClass(s.Status)">@VanChuyenHelpers.StatusText(s.Status)</span>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-7">
+        <div class="card card-vt p-3 mb-3">
+            <h2 class="h6">Thông tin đơn</h2>
+            <div class="row g-2 small">
+                <div class="col-12 col-md-6"><span class="text-muted">Tuyến:</span> <strong>@s.FromStation &rarr; @s.ToStation</strong></div>
+                <div class="col-12 col-md-6"><span class="text-muted">Dịch vụ:</span> @VanChuyenHelpers.ServiceText(s.ServiceType)</div>
+                <div class="col-12 col-md-6"><span class="text-muted">Nhận hàng:</span> @VanChuyenHelpers.PickupText(s.PickupMode)</div>
+                <div class="col-12 col-md-6"><span class="text-muted">Giao hàng:</span> @VanChuyenHelpers.DeliveryText(s.DeliveryMode)</div>
+                <div class="col-12 col-md-6"><span class="text-muted">Người gửi:</span> @s.SenderName (@s.SenderPhone)</div>
+                <div class="col-12 col-md-6"><span class="text-muted">Địa chỉ gửi:</span> @(s.SenderAddress ?? "-")</div>
+                <div class="col-12 col-md-6"><span class="text-muted">Người nhận:</span> @s.ReceiverName (@s.ReceiverPhone)</div>
+                <div class="col-12 col-md-6"><span class="text-muted">Địa chỉ nhận:</span> @(s.ReceiverAddress ?? "-")</div>
+                <div class="col-12"><span class="text-muted">Ghi chú:</span> @(string.IsNullOrWhiteSpace(s.Note) ? "-" : s.Note)</div>
+                <div class="col-12">
+                    <span class="text-muted">Chuyến xe:</span>
+                    @if (s.Trip != null)
+                    {
+                        <strong>@s.Trip.Route · @s.Trip.DepartAt.ToString("dd/MM/yyyy HH:mm")</strong>
+                    }
+                    else
+                    {
+                        <span>Chưa gắn chuyến</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-vt mb-3">
+            <div class="table-responsive">
+                <table class="table table-vt align-middle mb-0">
+                    <thead>
+                        <tr><th>Hàng hóa</th><th>Loại</th><th class="text-end">Cân thực</th><th class="text-end">Cân tính cước</th><th class="text-end">SL</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var i in s.Items)
+                        {
+                            <tr>
+                                <td>@i.Name<div class="small text-muted">@i.Length x @i.Width x @i.Height cm</div></td>
+                                <td>@VanChuyenHelpers.GoodsTypeText(i.GoodsType)</td>
+                                <td class="text-end">@i.Weight kg</td>
+                                <td class="text-end">@i.ChargeWeight kg</td>
+                                <td class="text-end">@i.Quantity</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card card-vt p-3">
+            <h2 class="h6">Lịch sử trạng thái</h2>
+            <ul class="timeline mt-2">
+                @foreach (var l in s.Logs.OrderByDescending(x => x.At))
+                {
+                    <li>
+                        <div class="fw-semibold">@VanChuyenHelpers.StatusText(l.Status)</div>
+                        <div class="small text-muted">
+                            @l.At.ToString("dd/MM/yyyy HH:mm")@(string.IsNullOrWhiteSpace(l.Note) ? "" : " · " + l.Note)@(string.IsNullOrWhiteSpace(l.ByEmail) ? "" : " · " + l.ByEmail)
+                        </div>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-5">
+        <div class="card card-vt p-3 mb-3">
+            <h2 class="h6">Thanh toán</h2>
+            <div class="fee-row d-flex justify-content-between"><span>Phí dịch vụ</span><strong>@DatVeHelpers.Money(s.ShippingFee)</strong></div>
+            <div class="fee-row d-flex justify-content-between"><span>Khuyến mãi</span><strong>- @DatVeHelpers.Money(s.DiscountAmount)</strong></div>
+            <div class="fee-row d-flex justify-content-between fs-5"><span>Tổng cước</span><strong class="text-primary">@DatVeHelpers.Money(s.TotalAmount)</strong></div>
+            <div class="small text-muted mt-1">
+                @VanChuyenHelpers.FeePayerText(s.FeePayer) · Giá trị khai báo @DatVeHelpers.Money(s.DeclaredValue)
+            </div>
+            <div class="mt-2">
+                <span class="pill @(s.PaymentStatus == "Paid" ? "pill-ok" : "pill-warn")">@VanChuyenHelpers.PaymentText(s.PaymentStatus)</span>
+                @if (s.PaidAt.HasValue)
+                {
+                    <span class="small text-muted ms-1">@s.PaidAt.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                }
+            </div>
+            @if (canCollect && s.PaymentStatus == "Unpaid" && s.Status != "Cancelled")
+            {
+                <form asp-action="CollectFee" asp-route-id="@s.Id" method="post" class="mt-3"
+                      data-confirm="@("Xác nhận đã thu " + DatVeHelpers.Money(s.TotalAmount) + "?")">
+                    <button type="submit" class="btn btn-primary w-100">Ghi nhận đã thu cước</button>
+                </form>
+            }
+        </div>
+
+        @if (canOperate && next.Length > 0)
+        {
+            <div class="card card-vt p-3 mb-3">
+                <h2 class="h6">Cập nhật trạng thái</h2>
+                <form asp-action="ChangeStatus" asp-route-id="@s.Id" method="post">
+                    <select name="status" class="form-select mb-2">
+                        @foreach (var n in next)
+                        {
+                            <option value="@n">@VanChuyenHelpers.StatusText(n)</option>
+                        }
+                    </select>
+                    <input name="note" class="form-control mb-2" maxlength="300" placeholder="Ghi chú (không bắt buộc)" />
+                    <button type="submit" class="btn btn-primary w-100">Cập nhật</button>
+                </form>
+            </div>
+        }
+
+        @if (canOperate && s.Status is not ("Delivered" or "Cancelled" or "Returned"))
+        {
+            <div class="card card-vt p-3">
+                <h2 class="h6">Gắn chuyến xe</h2>
+                @if (Model.Trips.Count == 0)
+                {
+                    <div class="small text-muted">Chưa có chuyến đang mở bán nào đi đúng tuyến này.</div>
+                }
+                else
+                {
+                    <form asp-action="AssignTrip" asp-route-id="@s.Id" method="post">
+                        <select name="tripId" class="form-select mb-2">
+                            @foreach (var t in Model.Trips)
+                            {
+                                <option value="@t.Id" selected="@(s.Trip?.Id == t.Id)">@t.DepartAt.ToString("dd/MM HH:mm") · @t.Route · @t.Plate</option>
+                            }
+                        </select>
+                        <button type="submit" class="btn btn-primary w-100">Gắn chuyến</button>
+                    </form>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ConfirmDeleteScript" />
+}

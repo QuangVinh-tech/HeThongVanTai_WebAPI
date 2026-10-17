@@ -30,6 +30,7 @@ public static class DatVeHelpers
     public static string TicketStatusText(string status) => status switch
     {
         "Active" => "Còn hiệu lực",
+        "CheckedIn" => "Đã soát vé",
         "Cancelled" => "Đã hủy",
         _ => status
     };

@@ -1,0 +1,112 @@
+﻿@using HeThongVanTai.Web.Models.ViewModels.VanChuyen
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@model ShipmentListViewModel
+@{
+    ViewData["Title"] = "Đơn hàng của tôi";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/van-chuyen.css" asp-append-version="true" />
+}
+
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h1 class="h4 mb-0">Đơn hàng của tôi</h1>
+        <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg me-1"></i>Tạo đơn hàng</a>
+    </div>
+
+    <form method="get" class="row g-2 align-items-end mb-3">
+        <div class="col-12 col-md-4">
+            <label class="form-label small mb-1" for="status">Trạng thái</label>
+            <select id="status" name="status" class="form-select">
+                <option value="">Tất cả</option>
+                @foreach (var s in VanChuyenHelpers.AllStatuses)
+                {
+                    <option value="@s.Value" selected="@(Model.Status == s.Value)">@s.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-12 col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-grow-1">Lọc</button>
+            @if (!string.IsNullOrWhiteSpace(Model.Status))
+            {
+                <a class="btn btn-outline-primary" asp-action="Mine">Bỏ lọc</a>
+            }
+        </div>
+    </form>
+
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <div class="alert alert-danger">@Model.Error</div>
+    }
+
+    <div class="card card-vt">
+        @if (Model.Items.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">Chưa có đơn hàng nào.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-vt table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Mã vận đơn</th>
+                            <th>Tuyến</th>
+                            <th>Người nhận</th>
+                            <th class="text-end">Cước</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in Model.Items)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@s.Code<div class="small text-muted">@s.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div></td>
+                                <td>@s.FromStation &rarr; @s.ToStation<div class="small text-muted">@s.ParcelCount kiện · @VanChuyenHelpers.ServiceText(s.ServiceType)</div></td>
+                                <td>@s.ReceiverName<div class="small text-muted">@s.ReceiverPhone</div></td>
+                                <td class="text-end">@DatVeHelpers.Money(s.TotalAmount)<div class="small text-muted">@VanChuyenHelpers.PaymentText(s.PaymentStatus)</div></td>
+                                <td><span class="pill @VanChuyenHelpers.StatusClass(s.Status)">@VanChuyenHelpers.StatusText(s.Status)</span></td>
+                                <td class="text-end text-nowrap">
+                                    <a class="btn btn-sm btn-outline-primary" asp-action="Track" asp-route-code="@s.Code">Theo dõi</a>
+                                    @if (s.Status == "Pending" && s.PaymentStatus == "Unpaid")
+                                    {
+                                        <form asp-action="Cancel" asp-route-id="@s.Id" method="post" class="d-inline"
+                                              data-confirm="@("Hủy đơn hàng " + s.Code + "?")">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Hủy</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav aria-label="Phân trang" class="mt-3">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Mine" asp-route-status="@Model.Status" asp-route-page="@(Model.Page - 1)">Trước</a>
+                </li>
+                @for (var i = Math.Max(1, Model.Page - 2); i <= Math.Min(Model.TotalPages, Model.Page + 2); i++)
+                {
+                    <li class="page-item @(i == Model.Page ? "active" : "")">
+                        <a class="page-link" asp-action="Mine" asp-route-status="@Model.Status" asp-route-page="@i">@i</a>
+                    </li>
+                }
+                <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Mine" asp-route-status="@Model.Status" asp-route-page="@(Model.Page + 1)">Sau</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ConfirmDeleteScript" />
+}

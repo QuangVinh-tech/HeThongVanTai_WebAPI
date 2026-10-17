@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Text;
 using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
 using HeThongVanTai.Models.Domain;
@@ -31,12 +33,14 @@ namespace HeThongVanTai.Controllers
         private readonly IConfiguration _config;
         private readonly ILogger<AuthController> _logger;
         private readonly RefreshTokenService _refresh;
+        private readonly IServiceScopeFactory _scopeFactory;
 
         public AuthController(UserManager<IdentityUser> userManager, ITokenRepository tokenRepository,
             IEmailService email, IMemoryCache cache, IConfiguration config, ILogger<AuthController> logger,
-            RefreshTokenService refresh)
+            RefreshTokenService refresh, IServiceScopeFactory scopeFactory)
         {
             _refresh = refresh;
+            _scopeFactory = scopeFactory;
             _userManager = userManager;
             _tokenRepository = tokenRepository;
             _email = email;
@@ -166,6 +170,89 @@ namespace HeThongVanTai.Controllers
             var user = await _userManager.FindByEmailAsync(dto.Email);
             if (user != null && !user.EmailConfirmed) await SendOtpAsync(user);
             return Ok(new { message = "Nếu email này đang chờ xác thực, mã mới đã được gửi." });
+        }
+
+        // POST: /api/Auth/forgot-password  { email }
+        // Gửi liên kết đặt lại mật khẩu (hết hạn sau Auth:ResetLinkMinutes phút, mặc định 30). Luôn trả cùng một câu
+        // dù email có tồn tại hay không; việc gửi mail chạy nền để thời gian phản hồi cũng không để lộ điều đó.
+        [AllowAnonymous]
+        [EnableRateLimiting("auth")]
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO dto)
+        {
+            var email = dto.Email.Trim();
+
+            // Mỗi email chỉ yêu cầu 1 lần mỗi 60 giây (tính theo email người ta nhập, nên không lộ email có tồn tại)
+            var cooldownKey = "pwreset-cd:" + email.ToLowerInvariant();
+            if (_cache.TryGetValue(cooldownKey, out DateTime until))
+            {
+                var wait = Math.Max(1, (int)Math.Ceiling((until - DateTime.UtcNow).TotalSeconds));
+                return StatusCode(StatusCodes.Status429TooManyRequests,
+                    new { message = $"Vui lòng đợi {wait} giây rồi yêu cầu lại." });
+            }
+            _cache.Set(cooldownKey, DateTime.UtcNow.AddSeconds(60), TimeSpan.FromSeconds(60));
+
+            var user = await _userManager.FindByEmailAsync(email);
+            // Tài khoản bị admin khóa không được tự mở khóa bằng cách đặt lại mật khẩu
+            if (user != null && !IsAdminLock(user))
+            {
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var link = BuildResetLink(user.Email!, token);
+                var to = user.Email!;
+                var minutes = ResetLinkMinutes;
+                _ = SendResetEmailInBackgroundAsync(to, link, minutes);
+                _logger.LogInformation("Yêu cầu đặt lại mật khẩu: {Email}", LogText.Clean(to));
+            }
+            else
+            {
+                _logger.LogInformation("Yêu cầu đặt lại mật khẩu cho email không có hoặc bị khóa: {Email}", LogText.Clean(email));
+            }
+
+            return Ok(new { message = ForgotPasswordMessage });
+        }
+
+        // POST: /api/Auth/reset-password  { email, token, newPassword }
+        // Liên kết dùng một lần (đặt lại xong thì mã bảo mật của tài khoản đổi nên liên kết cũ vô hiệu) và hết hạn sau 30 phút.
+        [AllowAnonymous]
+        [EnableRateLimiting("auth")]
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO dto)
+        {
+            // Cùng một thông báo cho mọi trường hợp liên kết không dùng được (email lạ, sai mã, hết hạn, đã dùng)
+            var bad = new { message = "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu liên kết mới." };
+
+            var user = await _userManager.FindByEmailAsync(dto.Email.Trim());
+            if (user == null || IsAdminLock(user)) return BadRequest(bad);
+
+            string token;
+            try { token = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(dto.Token)); }
+            catch (FormatException) { return BadRequest(bad); }
+
+            var result = await _userManager.ResetPasswordAsync(user, token, dto.NewPassword);
+            if (!result.Succeeded)
+            {
+                if (result.Errors.Any(e => e.Code == "InvalidToken"))
+                {
+                    _logger.LogWarning("Đặt lại mật khẩu thất bại (liên kết sai hoặc hết hạn): {Email}", LogText.Clean(user.Email));
+                    return BadRequest(bad);
+                }
+                return BadRequest(new { message = string.Join(" ", result.Errors.Select(PasswordErrorText)) });
+            }
+
+            // Nhận được liên kết qua email nghĩa là chủ email đã xác nhận; mở luôn khóa tạm do sai mật khẩu
+            if (!user.EmailConfirmed)
+            {
+                user.EmailConfirmed = true;
+                await _userManager.UpdateAsync(user);
+            }
+            await _userManager.SetLockoutEndDateAsync(user, null);
+            await _userManager.ResetAccessFailedCountAsync(user);
+
+            // Mọi phiên đang đăng nhập (kể cả của kẻ lạ nếu có) phải đăng nhập lại
+            await _refresh.RevokeAllAsync(user.Id);
+
+            _logger.LogInformation("Đặt lại mật khẩu thành công: {Email}", LogText.Clean(user.Email));
+            return Ok(new { message = "Đã đặt lại mật khẩu. Bạn có thể đăng nhập bằng mật khẩu mới." });
         }
 
         // POST: /api/Auth/Login
@@ -323,6 +410,38 @@ namespace HeThongVanTai.Controllers
         }
 
         // ---------- hàm phụ ----------
+
+        private int ResetLinkMinutes => Math.Max(1, _config.GetValue("Auth:ResetLinkMinutes", 30));
+
+        private string ForgotPasswordMessage =>
+            $"Nếu email này có tài khoản, chúng tôi đã gửi liên kết đặt lại mật khẩu. Liên kết có hiệu lực {ResetLinkMinutes} phút.";
+
+        // Địa chỉ trang đặt lại mật khẩu lấy từ cấu hình (Web:BaseUrl), không lấy từ header Host của request
+        private string BuildResetLink(string email, string token)
+        {
+            var baseUrl = (_config["Web:BaseUrl"] ?? "https://localhost:7300").TrimEnd('/');
+            var encoded = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+            return $"{baseUrl}/Account/ResetPassword?email={Uri.EscapeDataString(email)}&token={encoded}";
+        }
+
+        // Gửi chạy nền bằng scope riêng (scope của request đã đóng khi trả lời xong). Lỗi chỉ ghi log.
+        private async Task SendResetEmailInBackgroundAsync(string to, string link, int minutes)
+        {
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var mail = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                await mail.SendAsync(EmailTemplates.ResetPassword(to, link, minutes));
+            }
+            catch (EmailNotConfiguredException)
+            {
+                _logger.LogWarning("Chưa gửi được email đặt lại mật khẩu tới {Email} vì chưa cấu hình SMTP", LogText.Clean(to));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Không gửi được email đặt lại mật khẩu tới {Email}", LogText.Clean(to));
+            }
+        }
 
         // Việt hóa các lỗi mật khẩu thường gặp của Identity
         private static string PasswordErrorText(IdentityError e) => e.Code switch

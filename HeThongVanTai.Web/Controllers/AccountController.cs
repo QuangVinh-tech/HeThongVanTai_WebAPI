@@ -209,6 +209,76 @@ public class AccountController : Controller
         return RedirectToAction("Index", "Home");
     }
 
+    // ---------- Quên mật khẩu ----------
+
+    [AllowAnonymous]
+    [HttpGet]
+    public IActionResult ForgotPassword() => View(new ForgotPasswordViewModel());
+
+    [AllowAnonymous]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var result = await _api.PostAsync<MessageResponse>("api/Auth/forgot-password", new { email = model.Email.Trim() });
+        if (!result.Ok)
+        {
+            // Ví dụ 429 (yêu cầu quá nhanh). Không có lỗi nào cho biết email có tồn tại hay không.
+            ModelState.AddModelError(string.Empty, result.Error ?? "Không gửi được yêu cầu. Vui lòng thử lại sau.");
+            return View(model);
+        }
+
+        _logger.LogInformation("Yêu cầu quên mật khẩu từ Web: {Email}", Safe(model.Email));
+        // Cùng một thông báo dù email có tài khoản hay không
+        ViewData["Sent"] = result.Data?.Message
+            ?? "Nếu email này có tài khoản, chúng tôi đã gửi liên kết đặt lại mật khẩu.";
+        return View(new ForgotPasswordViewModel { Email = model.Email });
+    }
+
+    [AllowAnonymous]
+    [HttpGet]
+    public IActionResult ResetPassword(string? email, string? token)
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
+        {
+            ViewData["InvalidLink"] = true;
+            return View(new ResetPasswordViewModel());
+        }
+        return View(new ResetPasswordViewModel { Email = email, Token = token });
+    }
+
+    [AllowAnonymous]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+    {
+        if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Token))
+        {
+            ViewData["InvalidLink"] = true;
+            return View(new ResetPasswordViewModel());
+        }
+        if (!ModelState.IsValid) return View(model);
+
+        var result = await _api.PostAsync<MessageResponse>("api/Auth/reset-password",
+            new { email = model.Email, token = model.Token, newPassword = model.NewPassword });
+        if (!result.Ok)
+        {
+            _logger.LogWarning("Đặt lại mật khẩu Web thất bại: {Email} (API trả {Status})", Safe(model.Email), result.Status);
+            ModelState.AddModelError(string.Empty, result.Error ?? "Không đặt lại được mật khẩu. Vui lòng thử lại.");
+            // Liên kết hỏng hoặc hết hạn: gợi ý xin liên kết mới
+            ViewData["ShowRequestNew"] = true;
+            model.NewPassword = "";
+            model.ConfirmPassword = "";
+            return View(model);
+        }
+
+        _logger.LogInformation("Đặt lại mật khẩu Web thành công: {Email}", Safe(model.Email));
+        TempData["Success"] = result.Data?.Message ?? "Đã đặt lại mật khẩu. Bạn có thể đăng nhập.";
+        return RedirectToAction(nameof(Login));
+    }
+
     // Hồ sơ cá nhân: mọi tài khoản đã đăng nhập
     [Authorize]
     [HttpGet]

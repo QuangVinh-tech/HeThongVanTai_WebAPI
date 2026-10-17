@@ -1,0 +1,128 @@
+﻿@using HeThongVanTai.Web.Models.ViewModels.VanChuyen
+@model QuotePageModel
+@{
+    ViewData["Title"] = "Tính cước nhanh";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/van-chuyen.css" asp-append-version="true" />
+}
+
+<div class="container py-4 vc-narrow">
+    <h1 class="h4 mb-1">Tính cước nhanh</h1>
+    <p class="small text-muted">Không cần đăng nhập. Chọn bến gửi, bến nhận và nhập thông tin hàng để xem cước dự kiến.</p>
+
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <div class="alert alert-danger">@Model.Error</div>
+    }
+
+    <div class="card card-vt p-3">
+        <h2 class="h6 mb-2">1. Thông tin nơi gửi và nơi nhận</h2>
+        <div class="row g-2 mb-3">
+            <div class="col-12 col-md-6">
+                <label class="form-label small mb-1" for="From">Bến gửi <span class="text-danger">*</span></label>
+                <select id="From" class="form-select">
+                    <option value="0">-- Chọn bến gửi --</option>
+                    @foreach (var s in Model.Stations)
+                    {
+                        <option value="@s.Id">@s.Name@(string.IsNullOrWhiteSpace(s.City) ? "" : " - " + s.City)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label small mb-1" for="To">Bến nhận <span class="text-danger">*</span></label>
+                <select id="To" class="form-select">
+                    <option value="0">-- Chọn bến nhận --</option>
+                    @foreach (var s in Model.Stations)
+                    {
+                        <option value="@s.Id">@s.Name@(string.IsNullOrWhiteSpace(s.City) ? "" : " - " + s.City)</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <h2 class="h6 mb-2">2. Chi tiết hàng hóa</h2>
+        <div class="row g-2 mb-3">
+            <div class="col-12 col-md-4">
+                <label class="form-label small mb-1" for="Service">Loại dịch vụ</label>
+                <select id="Service" class="form-select">
+                    <option value="Standard">Tiêu chuẩn</option>
+                    <option value="Express">Hỏa tốc</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-4">
+                <label class="form-label small mb-1" for="Pickup">Nhận hàng</label>
+                <select id="Pickup" class="form-select">
+                    <option value="Door">Nhận tận nơi</option>
+                    <option value="Station">Gửi tại bến</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-4">
+                <label class="form-label small mb-1" for="Delivery">Giao hàng</label>
+                <select id="Delivery" class="form-select">
+                    <option value="Door">Giao tận nơi</option>
+                    <option value="Station">Nhận tại bến</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label small mb-1" for="Declared">Giá trị hàng hóa (đ)</label>
+                <input id="Declared" type="number" min="0" step="1000" class="form-control" value="0" />
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label small mb-1" for="Promo">Mã khuyến mãi</label>
+                <input id="Promo" type="text" class="form-control text-uppercase" maxlength="30" autocomplete="off" />
+            </div>
+        </div>
+
+        <partial name="_ParcelsEditor" model="Model.Parcels" />
+
+        <button type="button" id="btnQuote" class="btn btn-primary mt-3 w-100">
+            <i class="bi bi-calculator me-1"></i>Tính cước nhanh
+        </button>
+
+        <div id="quoteError" class="alert alert-danger mt-3 d-none"></div>
+        <div id="quoteResult" class="quote-result mt-3 d-none">
+            <div class="fee-row d-flex justify-content-between"><span>Quãng đường</span><strong id="rKm"></strong></div>
+            <div class="fee-row d-flex justify-content-between"><span>Khối lượng tính cước</span><strong id="rKg"></strong></div>
+            <div class="fee-row d-flex justify-content-between"><span>Phí dịch vụ</span><strong id="rFee"></strong></div>
+            <div class="fee-row d-flex justify-content-between"><span>Khuyến mãi</span><strong id="rDiscount"></strong></div>
+            <div class="fee-row d-flex justify-content-between fs-5"><span>Tổng cước</span><strong id="rTotal" class="text-primary"></strong></div>
+            <a asp-action="Create" class="btn btn-outline-primary btn-sm mt-2">Tạo đơn hàng</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/van-chuyen.js" asp-append-version="true"></script>
+    <script>
+        const $ = id => document.getElementById(id);
+
+        $('btnQuote').addEventListener('click', async () => {
+            const err = $('quoteError'), box = $('quoteResult');
+            err.classList.add('d-none'); box.classList.add('d-none');
+
+            const body = {
+                fromStationId: parseInt($('From').value, 10) || 0,
+                toStationId: parseInt($('To').value, 10) || 0,
+                serviceType: $('Service').value,
+                pickupMode: $('Pickup').value,
+                deliveryMode: $('Delivery').value,
+                declaredValue: parseFloat($('Declared').value) || 0,
+                promoCode: $('Promo').value.trim() || null,
+                parcels: VanChuyen.gatherParcels()
+            };
+
+            const r = await VanChuyen.quote(body);
+            if (!r.ok) { err.textContent = r.message; err.classList.remove('d-none'); return; }
+
+            const d = r.data;
+            $('rKm').textContent = d.distanceKm + ' km';
+            $('rKg').textContent = d.chargeWeightKg + ' kg';
+            $('rFee').textContent = VanChuyen.money(d.shippingFee);
+            $('rDiscount').textContent = '- ' + VanChuyen.money(d.discount);
+            $('rTotal').textContent = VanChuyen.money(d.total);
+            box.classList.remove('d-none');
+        });
+    </script>
+}
