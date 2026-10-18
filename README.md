@@ -53,7 +53,19 @@ Không ghi mật khẩu vào file `.json`: CI sẽ báo lỗi nếu tìm thấy 
 
 **Cài đặt hệ thống:** Admin vào `/Admin/Settings` để đổi thời gian giữ ghế, các mốc hoàn tiền, tên công ty, logo, hotline, email. Giá trị lưu trong bảng `SystemSettings` (cần chạy migration), chưa lưu thì dùng mặc định (giữ ghế theo `Booking:HoldMinutes`). Thay đổi có hiệu lực ngay, chân trang và trang Liên hệ, Chính sách tự cập nhật theo.
 
-**Bảo mật đăng nhập** (mục `Auth`, `Jwt`, `Security` trong `appsettings.json` của API): sai mật khẩu 5 lần thì tạm khóa 5 phút; access token sống 15 phút và Web tự làm mới bằng refresh token (7 ngày); đăng nhập và đăng ký bị giới hạn 10 lần mỗi phút theo IP. API tính IP khách từ header `X-Forwarded-For` do Web gửi, chỉ tin proxy loopback. Khi Web và API chạy trên máy khác nhau (Docker, IIS...), thêm địa chỉ IP của máy chủ Web vào `Security:TrustedProxies`, nếu không mọi khách sẽ bị tính chung một IP.
+**Bảo mật đăng nhập** (mục `Auth`, `Jwt`, `Security` trong `appsettings.json` của API): sai mật khẩu 5 lần thì tạm khóa 5 phút; access token sống 15 phút và Web tự làm mới bằng refresh token (7 ngày); đăng nhập và đăng ký bị giới hạn 10 lần mỗi phút theo IP. API tính IP khách từ header `X-Forwarded-For` do Web gửi, chỉ tin proxy loopback. Khi Web và API chạy trên máy khác nhau (IIS...), thêm địa chỉ IP của máy chủ Web vào `Security:TrustedProxies`, nếu không mọi khách sẽ bị tính chung một IP. Với Docker Compose đã bật sẵn `ASPNETCORE_FORWARDEDHEADERS_ENABLED`, không cần cấu hình thêm.
+
+## Triển khai bằng Docker
+
+Chạy toàn bộ hệ thống (SQL Server, API, Web, HTTPS) bằng Docker Compose:
+
+```
+cp .env.example .env          # Windows PowerShell: Copy-Item .env.example .env
+# sửa .env: MSSQL_SA_PASSWORD, JWT_KEY, ADMIN_EMAIL, ADMIN_PASSWORD
+docker compose up -d --build
+```
+
+Mở https://localhost và đăng nhập bằng `ADMIN_EMAIL`, `ADMIN_PASSWORD`. API tự áp migration và tạo Admin đầu tiên. Kiểm tra sức khỏe ở `/health` của Web và API. Hướng dẫn lên máy chủ thật, IIS, biến môi trường, **sao lưu và phục hồi**: [docs/trien-khai.md](docs/trien-khai.md).
 
 ### 3. Tạo cơ sở dữ liệu (migration)
 

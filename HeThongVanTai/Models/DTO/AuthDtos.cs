@@ -7,6 +7,10 @@ namespace HeThongVanTai.Models.DTO
         [Required][EmailAddress] public string Username { get; set; } = "";
         [Required][MinLength(6)] public string Password { get; set; } = "";
         public string[] Roles { get; set; } = Array.Empty<string>();
+
+        // Người tự đăng ký phải đồng ý Điều khoản sử dụng và Chính sách bảo mật (Nghị định 13/2023)
+        public bool AcceptTerms { get; set; }
+        public string? TermsVersion { get; set; }
     }
 
     public class LoginRequestDTO

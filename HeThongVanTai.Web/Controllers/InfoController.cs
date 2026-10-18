@@ -35,5 +35,7 @@ public class InfoController : Controller
 
     public async Task<IActionResult> Contact() => View(await _site.GetPublicAsync());
     public async Task<IActionResult> Policy() => View(await _site.GetPublicAsync());
+    public async Task<IActionResult> Terms() => View(await _site.GetPublicAsync());
+    public async Task<IActionResult> Privacy() => View(await _site.GetPublicAsync());
     public IActionResult Careers() => View();
 }

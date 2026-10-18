@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace HeThongVanTai.Web.Models;
 
@@ -33,6 +33,10 @@ public class RegisterViewModel
     [DataType(DataType.Password)]
     [Display(Name = "Nhập lại mật khẩu")]
     public string ConfirmPassword { get; set; } = "";
+
+    [Range(typeof(bool), "true", "true", ErrorMessage = "Bạn cần đồng ý Điều khoản sử dụng và Chính sách bảo mật để đăng ký")]
+    [Display(Name = "Đồng ý điều khoản")]
+    public bool AcceptTerms { get; set; }
 }
 
 public class ForgotPasswordViewModel

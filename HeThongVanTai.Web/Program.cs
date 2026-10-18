@@ -1,6 +1,9 @@
 ﻿using HeThongVanTai.Web.Infrastructure;
 using HeThongVanTai.Web.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
 
 // Logger tạm để ghi được cả lỗi khởi động; sau đó thay bằng cấu hình trong appsettings (mục "Serilog")
@@ -36,6 +39,15 @@ builder.Services.AddHttpClient("api-refresh", client =>
     client.BaseAddress = new Uri(apiBaseUrl.TrimEnd('/') + "/");
     client.Timeout = TimeSpan.FromSeconds(15);
 });
+
+// Endpoint /health: Web chạy và gọi được API thì báo Healthy
+builder.Services.AddHealthChecks().AddCheck<ApiHealthCheck>("api");
+
+// Lưu khóa mã hóa ra thư mục cố định khi triển khai (DataProtection:KeysPath), nếu không mỗi lần khởi động lại
+// container thì cookie đăng nhập và mã chống giả mạo form cũ đều mất hiệu lực
+var keysPath = builder.Configuration["DataProtection:KeysPath"];
+if (!string.IsNullOrWhiteSpace(keysPath))
+    builder.Services.AddDataProtection().SetApplicationName("HeThongVanTai.Web").PersistKeysToFileSystem(new DirectoryInfo(keysPath));
 
 // Service gọi API theo từng module
 builder.Services.AddScoped<DanhMucApiService>();
@@ -83,6 +95,8 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();   // phải đứng trước UseAuthorization
 app.UseAuthorization();
+
+app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = HealthResponse.WriteAsync });
 
 app.MapControllerRoute(
     name: "default",

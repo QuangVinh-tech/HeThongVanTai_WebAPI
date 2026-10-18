@@ -1,9 +1,11 @@
-using System.Text;
+﻿using System.Text;
 using System.Text.Json.Serialization;
 using System.Net;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
@@ -65,6 +67,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddDbContext<VanTaiAuthDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("VanTaiAuthConnection")));
 
+// Kiểm tra sức khỏe (endpoint /health): kết nối được cả hai CSDL thì báo Healthy
+builder.Services.AddHealthChecks()
+    .AddCheck<DbHealthCheck<AppDbContext>>("csdl-nghiep-vu")
+    .AddCheck<DbHealthCheck<VanTaiAuthDbContext>>("csdl-tai-khoan");
+
+// Lưu khóa mã hóa ra thư mục cố định khi triển khai (DataProtection:KeysPath), nếu không mỗi lần khởi động lại
+// container thì liên kết đặt lại mật khẩu đã gửi sẽ không dùng được nữa
+var keysPath = builder.Configuration["DataProtection:KeysPath"];
+if (!string.IsNullOrWhiteSpace(keysPath))
+    builder.Services.AddDataProtection().SetApplicationName("HeThongVanTai.Api").PersistKeysToFileSystem(new DirectoryInfo(keysPath));
+
 // Dich vu dat ve / thanh toan (phan cua Tan)
 builder.Services.AddScoped<ReportService>();   // báo cáo mở rộng (việc 34)
 builder.Services.AddScoped<SettingsService>();   // cài đặt hệ thống (việc 33)
@@ -80,6 +93,7 @@ builder.Services.AddMemoryCache();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ITokenRepository, TokenRepository>();
+builder.Services.AddScoped<ConsentService>();         // lưu ngày đồng ý điều khoản (việc 36)
 builder.Services.AddScoped<RefreshTokenService>();
 
 builder.Services.AddIdentityCore<IdentityUser>()
@@ -183,6 +197,9 @@ builder.Services.AddScoped<IImageRepository, LocalImageRepository>();
 
 var app = builder.Build();
 
+// Triển khai: tự áp migration và tạo Admin đầu tiên theo cấu hình (xem docs/trien-khai.md)
+await DatabaseInitializer.InitializeAsync(app.Services, app.Configuration, app.Logger);
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -214,5 +231,6 @@ app.UseStaticFiles();
 app.UseAuthentication();   // phải đứng trước UseAuthorization
 app.UseAuthorization();
 app.UseRateLimiter();
+app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = HealthResponse.WriteAsync }).AllowAnonymous();
 app.MapControllers();
 app.Run();

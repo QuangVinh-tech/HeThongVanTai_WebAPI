@@ -33,3 +33,20 @@ jobs:
             echo "Co mat khau trong file json, hay chuyen vao user-secrets"
             exit 1
           fi
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lay code
+        uses: actions/checkout@v4
+
+      - name: Kiem tra docker-compose hop le
+        run: |
+          cp .env.example .env
+          docker compose config -q
+
+      - name: Build image API
+        run: docker build -f HeThongVanTai/Dockerfile -t vantai-api .
+
+      - name: Build image Web
+        run: docker build -f HeThongVanTai.Web/Dockerfile -t vantai-web .

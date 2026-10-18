@@ -17,7 +17,7 @@
 
 | Phương thức | Đường dẫn | Quyền | Mô tả |
 |---|---|---|---|
-| POST | `/api/Auth/Register` | Mọi người | Đăng ký (giới hạn 10 lần mỗi phút theo IP). Người lạ luôn là `Customer`; chỉ Admin đang đăng nhập mới gán được vai trò khác. Trả `{ message, requiresVerification, emailSent }`; tự đăng ký thì phải xác thực email bằng mã OTP. Đăng ký lại email chưa xác thực sẽ đặt lại mật khẩu theo lần mới và gửi lại mã. |
+| POST | `/api/Auth/Register` | Mọi người | Đăng ký (giới hạn 10 lần mỗi phút theo IP). Người lạ luôn là `Customer`; chỉ Admin đang đăng nhập mới gán được vai trò khác. Trả `{ message, requiresVerification, emailSent }`; tự đăng ký thì phải xác thực email bằng mã OTP. Đăng ký lại email chưa xác thực sẽ đặt lại mật khẩu theo lần mới và gửi lại mã. Người tự đăng ký phải gửi `acceptTerms: true` (và `termsVersion`); thiếu thì trả 400. Ngày đồng ý lưu ở bảng `UserConsents` (CSDL tài khoản). |
 | POST | `/api/Auth/verify-email` | Mọi người | Body `{ email, code }` (mã 6 số, hiệu lực khoảng 9 phút). Sai 5 lần thì tạm khóa 5 phút (429). |
 | POST | `/api/Auth/resend-otp` | Mọi người | Body `{ email }`. Gửi lại mã, tối thiểu 60 giây một lần (429 nếu gửi dồn). Luôn trả cùng một thông báo. |
 | POST | `/api/Auth/Login` | Mọi người | Đăng nhập, trả `{ jwtToken, refreshToken, refreshExpiresAt }`. Sai mật khẩu 5 lần (`Auth:MaxFailedAttempts`) thì tạm khóa 5 phút (`Auth:LockoutMinutes`), trả 403 kèm số phút còn lại. Tài khoản bị admin khóa hoặc chưa xác thực email cũng trả 403. Giới hạn 10 lần mỗi phút theo IP (429, header `Retry-After`). |

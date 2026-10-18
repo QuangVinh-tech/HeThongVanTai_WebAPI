@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using HeThongVanTai.Web.Infrastructure;
 using HeThongVanTai.Web.Models;
 using Microsoft.AspNetCore.Authentication;
@@ -125,7 +125,13 @@ public class AccountController : Controller
 
         // Không gửi roles: API luôn gán vai trò Customer cho người tự đăng ký
         var result = await _api.PostAsync<RegisterResponse>("api/Auth/Register",
-            new { username = model.Email, password = model.Password });
+            new
+            {
+                username = model.Email,
+                password = model.Password,
+                acceptTerms = model.AcceptTerms,
+                termsVersion = HeThongVanTai.Web.Infrastructure.LegalInfo.TermsVersion
+            });
 
         if (!result.Ok)
         {

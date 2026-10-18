@@ -105,7 +105,27 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
 .dropdown-item { color: var(--vt-text); }
 .dropdown-item:hover, .dropdown-item:focus { background: var(--vt-tint); color: var(--vt-primary-dark); }
 .alert-vt { border-radius: 12px; border: 0; box-shadow: 0 2px 8px rgba(176, 48, 96, .08); }
-.footer-vt { background: var(--vt-soft); border-top: 1px solid var(--vt-line); color: var(--vt-muted); }
+.footer-vt { background: var(--vt-soft); border-top: 1px solid var(--vt-line); color: var(--vt-text); }
+.footer-main { padding-top: 2rem; padding-bottom: 1.75rem; }
+.footer-heading { font-weight: 600; color: var(--vt-primary-dark); margin-bottom: .6rem; text-transform: none; }
+.footer-hotline { display: inline-block; font-size: 2rem; font-weight: 700; line-height: 1.2; color: var(--vt-primary); text-decoration: none; margin-bottom: .75rem; }
+.footer-hotline:hover { color: var(--vt-primary-dark); }
+.footer-company { font-weight: 600; color: var(--vt-primary-dark); margin-bottom: .5rem; text-transform: uppercase; font-size: .95rem; }
+.footer-contact li { margin-bottom: .35rem; font-size: .95rem; }
+.footer-contact a { color: var(--vt-primary); text-decoration: none; }
+.footer-contact a:hover { text-decoration: underline; }
+.footer-label { color: var(--vt-muted); }
+.footer-links { list-style: none; padding: 0; margin: 0; }
+.footer-links li { position: relative; padding-left: 1.1rem; margin-bottom: .55rem; font-size: .95rem; }
+.footer-links li::before { content: ""; position: absolute; left: 0; top: .55em; width: 7px; height: 7px; border-radius: 50%; background: var(--vt-pink); }
+.footer-links a { color: var(--vt-text); text-decoration: none; }
+.footer-links a:hover { color: var(--vt-primary); text-decoration: underline; }
+.footer-bottom { background: var(--vt-primary); color: #FFFFFF; padding: .7rem 0; font-size: .9rem; text-align: center; }
+.footer-bottom .footer-sep { margin: 0 .5rem; opacity: .6; }
+@media (max-width: 575.98px) {
+    .footer-hotline { font-size: 1.6rem; }
+    .footer-bottom { font-size: .8rem; }
+}
 
 /* Thẻ, banner */
 .card-vt {

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -34,13 +34,15 @@ namespace HeThongVanTai.Controllers
         private readonly ILogger<AuthController> _logger;
         private readonly RefreshTokenService _refresh;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly ConsentService _consent;
 
         public AuthController(UserManager<IdentityUser> userManager, ITokenRepository tokenRepository,
             IEmailService email, IMemoryCache cache, IConfiguration config, ILogger<AuthController> logger,
-            RefreshTokenService refresh, IServiceScopeFactory scopeFactory)
+            RefreshTokenService refresh, IServiceScopeFactory scopeFactory, ConsentService consent)
         {
             _refresh = refresh;
             _scopeFactory = scopeFactory;
+            _consent = consent;
             _userManager = userManager;
             _tokenRepository = tokenRepository;
             _email = email;
@@ -68,6 +70,10 @@ namespace HeThongVanTai.Controllers
         {
             var byAdmin = User.IsInRole(AppRoles.Admin);
 
+            // Người tự đăng ký phải đồng ý Điều khoản và Chính sách bảo mật (Nghị định 13/2023/NĐ-CP)
+            if (!byAdmin && !dto.AcceptTerms)
+                return BadRequest(new { message = "Bạn cần đồng ý Điều khoản sử dụng và Chính sách bảo mật để đăng ký tài khoản." });
+
             // Email đã đăng ký nhưng chưa xác thực: coi là đăng ký lại. Đặt lại mật khẩu theo lần này
             // (để người khác không giữ trước email của bạn rồi biết mật khẩu) và gửi lại mã OTP.
             var existing = await _userManager.FindByEmailAsync(dto.Username);
@@ -76,6 +82,7 @@ namespace HeThongVanTai.Controllers
                 var resetToken = await _userManager.GeneratePasswordResetTokenAsync(existing);
                 var reset = await _userManager.ResetPasswordAsync(existing, resetToken, dto.Password);
                 if (!reset.Succeeded) return BadRequest(reset.Errors.Select(e => e.Description));
+                await _consent.RecordAsync(existing.Id, dto.TermsVersion);
 
                 var resent = await SendOtpAsync(existing);
                 StartCooldown(existing.Email!);
@@ -103,6 +110,9 @@ namespace HeThongVanTai.Controllers
                 : new[] { AppRoles.Customer };
             result = await _userManager.AddToRolesAsync(user, roles);
             if (!result.Succeeded) return BadRequest(result.Errors.Select(e => e.Description));
+
+            // Lưu ngày đồng ý điều khoản (tài khoản do Admin tạo hộ không có sự đồng ý của chủ tài khoản nên không ghi)
+            if (!byAdmin) await _consent.RecordAsync(user.Id, dto.TermsVersion);
 
             _logger.LogInformation("Đăng ký thành công: {Email}, vai trò {Roles}, cần OTP {NeedOtp}",
                 user.Email, string.Join(",", roles), !user.EmailConfirmed);
