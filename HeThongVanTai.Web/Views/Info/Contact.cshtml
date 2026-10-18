@@ -1,23 +1,26 @@
-﻿@{
+﻿@model HeThongVanTai.Web.Models.ViewModels.CaiDat.PublicSettings
+@{
     ViewData["Title"] = "Liên hệ";
 }
 
 <div class="container py-4" style="max-width: 760px;">
     <h1 class="h3 fw-bold mb-3">Liên hệ</h1>
+    <p class="text-muted">Cần hỗ trợ đặt vé, đổi hoặc hủy vé, hãy liên hệ @Model.CompanyName.</p>
 
-    <div class="card card-vt p-4 mb-3">
-        <div class="mb-2"><i class="bi bi-telephone-fill me-2"></i><strong>Tổng đài:</strong> 0911911911</div>
-        <div class="mb-2"><i class="bi bi-envelope-fill me-2"></i><strong>Email:</strong> Tan313431@gmail.com</div>
-        <div class="mb-2"><i class="bi bi-geo-alt-fill me-2"></i><strong>Trụ sở:</strong> Lô 9999 Ngô Quyền</div>
-        <div><i class="bi bi-clock-fill me-2"></i><strong>Giờ làm việc:</strong> 8h00 - 16h30</div>
-    </div>
+    <ul class="list-unstyled">
+        @if (!string.IsNullOrWhiteSpace(Model.Hotline))
+        {
+            <li class="mb-2"><i class="bi bi-telephone me-2"></i>Hotline: <strong>@Model.Hotline</strong></li>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Email))
+        {
+            <li class="mb-2"><i class="bi bi-envelope me-2"></i>Email: <a href="mailto:@Model.Email">@Model.Email</a></li>
+        }
+        <li class="mb-2"><i class="bi bi-geo-alt me-2"></i>Địa chỉ các bến xe và văn phòng: xem trang <a asp-action="Offices">Văn phòng</a>.</li>
+    </ul>
 
-    <div class="card card-vt p-4">
-        <h2 class="h6 fw-bold">Cần hỗ trợ nhanh?</h2>
-        <ul class="mb-0">
-            <li>Tìm vé đã đặt: <a asp-controller="TraCuuVe" asp-action="Index">Tra cứu vé</a></li>
-            <li>Theo dõi hàng gửi: <a asp-controller="Shipments" asp-action="Track">Tra cứu đơn hàng</a></li>
-            <li>Điều kiện hủy, đổi vé: <a asp-action="Policy">Chính sách</a></li>
-        </ul>
-    </div>
+    @if (string.IsNullOrWhiteSpace(Model.Hotline) && string.IsNullOrWhiteSpace(Model.Email))
+    {
+        <div class="alert alert-info">Thông tin liên hệ đang được cập nhật.</div>
+    }
 </div>

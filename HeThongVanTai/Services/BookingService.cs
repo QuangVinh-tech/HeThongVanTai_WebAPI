@@ -10,15 +10,23 @@ public class BookingService
     private readonly AppDbContext _db;
     private readonly IConfiguration _cfg;
     private readonly ILogger<BookingService> _logger;
+    private readonly SettingsService? _settings;
 
-    public BookingService(AppDbContext db, IConfiguration cfg, ILogger<BookingService> logger)
+    // settings có thể null (test đơn giản): khi đó dùng appsettings và chính sách hoàn tiền mặc định
+    public BookingService(AppDbContext db, IConfiguration cfg, ILogger<BookingService> logger, SettingsService? settings = null)
     {
         _db = db;
         _cfg = cfg;
         _logger = logger;
+        _settings = settings;
     }
 
-    private int HoldMinutes => _cfg.GetValue<int?>("Booking:HoldMinutes") ?? 15;
+    // Thời gian giữ ghế và chính sách hoàn tiền do Admin cài trong CSDL, đọc mỗi lần dùng nên đổi có hiệu lực ngay
+    private async Task<int> HoldMinutesAsync() =>
+        _settings != null ? (await _settings.GetAsync()).HoldMinutes : _cfg.GetValue<int?>("Booking:HoldMinutes") ?? 15;
+
+    private async Task<IReadOnlyList<RefundTierDto>> RefundTiersAsync() =>
+        _settings != null ? (await _settings.GetAsync()).RefundTiers : Rules.DefaultRefundTiers;
 
     private static object Shape(Booking b) => new
     {
@@ -116,7 +124,7 @@ public class BookingService
     }
 
     // ============== Đặt vé, giữ ghế, áp mã ==============
-    public async Task<(int Id, object Body)> CreateAsync(CreateBookingDto dto)
+    public async Task<(int Id, object Body)> CreateAsync(CreateBookingDto dto, string? soldBy = null)
     {
         var now = DateTime.Now;
 
@@ -171,17 +179,19 @@ public class BookingService
             if (err != null) throw new ServiceException(400, err);
         }
 
+        var holdMinutes = await HoldMinutesAsync();
         var booking = new Booking
         {
             Code = Rules.NewBookingCode(),
             CustomerId = dto.CustomerId,
             Status = "Holding",
-            HoldExpiresAt = now.AddMinutes(HoldMinutes),
+            HoldExpiresAt = now.AddMinutes(holdMinutes),
             CreatedAt = now,
             DiscountAmount = discount,
             PromotionId = promo?.Id,
             TotalAmount = subtotal - discount,
             ContactPhone = contactPhone,
+            SoldBy = string.IsNullOrWhiteSpace(soldBy) ? null : soldBy.Trim(),
             NeedTransfer = dto.NeedTransfer,
             TransferAddress = transferAddress,
             Tickets = seats.Select(s => new Ticket
@@ -284,7 +294,7 @@ public class BookingService
             if (depart <= now) throw new ServiceException(400, "Chuyến đã khởi hành, không thể hủy.");
             var paidPayment = b.Payments.FirstOrDefault(p => p.Status == "Paid");
             var paid = b.Payments.Where(p => p.Status == "Paid").Sum(p => p.Amount);
-            rate = Rules.RefundRate(depart, now);
+            rate = Rules.RefundRate(depart, now, await RefundTiersAsync());
             refund = Math.Round(paid * rate, 0);
             if (refund > 0 && paidPayment != null)
             {
@@ -520,7 +530,7 @@ public class BookingService
         if (b.Status == "Paid")
         {
             var paid = b.Payments.Where(p => p.Status == "Paid").Sum(p => p.Amount);
-            rate = Rules.RefundRate(depart, now);
+            rate = Rules.RefundRate(depart, now, await RefundTiersAsync());
             refund = Math.Round(paid * rate, 0);
         }
         return new { CanCancel = true, Reason = (string?)null, RefundRate = rate, RefundAmount = refund };

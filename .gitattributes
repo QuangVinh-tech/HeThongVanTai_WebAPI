@@ -1,0 +1,5 @@
+# Script chạy trên Linux và file Docker phải giữ xuống dòng kiểu LF, kể cả khi lấy mã trên Windows
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+deploy/Caddyfile text eol=lf

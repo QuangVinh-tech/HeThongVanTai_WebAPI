@@ -4,19 +4,84 @@
     var stations = ViewData["Stations"] as List<StationItem> ?? new List<StationItem>();
     var routes = ViewData["PopularRoutes"] as List<RouteItem> ?? new List<RouteItem>();
     var today = DateTime.Today.ToString("yyyy-MM-dd");
+    var bannerImages = ViewData["BannerImages"] as List<string> ?? new List<string>();
+
+    // Banner thiết kế sẵn, dùng khi chưa có ảnh trong wwwroot/images/banners
+    var defaultSlides = new[]
+    {
+        new { Css = "banner-slide-1", Icon = "bi-bus-front-fill", Title = "Đặt vé xe khách trực tuyến",
+              Text = "Chọn chuyến, chọn ghế và thanh toán chỉ trong vài bước.", Cta = "Tìm chuyến ngay", Href = "#tim-chuyen" },
+        new { Css = "banner-slide-2", Icon = "bi-qr-code", Title = "Thanh toán QR, nhận vé điện tử",
+              Text = "Chuyển khoản xong, vé được xác nhận tự động và có mã QR để lên xe.", Cta = "Tra cứu vé", Href = Url.Action("Index", "TraCuuVe") ?? "#" },
+        new { Css = "banner-slide-3", Icon = "bi-signpost-split-fill", Title = "Lịch trình rõ ràng, giá minh bạch",
+              Text = "Xem toàn bộ tuyến, thời gian chạy và giá vé trước khi đặt.", Cta = "Xem lịch trình", Href = Url.Action("Schedule", "Info") ?? "#" }
+    };
+    var slideCount = bannerImages.Count > 0 ? bannerImages.Count : defaultSlides.Length;
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
 }
 
-<section class="hero-vt">
-    <div class="container text-center">
-        <h1 class="display-6 fw-bold">Đặt vé xe khách trực tuyến</h1>
-        <p class="lead mb-0">Chọn chuyến, chọn ghế và thanh toán chỉ trong vài bước.</p>
+<section class="hero-banner">
+    <h1 class="visually-hidden">Đặt vé xe khách trực tuyến</h1>
+    <div class="container">
+        <div id="homeBanner" class="carousel slide banner-vt" data-bs-ride="carousel" data-bs-interval="5000"
+             aria-roledescription="carousel" aria-label="Banner giới thiệu">
+            @if (slideCount > 1)
+            {
+                <div class="carousel-indicators">
+                    @for (var i = 0; i < slideCount; i++)
+                    {
+                        <button type="button" data-bs-target="#homeBanner" data-bs-slide-to="@i"
+                                class="@(i == 0 ? "active" : "")" aria-current="@(i == 0 ? "true" : null)"
+                                aria-label="Banner @(i + 1)"></button>
+                    }
+                </div>
+            }
+            <div class="carousel-inner">
+                @if (bannerImages.Count > 0)
+                {
+                    for (var i = 0; i < bannerImages.Count; i++)
+                    {
+                        <div class="carousel-item @(i == 0 ? "active" : "")">
+                            <img src="@bannerImages[i]" class="d-block w-100 banner-img" alt="Banner @(i + 1)" />
+                        </div>
+                    }
+                }
+                else
+                {
+                    for (var i = 0; i < defaultSlides.Length; i++)
+                    {
+                        var s = defaultSlides[i];
+                        <div class="carousel-item @(i == 0 ? "active" : "")">
+                            <div class="banner-slide @s.Css">
+                                <i class="bi @s.Icon banner-deco" aria-hidden="true"></i>
+                                <div class="banner-copy">
+                                    <h2 class="banner-title">@s.Title</h2>
+                                    <p class="banner-text">@s.Text</p>
+                                    <a class="btn btn-light banner-cta" href="@s.Href">@s.Cta</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+            @if (slideCount > 1)
+            {
+                <button class="carousel-control-prev" type="button" data-bs-target="#homeBanner" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Banner trước</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#homeBanner" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Banner sau</span>
+                </button>
+            }
+        </div>
     </div>
 </section>
 
-<div class="container search-wrap">
+<div class="container search-wrap" id="tim-chuyen">
     <form method="get" action="/Trips/Search" class="card card-vt search-card p-4">
         <div class="btn-group mb-3 trip-switch" role="group" aria-label="Loại vé">
             <input type="radio" class="btn-check" name="tripType" id="oneWay" value="oneway" checked>

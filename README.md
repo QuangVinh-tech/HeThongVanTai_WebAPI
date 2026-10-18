@@ -49,6 +49,24 @@ dotnet user-secrets set "ConnectionStrings:VanTaiAuthConnection" "<chuỗi kết
 
 Không ghi mật khẩu vào file `.json`: CI sẽ báo lỗi nếu tìm thấy `password=` trong file json.
 
+**Báo cáo:** Admin và Kế toán vào `/Admin/Reports`: doanh thu theo tuyến, ngày, tháng, xe, tài xế, nhân viên bán (có biểu đồ), công nợ vận chuyển và đối soát chuyển khoản; mỗi báo cáo xuất được Excel theo điều kiện lọc. Báo cáo theo nhân viên chỉ có số liệu cho đặt vé bán tại quầy từ sau khi chạy migration `AddBookingSoldBy`; trước đó nằm ở dòng "Khách tự đặt hoặc chưa ghi nhận". Biểu đồ dùng Chart.js tải từ CDN jsDelivr (mất mạng thì chỉ ẩn biểu đồ, bảng số liệu vẫn dùng được).
+
+**Cài đặt hệ thống:** Admin vào `/Admin/Settings` để đổi thời gian giữ ghế, các mốc hoàn tiền, tên công ty, logo, hotline, email. Giá trị lưu trong bảng `SystemSettings` (cần chạy migration), chưa lưu thì dùng mặc định (giữ ghế theo `Booking:HoldMinutes`). Thay đổi có hiệu lực ngay, chân trang và trang Liên hệ, Chính sách tự cập nhật theo.
+
+**Bảo mật đăng nhập** (mục `Auth`, `Jwt`, `Security` trong `appsettings.json` của API): sai mật khẩu 5 lần thì tạm khóa 5 phút; access token sống 15 phút và Web tự làm mới bằng refresh token (7 ngày); đăng nhập và đăng ký bị giới hạn 10 lần mỗi phút theo IP. API tính IP khách từ header `X-Forwarded-For` do Web gửi, chỉ tin proxy loopback. Khi Web và API chạy trên máy khác nhau (IIS...), thêm địa chỉ IP của máy chủ Web vào `Security:TrustedProxies`, nếu không mọi khách sẽ bị tính chung một IP. Với Docker Compose đã bật sẵn `ASPNETCORE_FORWARDEDHEADERS_ENABLED`, không cần cấu hình thêm.
+
+## Triển khai bằng Docker
+
+Chạy toàn bộ hệ thống (SQL Server, API, Web, HTTPS) bằng Docker Compose:
+
+```
+cp .env.example .env          # Windows PowerShell: Copy-Item .env.example .env
+# sửa .env: MSSQL_SA_PASSWORD, JWT_KEY, ADMIN_EMAIL, ADMIN_PASSWORD
+docker compose up -d --build
+```
+
+Mở https://localhost và đăng nhập bằng `ADMIN_EMAIL`, `ADMIN_PASSWORD`. API tự áp migration và tạo Admin đầu tiên. Kiểm tra sức khỏe ở `/health` của Web và API. Hướng dẫn lên máy chủ thật, IIS, biến môi trường, **sao lưu và phục hồi**: [docs/trien-khai.md](docs/trien-khai.md).
+
 ### 3. Tạo cơ sở dữ liệu (migration)
 
 Hệ thống dùng **hai** cơ sở dữ liệu, mỗi cái một DbContext:
@@ -103,6 +121,8 @@ dotnet user-secrets set "Email:From" "<email gửi>"
 ```
 
 Với Gmail, bật xác minh 2 bước rồi tạo "Mật khẩu ứng dụng" (App Password) để dùng làm `Email:Password`.
+
+Email cũng dùng cho **quên mật khẩu**: trang `/Account/ForgotPassword` gửi liên kết `/Account/ResetPassword?...` có hiệu lực 30 phút (`Auth:ResetLinkMinutes`), dùng một lần. Địa chỉ gốc của Web trong liên kết lấy từ `Web:BaseUrl` (mặc định `https://localhost:7300`), đổi lại nếu Web chạy ở địa chỉ khác. Mẫu email dùng chung nằm ở `Services/Email/EmailTemplates.cs`.
 
 Chưa cấu hình `Email:Host` thì API không gửi email; ở môi trường Development, mã OTP được ghi vào log (tìm dòng `EMAIL GIẢ LẬP`) để bạn vẫn thử được. Tài khoản `admin@vantai.com` tự được đánh dấu đã xác thực.
 

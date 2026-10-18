@@ -1,3 +1,5 @@
+﻿@inject HeThongVanTai.Web.Services.SettingsApiService SettingsApi
+@{ var site = await SettingsApi.GetPublicAsync(); }
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -36,6 +38,8 @@
                                 <li><a class="dropdown-item" asp-controller="Info" asp-action="Schedule">Lịch trình tuyến</a></li>
                                 <li><a class="dropdown-item" asp-controller="Info" asp-action="Offices">Văn phòng và bến xe</a></li>
                                 <li><a class="dropdown-item" asp-controller="Info" asp-action="Policy">Chính sách</a></li>
+                                <li><a class="dropdown-item" asp-controller="Info" asp-action="Terms">Điều khoản sử dụng</a></li>
+                                <li><a class="dropdown-item" asp-controller="Info" asp-action="Privacy">Chính sách bảo mật</a></li>
                                 <li><a class="dropdown-item" asp-controller="Info" asp-action="Careers">Tuyển dụng</a></li>
                                 <li><a class="dropdown-item" asp-controller="Info" asp-action="Contact">Liên hệ</a></li>
                             </ul>
@@ -168,18 +172,62 @@
         @RenderBody()
     </main>
 
-    <footer class="footer-vt py-3 mt-auto">
-        <div class="container small d-flex flex-column flex-md-row justify-content-between gap-1">
-            <span>&copy; 2026 VậnTải HK - Hệ thống quản lý dịch vụ vận tải hành khách</span>
-            <span>
-                <a class="text-reset" asp-controller="Info" asp-action="Contact">Liên hệ</a> ·
-                <a class="text-reset" asp-controller="Info" asp-action="Policy">Chính sách</a> ·
-                <a class="text-reset" asp-controller="Info" asp-action="Careers">Tuyển dụng</a>
-            </span>
+    <footer class="footer-vt mt-auto">
+        @{
+            var hotlineDigits = new string((site.Hotline ?? "").Where(char.IsDigit).ToArray());
+        }
+        <div class="container footer-main">
+            <div class="row g-4">
+                <div class="col-12 col-lg-5">
+                    <div class="footer-heading">TRUNG TÂM TỔNG ĐÀI &amp; CSKH</div>
+                    @if (!string.IsNullOrWhiteSpace(site.Hotline))
+                    {
+                        <a class="footer-hotline" href="tel:@hotlineDigits">@site.Hotline</a>
+                    }
+                    <div class="footer-company">@site.CompanyName</div>
+                    <ul class="list-unstyled footer-contact mb-0">
+                        @if (!string.IsNullOrWhiteSpace(site.Email))
+                        {
+                            <li><span class="footer-label">Email:</span> <a href="mailto:@site.Email">@site.Email</a></li>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(site.Hotline))
+                        {
+                            <li><span class="footer-label">Điện thoại:</span> @site.Hotline</li>
+                        }
+                        <li><span class="footer-label">Văn phòng và bến xe:</span> <a asp-controller="Info" asp-action="Offices">Xem mạng lưới văn phòng</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-6 col-lg-3">
+                    <div class="footer-heading">@site.CompanyName</div>
+                    <ul class="footer-links">
+                        <li><a asp-controller="Info" asp-action="Schedule">Lịch trình</a></li>
+                        <li><a asp-controller="Info" asp-action="Offices">Mạng lưới văn phòng</a></li>
+                        <li><a asp-controller="Info" asp-action="Careers">Tuyển dụng</a></li>
+                        <li><a asp-controller="Info" asp-action="Privacy">Chính sách bảo mật</a></li>
+                        <li><a asp-controller="Info" asp-action="Contact">Liên hệ</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-6 col-lg-4">
+                    <div class="footer-heading">Hỗ trợ</div>
+                    <ul class="footer-links">
+                        <li><a asp-controller="TraCuuVe" asp-action="Index">Tra cứu thông tin đặt vé</a></li>
+                        <li><a asp-controller="Info" asp-action="Terms">Điều khoản sử dụng</a></li>
+                        <li><a asp-controller="Info" asp-action="Policy">Chính sách đổi vé, hủy vé và hoàn tiền</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="container">
+                &copy; @DateTime.Now.Year <span class="footer-sep">|</span> Bản quyền thuộc về @site.CompanyName
+                @if (!string.IsNullOrWhiteSpace(site.Hotline)) { <text><span class="footer-sep">|</span> Hotline: @site.Hotline</text> }
+            </div>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
-</html>
+</html>

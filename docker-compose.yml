@@ -1,0 +1,104 @@
+# Chạy toàn bộ hệ thống: SQL Server + API + Web + Caddy (HTTPS).
+#   cp .env.example .env     (sửa giá trị)
+#   docker compose up -d --build
+# Hướng dẫn đầy đủ: docs/trien-khai.md
+name: vantai
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Express
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Hãy đặt MSSQL_SA_PASSWORD trong file .env}
+    volumes:
+      - sqldata:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "SQLCMDPASSWORD=$$MSSQL_SA_PASSWORD /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -b -Q 'SELECT 1' -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  api:
+    build:
+      context: .
+      dockerfile: HeThongVanTai/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      # Tin header X-Forwarded-* từ Caddy và Web (API chỉ nhận request từ mạng nội bộ của compose)
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      ConnectionStrings__DefaultConnection: Server=db;Database=VanTaiDB;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;
+      ConnectionStrings__VanTaiAuthConnection: Server=db;Database=VanTaiAuthDB;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;
+      Database__AutoMigrate: "true"
+      Seed__AdminEmail: ${ADMIN_EMAIL:-}
+      Seed__AdminPassword: ${ADMIN_PASSWORD:-}
+      Jwt__Key: ${JWT_KEY:?Hãy đặt JWT_KEY (ít nhất 32 ký tự) trong file .env}
+      Jwt__Issuer: https://${API_DOMAIN:-api.localhost}
+      Jwt__Audience: https://${API_DOMAIN:-api.localhost}
+      Web__BaseUrl: https://${WEB_DOMAIN:-localhost}
+      PublicUrls__ApiBaseUrl: https://${API_DOMAIN:-api.localhost}
+      DataProtection__KeysPath: /keys
+      Email__Host: ${SMTP_HOST:-}
+      Email__Port: ${SMTP_PORT:-587}
+      Email__User: ${SMTP_USER:-}
+      Email__Password: ${SMTP_PASSWORD:-}
+      Email__From: ${SMTP_FROM:-}
+      Payment__WebhookApiKey: ${SEPAY_WEBHOOK_KEY:-}
+    volumes:
+      - api_images:/app/wwwroot/Images
+      - api_logs:/app/Logs
+      - api_keys:/keys
+
+  web:
+    build:
+      context: .
+      dockerfile: HeThongVanTai.Web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      # Web gọi API qua mạng nội bộ, không đi vòng ra Internet
+      ApiBaseUrl: http://api:8080/
+      DataProtection__KeysPath: /keys
+      BankTransfer__BankId: ${BANK_ID:-MB}
+      BankTransfer__AccountNo: ${BANK_ACCOUNT_NO:-}
+      BankTransfer__AccountName: ${BANK_ACCOUNT_NAME:-}
+    volumes:
+      - web_logs:/app/Logs
+      - web_keys:/keys
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - web
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      WEB_DOMAIN: ${WEB_DOMAIN:-localhost}
+      API_DOMAIN: ${API_DOMAIN:-api.localhost}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  sqldata:
+  api_images:
+  api_logs:
+  api_keys:
+  web_logs:
+  web_keys:
+  caddy_data:
+  caddy_config:

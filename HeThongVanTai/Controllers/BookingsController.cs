@@ -1,7 +1,6 @@
 using HeThongVanTai.Models.Domain;
 using HeThongVanTai.Models.DTO;
 using HeThongVanTai.Services;
-using HeThongVanTai.Services.Audit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,12 +10,7 @@ namespace HeThongVanTai.Controllers;
 public class BookingsController : ControllerBase
 {
     private readonly BookingService _svc;
-    private readonly IAuditService? _audit;
-    public BookingsController(BookingService svc, IAuditService? audit = null)
-    {
-        _svc = svc;
-        _audit = audit;
-    }
+    public BookingsController(BookingService svc) => _svc = svc;
 
     private bool IsStaff => User.IsInRole("Admin") || User.IsInRole("Seller");
 
@@ -56,7 +50,8 @@ public class BookingsController : ControllerBase
             if (uid == null) return Unauthorized();
             dto.CustomerId = await _svc.GetOrCreateCustomerIdAsync(uid, UserClaims.Email(User));
         }
-        var (id, body) = await _svc.CreateAsync(dto);
+        // Nhân viên bán tại quầy thì ghi lại người bán để báo cáo doanh thu theo nhân viên
+        var (id, body) = await _svc.CreateAsync(dto, IsStaff ? UserClaims.Email(User) : null);
         return CreatedAtAction(nameof(GetById), new { id }, body);
     }
 
@@ -113,11 +108,7 @@ public class BookingsController : ControllerBase
     public async Task<IActionResult> Cancel(int id)
     {
         if (!await CanAccessBookingAsync(id)) return Deny();
-        var result = await _svc.CancelAsync(id);
-        var refund = (decimal?)result.GetType().GetProperty("RefundAmount")?.GetValue(result) ?? 0m;
-        await _audit.AuditAsync(refund > 0 ? "Refund" : "Cancel", "Booking", id,
-            refund > 0 ? $"Hủy đặt vé #{id}, hoàn {refund:N0}đ" : $"Hủy đặt vé #{id}, không hoàn tiền");
-        return Ok(result);
+        return Ok(await _svc.CancelAsync(id));
     }
 
     // Quản trị: lọc, sắp xếp, phân trang

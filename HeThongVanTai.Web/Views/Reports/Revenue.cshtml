@@ -1,0 +1,215 @@
+@using System.Globalization
+@using System.Text.Json
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@using HeThongVanTai.Web.Models.ViewModels.Reports
+@model BreakdownViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    Layout = "_AdminLayout";
+    var vi = CultureInfo.GetCultureInfo("vi-VN");
+    var f = Model.Filter;
+    var data = Model.Data;
+    var fromText = f.From.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    var toText = f.To.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    var descText = f.Desc ? "true" : "false";
+    var chartKind = Model.By == "day" ? "line" : Model.By == "month" ? "bar" : "bar-h";
+
+    var totalPages = data?.TotalPages ?? 1;
+    var current = Math.Min(Math.Max(f.Page, 1), totalPages);
+    var pageFrom = Math.Max(1, current - 2);
+    var pageTo = Math.Min(totalPages, current + 2);
+
+    // Cột sắp xếp (chỉ khi không phải theo ngày, tháng)
+    var columns = new[]
+    {
+        (Key: "route", Label: Model.NameColumn, Right: false),
+        (Key: "payments", Label: "Số giao dịch", Right: true),
+        (Key: "tickets", Label: "Số vé", Right: true),
+        (Key: "revenue", Label: "Doanh thu", Right: true)
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/reports.css" asp-append-version="true" />
+}
+
+<h1 class="h4 mb-3">@Model.Title</h1>
+<partial name="_ReportTabs" model="Model.By" />
+
+<form method="get" class="filter-vt row g-2 align-items-end mb-3">
+    <input type="hidden" name="by" value="@Model.By" />
+    <div class="col-6 col-md-3">
+        <label class="form-label small mb-1" for="from">Từ ngày</label>
+        <input id="from" name="from" type="date" value="@fromText" class="form-control" />
+    </div>
+    <div class="col-6 col-md-3">
+        <label class="form-label small mb-1" for="to">Đến ngày</label>
+        <input id="to" name="to" type="date" value="@toText" class="form-control" />
+    </div>
+    <div class="col-12 col-md-3">
+        <label class="form-label small mb-1" for="routeId">Tuyến</label>
+        <select id="routeId" name="routeId" class="form-select">
+            <option value="">Tất cả tuyến</option>
+            @foreach (var r in Model.Routes)
+            {
+                <option value="@r.Id" selected="@(f.RouteId == r.Id)">@r.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-12 col-md-3 d-flex gap-2">
+        @if (!Model.TimeSeries)
+        {
+            <input type="hidden" name="sort" value="@f.Sort" />
+            <input type="hidden" name="desc" value="@descText" />
+        }
+        <button type="submit" class="btn btn-primary flex-grow-1">Lọc</button>
+        <a class="btn btn-outline-primary text-nowrap" title="Tải file Excel theo điều kiện lọc hiện tại"
+           asp-action="RevenueExport" asp-route-by="@Model.By" asp-route-from="@fromText" asp-route-to="@toText"
+           asp-route-routeId="@f.RouteId" asp-route-sort="@f.Sort" asp-route-desc="@descText">
+            <i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel
+        </a>
+    </div>
+</form>
+
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div class="alert alert-danger">@Model.Error</div>
+}
+
+@if (data != null)
+{
+    <div class="row g-3 mb-3">
+        <div class="col-12 col-md-4">
+            <div class="card card-vt p-3 h-100">
+                <div class="small text-muted">Tổng doanh thu</div>
+                <div class="report-value">@DatVeHelpers.Money(data.Summary.TotalRevenue)</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card card-vt p-3 h-100">
+                <div class="small text-muted">Số vé bán</div>
+                <div class="report-value">@data.Summary.TotalTickets.ToString("N0", vi)</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card card-vt p-3 h-100">
+                <div class="small text-muted">Số giao dịch</div>
+                <div class="report-value">@data.Summary.TotalPayments.ToString("N0", vi)</div>
+            </div>
+        </div>
+    </div>
+
+    @if (data.Items.Count > 0 && data.Items.Any(i => i.Revenue != 0))
+    {
+        <div class="card card-vt chart-card">
+            <div class="chart-box"><canvas id="reportChart" role="img" aria-label="Biểu đồ @Model.Title.ToLowerInvariant()"></canvas></div>
+            @if (!Model.TimeSeries)
+            {
+                <div class="report-sub mt-2">Biểu đồ theo các dòng của trang hiện tại trong bảng bên dưới.</div>
+            }
+        </div>
+        <script id="chartData" type="application/json">@Html.Raw(JsonSerializer.Serialize(new
+        {
+            kind = chartKind,
+            labels = data.Items.Select(i => i.Label),
+            values = data.Items.Select(i => i.Revenue)
+        }))</script>
+    }
+
+    <div class="card card-vt">
+        @if (data.Items.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">Không có doanh thu nào trong khoảng thời gian và tuyến đã chọn.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-vt table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            @foreach (var c in columns)
+                            {
+                                if (Model.TimeSeries)
+                                {
+                                    <th class="@(c.Right ? "text-end" : "")">@c.Label</th>
+                                }
+                                else
+                                {
+                                    var active = f.Sort == c.Key;
+                                    var nextDesc = active ? !f.Desc : c.Key != "route";
+                                    <th class="@(c.Right ? "text-end" : "")">
+                                        <a class="sort-link" asp-action="Revenue" asp-route-by="@Model.By"
+                                           asp-route-from="@fromText" asp-route-to="@toText" asp-route-routeId="@f.RouteId"
+                                           asp-route-sort="@c.Key" asp-route-desc="@(nextDesc ? "true" : "false")">
+                                            @c.Label
+                                            @if (active)
+                                            {
+                                                <i class="bi @(f.Desc ? "bi-caret-down-fill" : "bi-caret-up-fill") ms-1"></i>
+                                            }
+                                        </a>
+                                    </th>
+                                }
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in data.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@row.Label</div>
+                                    @if (!string.IsNullOrWhiteSpace(row.Sub))
+                                    {
+                                        <div class="report-sub">@row.Sub</div>
+                                    }
+                                </td>
+                                <td class="text-end">@row.Payments.ToString("N0", vi)</td>
+                                <td class="text-end">@row.Tickets.ToString("N0", vi)</td>
+                                <td class="text-end fw-semibold">@DatVeHelpers.Money(row.Revenue)</td>
+                            </tr>
+                        }
+                    </tbody>
+                    @if (Model.TimeSeries)
+                    {
+                        <tfoot>
+                            <tr class="fw-bold">
+                                <td>Tổng cộng</td>
+                                <td class="text-end">@data.Summary.TotalPayments.ToString("N0", vi)</td>
+                                <td class="text-end">@data.Summary.TotalTickets.ToString("N0", vi)</td>
+                                <td class="text-end">@DatVeHelpers.Money(data.Summary.TotalRevenue)</td>
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+            </div>
+        }
+    </div>
+
+    @if (!Model.TimeSeries && totalPages > 1)
+    {
+        <nav class="mt-3" aria-label="Phân trang">
+            <ul class="pagination pagination-vt justify-content-center flex-wrap mb-0">
+                <li class="page-item @(current == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Revenue" asp-route-by="@Model.By" asp-route-from="@fromText" asp-route-to="@toText"
+                       asp-route-routeId="@f.RouteId" asp-route-sort="@f.Sort" asp-route-desc="@descText" asp-route-page="@(current - 1)">Trước</a>
+                </li>
+                @for (var p = pageFrom; p <= pageTo; p++)
+                {
+                    <li class="page-item @(p == current ? "active" : "")">
+                        <a class="page-link" asp-action="Revenue" asp-route-by="@Model.By" asp-route-from="@fromText" asp-route-to="@toText"
+                           asp-route-routeId="@f.RouteId" asp-route-sort="@f.Sort" asp-route-desc="@descText" asp-route-page="@p">@p</a>
+                    </li>
+                }
+                <li class="page-item @(current == totalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Revenue" asp-route-by="@Model.By" asp-route-from="@fromText" asp-route-to="@toText"
+                       asp-route-routeId="@f.RouteId" asp-route-sort="@f.Sort" asp-route-desc="@descText" asp-route-page="@(current + 1)">Sau</a>
+                </li>
+            </ul>
+        </nav>
+    }
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="~/js/report-chart.js" asp-append-version="true"></script>
+}

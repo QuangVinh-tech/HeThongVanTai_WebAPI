@@ -56,6 +56,10 @@ namespace HeThongVanTai.Migrations
                     b.Property<int?>("PromotionId")
                         .HasColumnType("int");
 
+                    b.Property<string>("SoldBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -526,6 +530,9 @@ namespace HeThongVanTai.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Code")
+                        .IsUnique();
+
                     b.HasIndex("FromStationId");
 
                     b.HasIndex("PromotionId");
@@ -580,7 +587,7 @@ namespace HeThongVanTai.Migrations
 
                     b.HasIndex("ShipmentId");
 
-                    b.ToTable("ShipmentItem");
+                    b.ToTable("ShipmentItems");
                 });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.ShipmentLog", b =>
@@ -641,6 +648,29 @@ namespace HeThongVanTai.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Stations");
+                });
+
+            modelBuilder.Entity("HeThongVanTai.Models.Domain.SystemSetting", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("SystemSettings");
                 });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.Ticket", b =>
@@ -861,7 +891,7 @@ namespace HeThongVanTai.Migrations
                     b.HasOne("HeThongVanTai.Models.Domain.Station", "FromStation")
                         .WithMany()
                         .HasForeignKey("FromStationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("HeThongVanTai.Models.Domain.Promotion", "Promotion")
@@ -871,12 +901,13 @@ namespace HeThongVanTai.Migrations
                     b.HasOne("HeThongVanTai.Models.Domain.Station", "ToStation")
                         .WithMany()
                         .HasForeignKey("ToStationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("HeThongVanTai.Models.Domain.Trip", "Trip")
                         .WithMany()
-                        .HasForeignKey("TripId");
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("FromStation");
 

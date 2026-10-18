@@ -9,6 +9,7 @@ namespace HeThongVanTai.Data
         {
         }
 
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -62,7 +63,19 @@ namespace HeThongVanTai.Data
                 .HasIndex(p => p.SePayTransactionId)
                 .IsUnique()
                 .HasFilter("[SePayTransactionId] IS NOT NULL");
+            modelBuilder.Entity<Shipment>().HasIndex(s => s.Code).IsUnique();
+
+            // Restrict để SQL Server không báo lỗi "multiple cascade paths"
+            modelBuilder.Entity<Shipment>().HasOne(s => s.FromStation).WithMany()
+                .HasForeignKey(s => s.FromStationId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Shipment>().HasOne(s => s.ToStation).WithMany()
+                .HasForeignKey(s => s.ToStationId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Shipment>().HasOne(s => s.Trip).WithMany()
+                .HasForeignKey(s => s.TripId).OnDelete(DeleteBehavior.Restrict);
         }
+        public DbSet<Shipment> Shipments { get; set; }
+        public DbSet<ShipmentItem> ShipmentItems { get; set; }
+        public DbSet<ShipmentLog> ShipmentLogs { get; set; }
 
         public DbSet<Station> Stations { get; set; }
         public DbSet<BusRoute> BusRoutes { get; set; }
@@ -79,9 +92,6 @@ namespace HeThongVanTai.Data
         public DbSet<Image> Images { get; set; }
         public DbSet<Review> Reviews { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
-
-      
-        public DbSet<Shipment> Shipments { get; set; }
-        public DbSet<ShipmentLog> ShipmentLogs { get; set; }
+        public DbSet<SystemSetting> SystemSettings { get; set; }
     }
 }

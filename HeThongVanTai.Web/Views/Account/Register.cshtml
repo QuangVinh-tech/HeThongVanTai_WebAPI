@@ -1,4 +1,4 @@
-@model RegisterViewModel
+﻿@model RegisterViewModel
 @{
     ViewData["Title"] = "Đăng ký";
 }
@@ -22,6 +22,15 @@
                 <label asp-for="ConfirmPassword" class="form-label"></label>
                 <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
                 <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+            </div>
+            <div class="form-check mb-3">
+                <input asp-for="AcceptTerms" class="form-check-input" />
+                <label asp-for="AcceptTerms" class="form-check-label small">
+                    Tôi đã đọc và đồng ý với <a asp-controller="Info" asp-action="Terms" target="_blank">Điều khoản sử dụng</a>
+                    và <a asp-controller="Info" asp-action="Privacy" target="_blank">Chính sách bảo mật</a>,
+                    bao gồm việc xử lý dữ liệu cá nhân của tôi để cung cấp dịch vụ đặt vé.
+                </label>
+                <div><span asp-validation-for="AcceptTerms" class="text-danger small"></span></div>
             </div>
             <button type="submit" class="btn btn-primary w-100">Đăng ký</button>
         </form>

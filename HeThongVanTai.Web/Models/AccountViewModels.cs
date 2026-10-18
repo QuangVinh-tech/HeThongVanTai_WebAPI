@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace HeThongVanTai.Web.Models;
 
@@ -32,6 +32,36 @@ public class RegisterViewModel
     [Compare(nameof(Password), ErrorMessage = "Mật khẩu nhập lại không khớp")]
     [DataType(DataType.Password)]
     [Display(Name = "Nhập lại mật khẩu")]
+    public string ConfirmPassword { get; set; } = "";
+
+    [Range(typeof(bool), "true", "true", ErrorMessage = "Bạn cần đồng ý Điều khoản sử dụng và Chính sách bảo mật để đăng ký")]
+    [Display(Name = "Đồng ý điều khoản")]
+    public bool AcceptTerms { get; set; }
+}
+
+public class ForgotPasswordViewModel
+{
+    [Required(ErrorMessage = "Vui lòng nhập email")]
+    [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+    [Display(Name = "Email")]
+    public string Email { get; set; } = "";
+}
+
+public class ResetPasswordViewModel
+{
+    public string Email { get; set; } = "";
+    public string Token { get; set; } = "";
+
+    [Required(ErrorMessage = "Vui lòng nhập mật khẩu mới")]
+    [MinLength(6, ErrorMessage = "Mật khẩu mới tối thiểu 6 ký tự")]
+    [DataType(DataType.Password)]
+    [Display(Name = "Mật khẩu mới")]
+    public string NewPassword { get; set; } = "";
+
+    [Required(ErrorMessage = "Vui lòng nhập lại mật khẩu mới")]
+    [Compare(nameof(NewPassword), ErrorMessage = "Mật khẩu nhập lại không khớp")]
+    [DataType(DataType.Password)]
+    [Display(Name = "Nhập lại mật khẩu mới")]
     public string ConfirmPassword { get; set; } = "";
 }
 

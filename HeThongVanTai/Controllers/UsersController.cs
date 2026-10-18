@@ -21,12 +21,15 @@ namespace HeThongVanTai.Controllers
 
         private readonly UserManager<IdentityUser> _userManager;
         private readonly AppDbContext _db;   // hồ sơ tài xế nằm ở CSDL nghiệp vụ
+        private readonly RefreshTokenService _refresh;
         private readonly ILogger<UsersController> _logger;
 
         private readonly IAuditService? _audit;
 
-        public UsersController(UserManager<IdentityUser> userManager, AppDbContext db, ILogger<UsersController> logger, IAuditService? audit = null)
+        public UsersController(UserManager<IdentityUser> userManager, AppDbContext db,
+            RefreshTokenService refresh, ILogger<UsersController> logger, IAuditService? audit = null)
         {
+            _refresh = refresh;
             _userManager = userManager;
             _db = db;
             _logger = logger;
@@ -231,6 +234,9 @@ namespace HeThongVanTai.Controllers
                 return BadRequest(new { message = string.Join(" ", result.Errors.Select(e => e.Description)) });
 
             if (!dto.Locked) await _userManager.ResetAccessFailedCountAsync(user);
+
+            // Khóa có hiệu lực ngay: access token cũ bị từ chối ở mỗi request (JwtBearerEvents), refresh token bị thu hồi
+            if (dto.Locked) await _refresh.RevokeAllAsync(user.Id);
 
             _logger.LogInformation("{Admin} {Action} tài khoản {Email}",
                 UserClaims.Email(User), dto.Locked ? "khóa" : "mở khóa", user.Email);

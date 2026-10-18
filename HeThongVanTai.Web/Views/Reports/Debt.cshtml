@@ -1,0 +1,157 @@
+@using System.Globalization
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@using HeThongVanTai.Web.Models.ViewModels.Reports
+@model DebtViewModel
+@{
+    ViewData["Title"] = "Báo cáo công nợ";
+    Layout = "_AdminLayout";
+    var vi = CultureInfo.GetCultureInfo("vi-VN");
+    var data = Model.Data;
+    var fromText = Model.From?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    var toText = Model.To?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    var totalPages = data?.TotalPages ?? 1;
+    var current = Math.Min(Math.Max(Model.Page, 1), totalPages);
+    var pageFrom = Math.Max(1, current - 2);
+    var pageTo = Math.Min(totalPages, current + 2);
+
+    string AgeClass(int days) => days > 60 ? "aging-bad" : days > 30 ? "aging-warn" : "aging-ok";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/reports.css" asp-append-version="true" />
+}
+
+<h1 class="h4 mb-3">Báo cáo công nợ vận chuyển</h1>
+<partial name="_ReportTabs" model='"debt"' />
+
+<p class="small text-muted">Các đơn vận chuyển chưa thu tiền (không tính đơn đã hủy), gom theo người gửi và chia theo tuổi nợ tính từ ngày tạo đơn.</p>
+
+<form method="get" class="filter-vt row g-2 align-items-end mb-3">
+    <div class="col-6 col-md-3">
+        <label class="form-label small mb-1" for="from">Tạo đơn từ ngày</label>
+        <input id="from" name="from" type="date" value="@fromText" class="form-control" />
+    </div>
+    <div class="col-6 col-md-3">
+        <label class="form-label small mb-1" for="to">Đến ngày</label>
+        <input id="to" name="to" type="date" value="@toText" class="form-control" />
+    </div>
+    <div class="col-12 col-md-3">
+        <label class="form-label small mb-1" for="feePayer">Người trả cước</label>
+        <select id="feePayer" name="feePayer" class="form-select">
+            <option value="">Tất cả</option>
+            @foreach (var v in new[] { "Debt", "Sender", "Receiver" })
+            {
+                <option value="@v" selected="@(Model.FeePayer == v)">@ReportLabels.FeePayer(v)</option>
+            }
+        </select>
+    </div>
+    <div class="col-12 col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-grow-1">Lọc</button>
+        <a class="btn btn-outline-primary text-nowrap" title="Tải file Excel gồm công nợ theo khách và chi tiết từng đơn"
+           asp-action="DebtExport" asp-route-from="@fromText" asp-route-to="@toText" asp-route-feePayer="@Model.FeePayer">
+            <i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel
+        </a>
+    </div>
+</form>
+
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div class="alert alert-danger">@Model.Error</div>
+}
+
+@if (data != null)
+{
+    <div class="row g-3 mb-3">
+        <div class="col-12 col-md-4">
+            <div class="card card-vt p-3 h-100">
+                <div class="small text-muted">Tổng công nợ</div>
+                <div class="report-value">@DatVeHelpers.Money(data.Summary.TotalDebt)</div>
+                <div class="report-sub">@data.Summary.Customers khách, @data.Summary.Shipments đơn</div>
+            </div>
+        </div>
+        <div class="col-4 col-md-2">
+            <div class="card card-vt p-3 h-100">
+                <div class="small text-muted">0 đến 30 ngày</div>
+                <div class="fw-bold aging-ok">@DatVeHelpers.Money(data.Summary.Within30)</div>
+            </div>
+        </div>
+        <div class="col-4 col-md-3">
+            <div class="card card-vt p-3 h-100">
+                <div class="small text-muted">31 đến 60 ngày</div>
+                <div class="fw-bold aging-warn">@DatVeHelpers.Money(data.Summary.Days31To60)</div>
+            </div>
+        </div>
+        <div class="col-4 col-md-3">
+            <div class="card card-vt p-3 h-100">
+                <div class="small text-muted">Trên 60 ngày</div>
+                <div class="fw-bold aging-bad">@DatVeHelpers.Money(data.Summary.Over60)</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-vt">
+        @if (data.Items.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">Không có công nợ nào theo điều kiện đã chọn.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-vt table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Người gửi</th>
+                            <th class="text-end">Số đơn</th>
+                            <th class="text-end">Tổng nợ</th>
+                            <th>Đơn cũ nhất</th>
+                            <th class="text-end">0-30 ngày</th>
+                            <th class="text-end">31-60 ngày</th>
+                            <th class="text-end">Trên 60 ngày</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in data.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@c.SenderName</div>
+                                    <div class="report-sub">@c.SenderPhone</div>
+                                </td>
+                                <td class="text-end">@c.Shipments.ToString("N0", vi)</td>
+                                <td class="text-end fw-semibold">@DatVeHelpers.Money(c.TotalAmount)</td>
+                                <td>
+                                    @c.OldestAt.ToString("dd/MM/yyyy")
+                                    <div class="report-sub @AgeClass(c.OldestDays)">@c.OldestDays ngày</div>
+                                </td>
+                                <td class="text-end">@(c.Within30 == 0 ? "-" : DatVeHelpers.Money(c.Within30))</td>
+                                <td class="text-end">@(c.Days31To60 == 0 ? "-" : DatVeHelpers.Money(c.Days31To60))</td>
+                                <td class="text-end @(c.Over60 > 0 ? "aging-bad" : "")">@(c.Over60 == 0 ? "-" : DatVeHelpers.Money(c.Over60))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <nav class="mt-3" aria-label="Phân trang">
+            <ul class="pagination pagination-vt justify-content-center flex-wrap mb-0">
+                <li class="page-item @(current == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Debt" asp-route-from="@fromText" asp-route-to="@toText" asp-route-feePayer="@Model.FeePayer" asp-route-page="@(current - 1)">Trước</a>
+                </li>
+                @for (var p = pageFrom; p <= pageTo; p++)
+                {
+                    <li class="page-item @(p == current ? "active" : "")">
+                        <a class="page-link" asp-action="Debt" asp-route-from="@fromText" asp-route-to="@toText" asp-route-feePayer="@Model.FeePayer" asp-route-page="@p">@p</a>
+                    </li>
+                }
+                <li class="page-item @(current == totalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Debt" asp-route-from="@fromText" asp-route-to="@toText" asp-route-feePayer="@Model.FeePayer" asp-route-page="@(current + 1)">Sau</a>
+                </li>
+            </ul>
+        </nav>
+    }
+}

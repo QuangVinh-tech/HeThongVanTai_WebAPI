@@ -9,9 +9,17 @@ namespace HeThongVanTai.Data
     {
         public VanTaiAuthDbContext(DbContextOptions<VanTaiAuthDbContext> options) : base(options) { }
 
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<UserConsent> UserConsents { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            builder.Entity<RefreshToken>().HasIndex(t => t.TokenHash).IsUnique();
+            builder.Entity<RefreshToken>().HasIndex(t => t.UserId);
+            builder.Entity<UserConsent>().HasIndex(c => c.UserId);
+
             builder.Entity<IdentityRole>().HasData(
                 NewRole("a0000000-0000-4000-8000-000000000001", AppRoles.Admin),
                 NewRole("a0000000-0000-4000-8000-000000000002", AppRoles.Operator),

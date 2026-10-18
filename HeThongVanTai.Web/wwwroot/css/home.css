@@ -208,3 +208,53 @@
         width: 100%;
     }
 }
+
+/* ===== Banner trang chủ ===== */
+.hero-banner { position: relative; padding: 1.25rem 0 0; }
+/* Dải màu chỉ nằm sau nửa trên của banner để banner "nổi" lên như trang mẫu */
+.hero-banner::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 60%;
+    background:
+        radial-gradient(circle at 85% 20%, rgba(255, 255, 255, .22), transparent 45%),
+        linear-gradient(135deg, #B03060 0%, #DB7093 60%, #FF82AB 100%);
+    border-radius: 0 0 28px 28px;
+}
+.banner-vt {
+    position: relative; z-index: 1; background: #FFFFFF;
+    border-radius: 20px; overflow: hidden;
+    box-shadow: 0 12px 30px rgba(176, 48, 96, .28);
+}
+.banner-img { width: 100%; height: clamp(180px, 30vw, 340px); object-fit: cover; }
+.banner-slide {
+    position: relative; overflow: hidden; color: #FFFFFF;
+    min-height: clamp(210px, 30vw, 340px);
+    display: flex; align-items: center;
+    padding: 2rem clamp(1.5rem, 7vw, 5rem);
+}
+.banner-slide-1 { background: linear-gradient(120deg, #8E2250 0%, #B03060 45%, #DB7093 100%); }
+.banner-slide-2 { background: linear-gradient(120deg, #962A52 0%, #C2477A 50%, #FF82AB 100%); }
+.banner-slide-3 { background: linear-gradient(120deg, #6F1D40 0%, #B03060 55%, #E58AA6 100%); }
+.banner-deco {
+    position: absolute; right: 4%; bottom: -10%; line-height: 1; opacity: .16; pointer-events: none;
+    font-size: clamp(7rem, 22vw, 15rem);
+}
+.banner-copy { position: relative; max-width: 560px; }
+.banner-title { color: #FFFFFF; font-weight: 700; line-height: 1.2; margin-bottom: .5rem; font-size: clamp(1.4rem, 3.6vw, 2.4rem); }
+.banner-text { opacity: .95; margin-bottom: 1.1rem; font-size: clamp(.95rem, 1.8vw, 1.15rem); }
+.banner-cta { color: var(--vt-primary); font-weight: 600; border-radius: 999px; padding: .5rem 1.5rem; }
+.banner-cta:hover { color: var(--vt-primary-dark); }
+.banner-vt .carousel-indicators { margin-bottom: .6rem; }
+.banner-vt .carousel-indicators [data-bs-target] { width: 9px; height: 9px; border-radius: 50%; border: 0; }
+
+/* Ô tìm chuyến nằm dưới banner, không còn đè lên dải màu */
+.hero-banner + .search-wrap { margin-top: 1.5rem; }
+.hero-banner + .search-wrap .search-card { margin-top: 0; }
+
+@media (max-width: 575.98px) {
+    .hero-banner { padding-top: .75rem; }
+    .banner-vt { border-radius: 14px; }
+    .banner-slide { padding: 1.5rem 2.75rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .banner-vt .carousel-item { transition: none; }
+}

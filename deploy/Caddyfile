@@ -1,0 +1,13 @@
+# Reverse proxy lo HTTPS. Tên miền lấy từ file .env (WEB_DOMAIN, API_DOMAIN).
+# Tên miền thật: Caddy tự xin và gia hạn chứng chỉ Let's Encrypt (cần mở cổng 80 và 443, DNS trỏ về máy chủ).
+# localhost và *.localhost: Caddy tự ký chứng chỉ nội bộ để chạy thử (xem docs/trien-khai.md để tin cậy chứng chỉ này).
+
+{$WEB_DOMAIN:localhost} {
+	encode zstd gzip
+	reverse_proxy web:8080
+}
+
+{$API_DOMAIN:api.localhost} {
+	encode zstd gzip
+	reverse_proxy api:8080
+}

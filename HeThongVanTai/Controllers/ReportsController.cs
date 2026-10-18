@@ -1,5 +1,6 @@
 using HeThongVanTai.Data;
 using HeThongVanTai.Models.Domain;
+using HeThongVanTai.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,10 +15,12 @@ namespace HeThongVanTai.Controllers
     {
         private const int MaxRangeDays = 366;
         private readonly AppDbContext _db;
+        private readonly ReportService _reports;
 
-        public ReportsController(AppDbContext db)
+        public ReportsController(AppDbContext db, ReportService reports)
         {
             _db = db;
+            _reports = reports;
         }
 
         // GET: /api/Reports/get-revenue-by-route?from=2026-10-01&to=2026-10-31&routeId=3
@@ -42,26 +45,9 @@ namespace HeThongVanTai.Controllers
                 return BadRequest(new { message = "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc." });
             if ((end - start).TotalDays > MaxRangeDays)
                 return BadRequest(new { message = $"Khoảng thời gian tối đa {MaxRangeDays} ngày." });
-            var endExclusive = end.AddDays(1);
 
-            var query = _db.Payments.AsNoTracking()
-                .Where(p => (p.Status == "Paid" || p.Status == "Refunded")
-                            && p.PaidAt != null && p.PaidAt >= start && p.PaidAt < endExclusive);
-            if (routeId.HasValue)
-            {
-                var rid = routeId.Value;
-                query = query.Where(p => p.Booking.Tickets.Any(t => t.Trip.BusRouteId == rid));
-            }
-
-            var payments = await query
-                .Select(p => new
-                {
-                    p.Amount,
-                    p.Status,
-                    RouteId = p.Booking.Tickets.Select(t => (int?)t.Trip.BusRouteId).FirstOrDefault(),
-                    Tickets = p.Booking.Tickets.Count(t => t.Status != "Cancelled")
-                })
-                .ToListAsync();
+            // Cùng một cách tính với các báo cáo theo ngày, tháng, xe, tài xế, nhân viên (ReportService.LoadFactsAsync)
+            var payments = await _reports.LoadFactsAsync(start, end, routeId);
 
             var routes = await _db.BusRoutes.AsNoTracking()
                 .Select(r => new
@@ -120,6 +106,55 @@ namespace HeThongVanTai.Controllers
             pageSize = Math.Clamp(pageSize, 1, 100);
             var items = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
             return Ok(new { Items = items, Total = ordered.Count, Page = page, PageSize = pageSize, Summary = summary });
+        }
+
+        // GET: /api/Reports/revenue-by?by=day|month|route|vehicle|driver|seller&from=&to=&routeId=
+        //        &sortBy=revenue|tickets|payments|name&desc=true&page=1&pageSize=10&all=false
+        // Doanh thu theo ngày, tháng, tuyến, xe, tài xế hoặc nhân viên bán; tổng luôn bằng báo cáo theo tuyến.
+        [HttpGet("revenue-by")]
+        public async Task<IActionResult> RevenueBy(
+            [FromQuery] string by = "day",
+            [FromQuery(Name = "from")] DateTime? fromDate = null,
+            [FromQuery(Name = "to")] DateTime? toDate = null,
+            [FromQuery] int? routeId = null,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool desc = true,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] bool all = false)
+        {
+            var today = DateTime.Now.Date;
+            // Theo ngày và tháng xếp theo thời gian (desc=false là cũ đến mới); các loại khác xếp theo sortBy
+            return Ok(await _reports.RevenueByAsync(by, fromDate ?? today.AddDays(-29), toDate ?? today,
+                routeId, sortBy, desc, page, pageSize, all));
+        }
+
+        // GET: /api/Reports/debt?from=&to=&feePayer=Sender|Receiver|Debt&page=1&pageSize=10&all=false
+        // Công nợ vận chuyển: đơn chưa thu tiền theo người gửi, chia tuổi nợ 0-30, 31-60, trên 60 ngày.
+        [HttpGet("debt")]
+        public async Task<IActionResult> Debt(
+            [FromQuery(Name = "from")] DateTime? fromDate,
+            [FromQuery(Name = "to")] DateTime? toDate,
+            [FromQuery] string? feePayer,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] bool all = false) =>
+            Ok(await _reports.DebtAsync(fromDate, toDate, feePayer, page, pageSize, all));
+
+        // GET: /api/Reports/reconciliation?from=&to=&onlyIssues=false&page=1&pageSize=10&all=false
+        // Đối soát chuyển khoản: giao dịch ngân hàng đã thanh toán, kèm cảnh báo bất thường.
+        [HttpGet("reconciliation")]
+        public async Task<IActionResult> Reconciliation(
+            [FromQuery(Name = "from")] DateTime? fromDate,
+            [FromQuery(Name = "to")] DateTime? toDate,
+            [FromQuery] bool onlyIssues = false,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] bool all = false)
+        {
+            var today = DateTime.Now.Date;
+            return Ok(await _reports.ReconciliationAsync(fromDate ?? today.AddDays(-29), toDate ?? today,
+                onlyIssues, page, pageSize, all));
         }
 
         public class RevenueRow

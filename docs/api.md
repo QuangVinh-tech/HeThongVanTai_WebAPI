@@ -4,9 +4,9 @@
 
 ## Quy ước chung
 
-- **Xác thực:** JWT. Đăng nhập tại `POST /api/Auth/Login`, lấy `jwtToken`, gửi kèm mọi lời gọi: `Authorization: Bearer <token>`. Token sống 60 phút.
+- **Xác thực:** JWT. Đăng nhập tại `POST /api/Auth/Login`, lấy `jwtToken` và `refreshToken`, gửi kèm mọi lời gọi: `Authorization: Bearer <jwtToken>`. `jwtToken` sống ngắn (mặc định 15 phút, `Jwt:AccessTokenMinutes`); hết hạn thì gọi `POST /api/Auth/refresh` để lấy cặp token mới (refresh token sống 7 ngày, `Jwt:RefreshTokenDays`, mỗi lần dùng được đổi lấy token mới). Tài khoản bị khóa hoặc bị xóa thì `jwtToken` cũ bị từ chối ngay (401).
 - **Mặc định phải đăng nhập.** API công khai được ghi rõ `[AllowAnonymous]` (cột Quyền ghi "Mọi người").
-- **Vai trò:** `Admin`, `Operator`, `Seller`, `Accountant`, `Driver` (tài xế), `Customer`. Vai trò nằm trong token, nên đổi vai trò có hiệu lực ở lần đăng nhập sau.
+- **Vai trò:** `Admin`, `Operator`, `Seller`, `Accountant`, `Driver` (tài xế), `Customer`. Vai trò nằm trong token, nên đổi vai trò có hiệu lực khi đăng nhập hoặc làm mới token.
 - **Lỗi nghiệp vụ** trả JSON `{ "message": "..." }` kèm mã 400, 404 hoặc 409. Lỗi dữ liệu nhập trả 400 theo chuẩn ProblemDetails. Chưa đăng nhập: 401. Không đủ quyền: 403.
 - **Ngày giờ** theo giờ máy chủ. Tham số ngày dạng `yyyy-MM-dd`.
 - **Phân trang:** tên tham số và dạng kết quả khác nhau giữa các API. Người dùng, báo cáo, đặt vé dùng `page`, `pageSize`; xe, tài xế, chuyến xe dùng `pageNumber`, `pageSize`, `sortBy`, `isAscending`. Xem Swagger để biết chính xác từng API.
@@ -17,12 +17,16 @@
 
 | Phương thức | Đường dẫn | Quyền | Mô tả |
 |---|---|---|---|
-| POST | `/api/Auth/Register` | Mọi người | Đăng ký. Người lạ luôn là `Customer`; chỉ Admin đang đăng nhập mới gán được vai trò khác. Trả `{ message, requiresVerification, emailSent }`; tự đăng ký thì phải xác thực email bằng mã OTP. Đăng ký lại email chưa xác thực sẽ đặt lại mật khẩu theo lần mới và gửi lại mã. |
+| POST | `/api/Auth/Register` | Mọi người | Đăng ký (giới hạn 10 lần mỗi phút theo IP). Người lạ luôn là `Customer`; chỉ Admin đang đăng nhập mới gán được vai trò khác. Trả `{ message, requiresVerification, emailSent }`; tự đăng ký thì phải xác thực email bằng mã OTP. Đăng ký lại email chưa xác thực sẽ đặt lại mật khẩu theo lần mới và gửi lại mã. Người tự đăng ký phải gửi `acceptTerms: true` (và `termsVersion`); thiếu thì trả 400. Ngày đồng ý lưu ở bảng `UserConsents` (CSDL tài khoản). |
 | POST | `/api/Auth/verify-email` | Mọi người | Body `{ email, code }` (mã 6 số, hiệu lực khoảng 9 phút). Sai 5 lần thì tạm khóa 5 phút (429). |
 | POST | `/api/Auth/resend-otp` | Mọi người | Body `{ email }`. Gửi lại mã, tối thiểu 60 giây một lần (429 nếu gửi dồn). Luôn trả cùng một thông báo. |
-| POST | `/api/Auth/Login` | Mọi người | Đăng nhập, trả `{ jwtToken }`. Tài khoản bị khóa hoặc chưa xác thực email trả 403. |
+| POST | `/api/Auth/Login` | Mọi người | Đăng nhập, trả `{ jwtToken, refreshToken, refreshExpiresAt }`. Sai mật khẩu 5 lần (`Auth:MaxFailedAttempts`) thì tạm khóa 5 phút (`Auth:LockoutMinutes`), trả 403 kèm số phút còn lại. Tài khoản bị admin khóa hoặc chưa xác thực email cũng trả 403. Giới hạn 10 lần mỗi phút theo IP (429, header `Retry-After`). |
+| POST | `/api/Auth/refresh` | Mọi người | Body `{ refreshToken }`. Trả cặp token mới, nạp lại vai trò; token cũ bị thu hồi. Token hết hạn, đã thu hồi hoặc tài khoản bị khóa trả 401. Dùng lại token đã đổi (ngoài 20 giây ân hạn) bị coi là nghi lộ và thu hồi mọi phiên của tài khoản. |
+| POST | `/api/Auth/forgot-password` | Mọi người | Body `{ email }`. Gửi email chứa liên kết đặt lại mật khẩu (hết hạn sau `Auth:ResetLinkMinutes` = 30 phút). Luôn trả cùng một thông báo dù email có tài khoản hay không; mỗi email chỉ yêu cầu lại sau 60 giây (429). Tài khoản bị admin khóa không được gửi. |
+| POST | `/api/Auth/reset-password` | Mọi người | Body `{ email, token, newPassword }`. Liên kết dùng một lần; sai, hết hạn hoặc đã dùng đều trả 400 cùng một thông báo. Thành công thì mở khóa tạm, thu hồi mọi phiên đăng nhập. |
+| POST | `/api/Auth/logout` | Mọi người | Body `{ refreshToken }`. Thu hồi phiên; luôn trả 200. |
 | GET | `/api/Auth/me` | Đăng nhập | Email và vai trò của token hiện tại. |
-| POST | `/api/Auth/change-password` | Đăng nhập (mọi vai trò) | Đổi mật khẩu của chính mình. Body `{ currentPassword, newPassword }`. Sai mật khẩu hiện tại, mật khẩu mới trùng mật khẩu cũ hoặc không đạt quy tắc thì trả 400 kèm `message`. Mật khẩu không được ghi vào log. |
+| POST | `/api/Auth/change-password` | Đăng nhập (mọi vai trò) | Đổi mật khẩu của chính mình. Body `{ currentPassword, newPassword, refreshToken? }` (gửi `refreshToken` của phiên đang dùng để giữ phiên này, các phiên khác bị thu hồi). Sai mật khẩu hiện tại, mật khẩu mới trùng mật khẩu cũ hoặc không đạt quy tắc thì trả 400 kèm `message`. Mật khẩu không được ghi vào log. |
 
 ## Người dùng – `/api/Users` (chỉ Admin)
 
@@ -35,6 +39,16 @@
 | PUT | `/api/Users/{id}/roles` | Đổi vai trò. Body `{ "roles": ["Seller"] }`; vai trò `Driver` cần thêm `"driverId"` (hồ sơ tài xế chưa liên kết tài khoản khác), bỏ vai trò Driver thì gỡ liên kết. Ít nhất 1 vai trò; không bỏ Admin của chính mình hoặc Admin cuối cùng. |
 | PATCH | `/api/Users/{id}/lock` | Khóa hoặc mở khóa. Body `{ "locked": true }`. Không tự khóa mình, không khóa Admin cuối cùng. |
 
+## Cài đặt hệ thống – `/api/settings`
+
+Thời gian giữ ghế, chính sách hoàn tiền và thông tin công ty lưu trong bảng `SystemSettings`. Chưa lưu thì dùng mặc định (giữ ghế lấy từ `Booking:HoldMinutes`, hoàn tiền 100% từ 24 giờ, 70% từ 12 giờ, 50% từ 2 giờ). Lưu xong có hiệu lực ngay với lần đặt vé và hủy vé tiếp theo.
+
+| Phương thức | Đường dẫn | Quyền | Mô tả |
+|---|---|---|---|
+| GET | `/api/settings/public` | Mọi người | Tên công ty, logo, hotline, email, thời gian giữ ghế, các mốc hoàn tiền (cho chân trang và trang Liên hệ, Chính sách). |
+| GET | `/api/settings` | Admin | Cài đặt hiện tại. |
+| PUT | `/api/settings` | Admin | Lưu cài đặt. Body `{ holdMinutes (1-120), refundTiers: [{ hoursBefore, ratePercent }] (1-10 mốc), companyName, logoUrl, hotline, email }`. Mốc không được trùng giờ; hủy càng sát giờ chạy thì tỉ lệ hoàn không được cao hơn. Sai dữ liệu trả 400 kèm `message`. |
+
 ## Tổng quan và báo cáo
 
 | Phương thức | Đường dẫn | Quyền | Mô tả |
@@ -44,6 +58,19 @@
 | GET | `/api/Reports/get-revenue-by-route` | Admin, Accountant | Doanh thu theo tuyến. Tham số: `from`, `to`, `routeId`, `sortBy` (`revenue`, `tickets`, `payments`, `route`), `desc`, `page`, `pageSize`, `all` (true: trả toàn bộ để xuất Excel). Trả thêm `summary` với tổng trên toàn bộ kết quả lọc. |
 
 Cách tính doanh thu: tiền đã thu (`Paid`) trừ tiền đã hoàn (`Refunded`), tính theo ngày thu.
+
+## Báo cáo mở rộng – `/api/Reports` (Admin, Accountant)
+
+Mọi báo cáo doanh thu dùng chung một cách tính (`ReportService.LoadFactsAsync`): doanh thu = tiền đã thu (Paid) trừ tiền đã hoàn (Refunded), tính theo ngày thu, gắn với tuyến, xe, tài xế của vé đầu tiên trong đặt vé và nhân viên bán (`Booking.SoldBy`, chỉ có khi bán tại quầy). Vì vậy tổng của các báo cáo theo ngày, tháng, tuyến, xe, tài xế, nhân viên luôn bằng nhau. Đặt vé bán trước khi có cột `SoldBy` được gom vào dòng "Khách tự đặt hoặc chưa ghi nhận".
+
+| Phương thức | Đường dẫn | Mô tả |
+|---|---|---|
+| GET | `/api/Reports/get-revenue-by-route` | Doanh thu theo tuyến (đã có từ trước). |
+| GET | `/api/Reports/revenue-by` | `by=day\|month\|route\|vehicle\|driver\|seller`, `from`, `to` (tối đa 366 ngày), `routeId`, `sortBy=revenue\|tickets\|payments\|name`, `desc`, `page`, `pageSize`, `all`. Theo ngày và tháng trả đủ mọi ngày, tháng trong khoảng (kỳ không có doanh thu là 0). |
+| GET | `/api/Reports/debt` | Công nợ vận chuyển: đơn chưa thu tiền (không tính đơn đã hủy) gom theo người gửi, chia tuổi nợ 0-30, 31-60, trên 60 ngày. `from`, `to` (lọc theo ngày tạo đơn, bỏ trống là không giới hạn), `feePayer=Sender\|Receiver\|Debt`, `all=true` trả thêm `details` từng đơn. |
+| GET | `/api/Reports/reconciliation` | Đối soát chuyển khoản: giao dịch `BankTransfer` đã thanh toán trong khoảng ngày, kèm cảnh báo (lệch số tiền, nhiều giao dịch cho một đặt vé, thiếu mã giao dịch ngân hàng, đặt vé hết hạn mà có tiền) và đặt vé đã Paid nhưng không có giao dịch. `onlyIssues=true` chỉ lấy dòng bất thường; phần tổng hợp gồm cả tiền mặt. |
+
+Giới hạn: giao dịch SePay không tự khớp được (sai số tiền, đặt vé hết hạn hoặc đã thanh toán) hiện chỉ ghi log, chưa lưu CSDL nên chưa lên báo cáo đối soát.
 
 ## Danh mục
 

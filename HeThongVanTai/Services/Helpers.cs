@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using System.Security.Cryptography;
 using HeThongVanTai.Models.Domain;
+using HeThongVanTai.Models.DTO;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Data.SqlClient;
@@ -34,12 +35,25 @@ public class ServiceExceptionFilter : IExceptionFilter
 
 public static class Rules
 {
-    // Chính sách hoàn tiền: >=24h: 100%, 12-24h: 70%, 2-12h: 50%, <2h: 0%
-    public static decimal RefundRate(DateTime departAt, DateTime now)
+    // Mốc hoàn tiền mặc định: >=24h: 100%, 12-24h: 70%, 2-12h: 50%, <2h: 0%.
+    // Admin đổi được ở trang Cài đặt hệ thống (bảng SystemSettings).
+    public static readonly IReadOnlyList<RefundTierDto> DefaultRefundTiers = new[]
+    {
+        new RefundTierDto { HoursBefore = 24, RatePercent = 100 },
+        new RefundTierDto { HoursBefore = 12, RatePercent = 70 },
+        new RefundTierDto { HoursBefore = 2, RatePercent = 50 }
+    };
+
+    // Hủy khi còn từ HoursBefore giờ trở lên thì hoàn RatePercent %; còn ít hơn mốc thấp nhất thì không hoàn.
+    public static decimal RefundRate(DateTime departAt, DateTime now, IEnumerable<RefundTierDto>? tiers)
     {
         var h = (departAt - now).TotalHours;
-        return h >= 24 ? 1m : h >= 12 ? 0.7m : h >= 2 ? 0.5m : 0m;
+        foreach (var t in (tiers ?? DefaultRefundTiers).OrderByDescending(x => x.HoursBefore))
+            if (h >= t.HoursBefore) return t.RatePercent / 100m;
+        return 0m;
     }
+
+    public static decimal RefundRate(DateTime departAt, DateTime now) => RefundRate(departAt, now, DefaultRefundTiers);
 
     // Trả về số tiền giảm; nếu mã không dùng được thì error != null
     public static decimal Discount(Promotion p, decimal subtotal, DateTime now, out string? error)
@@ -86,4 +100,4 @@ public static class UserClaims
         ?? u.FindFirst("email")?.Value
         ?? u.FindFirst(ClaimTypes.Name)?.Value
         ?? u.FindFirst("unique_name")?.Value;
-}
+}

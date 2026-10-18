@@ -24,7 +24,8 @@ namespace HeThongVanTai.Repositories
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var token = new JwtSecurityToken(
                 _configuration["Jwt:Issuer"], _configuration["Jwt:Audience"], claims,
-                expires: DateTime.Now.AddMinutes(60), signingCredentials: credentials);
+                expires: DateTime.UtcNow.AddMinutes(Math.Max(1, _configuration.GetValue("Jwt:AccessTokenMinutes", 15))),
+                signingCredentials: credentials);
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }

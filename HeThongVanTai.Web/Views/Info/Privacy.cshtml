@@ -1,0 +1,64 @@
+﻿@using HeThongVanTai.Web.Infrastructure
+@model HeThongVanTai.Web.Models.ViewModels.CaiDat.PublicSettings
+@{
+    ViewData["Title"] = "Chính sách bảo mật";
+}
+
+<div class="container py-4" style="max-width: 820px;">
+    <h1 class="h3 fw-bold mb-1">Chính sách bảo mật</h1>
+    <p class="text-muted small mb-4">Phiên bản @LegalInfo.TermsVersion · Có hiệu lực từ ngày @LegalInfo.EffectiveDate.ToString("dd/MM/yyyy")</p>
+
+    <h2 class="h5 mt-4">1. Phạm vi và căn cứ</h2>
+    <p>Chính sách này giải thích cách @Model.CompanyName ("Chúng tôi", bên kiểm soát dữ liệu) thu thập, sử dụng, lưu trữ và bảo vệ dữ liệu cá nhân của bạn, theo Nghị định 13/2023/NĐ-CP của Chính phủ về bảo vệ dữ liệu cá nhân và các quy định pháp luật liên quan.</p>
+
+    <h2 class="h5 mt-4">2. Dữ liệu chúng tôi thu thập</h2>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead><tr><th>Nhóm dữ liệu</th><th>Ví dụ</th></tr></thead>
+            <tbody>
+                <tr><td>Tài khoản</td><td>Email đăng nhập, mật khẩu (được mã hóa một chiều, chúng tôi không đọc được), ngày và phiên bản điều khoản bạn đã đồng ý</td></tr>
+                <tr><td>Thông tin liên hệ</td><td>Họ tên, số điện thoại, email dùng để đặt vé</td></tr>
+                <tr><td>Đặt vé</td><td>Chuyến, ghế, mã vé, thời điểm đặt, mã khuyến mãi đã dùng</td></tr>
+                <tr><td>Thanh toán</td><td>Phương thức, số tiền, mã giao dịch ngân hàng khi chuyển khoản. Chúng tôi không lưu số thẻ</td></tr>
+                <tr><td>Vận chuyển hàng</td><td>Thông tin người gửi, người nhận và hàng hóa</td></tr>
+                <tr><td>Đánh giá</td><td>Điểm và nội dung đánh giá chuyến đi</td></tr>
+                <tr><td>Kỹ thuật</td><td>Cookie đăng nhập và bảo vệ biểu mẫu, nhật ký hệ thống phục vụ an ninh</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2 class="h5 mt-4">3. Mục đích xử lý</h2>
+    <p>Tạo và xác thực tài khoản; đặt vé, giữ chỗ, thanh toán và đối soát; gửi mã OTP, vé và thông báo liên quan đến chuyến đi qua email; hỗ trợ khách hàng, xử lý hủy vé và hoàn tiền; bảo đảm an toàn hệ thống và phòng chống gian lận; thực hiện nghĩa vụ theo quy định pháp luật.</p>
+
+    <h2 class="h5 mt-4">4. Sự đồng ý của bạn</h2>
+    <p>Chúng tôi xử lý dữ liệu cá nhân của bạn dựa trên sự đồng ý khi đăng ký tài khoản, và trong phạm vi cần thiết để thực hiện dịch vụ bạn yêu cầu hoặc nghĩa vụ pháp lý. Khi bạn tích chọn đồng ý, hệ thống lưu lại thời điểm và phiên bản điều khoản bạn đã đồng ý. Bạn có thể rút lại sự đồng ý bất cứ lúc nào bằng cách liên hệ với chúng tôi; việc rút lại có thể khiến chúng tôi không thể tiếp tục cung cấp dịch vụ và không ảnh hưởng đến việc xử lý đã thực hiện trước đó.</p>
+
+    <h2 class="h5 mt-4">5. Chia sẻ dữ liệu</h2>
+    <p>Chúng tôi không bán dữ liệu cá nhân. Dữ liệu chỉ được chia sẻ trong phạm vi cần thiết với: nhân viên và tài xế được phân công phục vụ chuyến đi của bạn (tài xế chỉ thấy tên và số ghế); đơn vị cung cấp dịch vụ thanh toán, ngân hàng và gửi email; cơ quan nhà nước có thẩm quyền khi pháp luật yêu cầu.</p>
+
+    <h2 class="h5 mt-4">6. Thời gian lưu trữ</h2>
+    <p>Dữ liệu được lưu trong thời gian tài khoản còn hoạt động và trong thời hạn cần thiết để thực hiện mục đích nêu trên hoặc theo quy định pháp luật (ví dụ lưu chứng từ giao dịch). Hết thời hạn, dữ liệu được xóa hoặc ẩn danh khi không còn căn cứ lưu giữ.</p>
+
+    <h2 class="h5 mt-4">7. Quyền của bạn</h2>
+    <p>Theo Nghị định 13/2023/NĐ-CP, bạn có quyền: được biết về việc xử lý dữ liệu; đồng ý hoặc không đồng ý; truy cập, xem và chỉnh sửa dữ liệu; rút lại sự đồng ý; yêu cầu xóa dữ liệu; yêu cầu hạn chế xử lý; yêu cầu cung cấp dữ liệu của mình; phản đối việc xử lý; khiếu nại, tố cáo hoặc khởi kiện; yêu cầu bồi thường thiệt hại theo quy định; và tự bảo vệ dữ liệu của mình. Để thực hiện quyền, hãy liên hệ chúng tôi theo mục 11. Chúng tôi sẽ phản hồi trong thời hạn pháp luật quy định.</p>
+
+    <h2 class="h5 mt-4">8. Biện pháp bảo vệ</h2>
+    <p>Mật khẩu được mã hóa một chiều; kết nối được bảo vệ bằng HTTPS; truy cập được phân quyền theo vai trò (khách hàng chỉ xem dữ liệu của mình); tài khoản bị tạm khóa khi nhập sai mật khẩu nhiều lần; các thao tác quản trị được ghi nhật ký. Dù vậy, không hệ thống nào an toàn tuyệt đối; hãy giữ kín mật khẩu và đăng xuất khi dùng máy chung.</p>
+
+    <h2 class="h5 mt-4">9. Cookie</h2>
+    <p>Website dùng cookie cần thiết để duy trì đăng nhập và chống giả mạo biểu mẫu. Bạn có thể chặn cookie trong trình duyệt, nhưng khi đó một số chức năng như đăng nhập, đặt vé sẽ không hoạt động.</p>
+
+    <h2 class="h5 mt-4">10. Người dưới 16 tuổi</h2>
+    <p>Dịch vụ dành cho người từ đủ 16 tuổi. Với người dưới 16 tuổi, việc đăng ký và cung cấp dữ liệu cá nhân cần có sự đồng ý của cha, mẹ hoặc người giám hộ.</p>
+
+    <h2 class="h5 mt-4">11. Liên hệ về dữ liệu cá nhân</h2>
+    <p>
+        @Model.CompanyName
+        @if (!string.IsNullOrWhiteSpace(Model.Hotline)) { <text> · Hotline: @Model.Hotline</text> }
+        @if (!string.IsNullOrWhiteSpace(Model.Email)) { <text> · Email: @Model.Email</text> }
+        · <a asp-action="Contact">Trang liên hệ</a>
+    </p>
+
+    <h2 class="h5 mt-4">12. Thay đổi chính sách</h2>
+    <p>Khi có thay đổi quan trọng, chúng tôi cập nhật trang này kèm ngày hiệu lực mới. Xem thêm <a asp-action="Terms">Điều khoản sử dụng</a> và <a asp-action="Policy">Chính sách đặt vé, hoàn tiền</a>.</p>
+</div>

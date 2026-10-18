@@ -1,0 +1,172 @@
+@using System.Globalization
+@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@using HeThongVanTai.Web.Models.ViewModels.Reports
+@model ReconViewModel
+@{
+    ViewData["Title"] = "Đối soát chuyển khoản";
+    Layout = "_AdminLayout";
+    var vi = CultureInfo.GetCultureInfo("vi-VN");
+    var data = Model.Data;
+    var fromText = Model.From.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    var toText = Model.To.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    var onlyText = Model.OnlyIssues ? "true" : "false";
+
+    var totalPages = data?.TotalPages ?? 1;
+    var current = Math.Min(Math.Max(Model.Page, 1), totalPages);
+    var pageFrom = Math.Max(1, current - 2);
+    var pageTo = Math.Min(totalPages, current + 2);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/reports.css" asp-append-version="true" />
+}
+
+<h1 class="h4 mb-3">Đối soát chuyển khoản</h1>
+<partial name="_ReportTabs" model='"recon"' />
+
+<form method="get" class="filter-vt row g-2 align-items-end mb-3">
+    <div class="col-6 col-md-3">
+        <label class="form-label small mb-1" for="from">Từ ngày</label>
+        <input id="from" name="from" type="date" value="@fromText" class="form-control" />
+    </div>
+    <div class="col-6 col-md-3">
+        <label class="form-label small mb-1" for="to">Đến ngày</label>
+        <input id="to" name="to" type="date" value="@toText" class="form-control" />
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="onlyIssues" name="onlyIssues" value="true" @(Model.OnlyIssues ? "checked" : "") />
+            <label class="form-check-label small" for="onlyIssues">Chỉ hiện giao dịch bất thường</label>
+        </div>
+    </div>
+    <div class="col-12 col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-grow-1">Lọc</button>
+        <a class="btn btn-outline-primary text-nowrap" title="Tải file Excel theo điều kiện lọc hiện tại"
+           asp-action="ReconciliationExport" asp-route-from="@fromText" asp-route-to="@toText" asp-route-onlyIssues="@onlyText">
+            <i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel
+        </a>
+    </div>
+</form>
+
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div class="alert alert-danger">@Model.Error</div>
+}
+
+@if (data != null)
+{
+    var s = data.Summary;
+    <div class="row g-3 mb-3">
+        <div class="col-12 col-md-3">
+            <div class="card card-vt p-3 h-100">
+                <div class="small text-muted">Chuyển khoản nhận</div>
+                <div class="report-value">@DatVeHelpers.Money(s.BankReceived)</div>
+                <div class="report-sub">@s.BankCount giao dịch</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card card-vt p-3 h-100">
+                <div class="small text-muted">Chuyển khoản đã hoàn</div>
+                <div class="fw-bold">@DatVeHelpers.Money(s.BankRefunded)</div>
+                <div class="report-sub">Còn lại @DatVeHelpers.Money(s.BankNet)</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card card-vt p-3 h-100">
+                <div class="small text-muted">Tiền mặt (đối chiếu quỹ)</div>
+                <div class="fw-bold">@DatVeHelpers.Money(s.CashNet)</div>
+                <div class="report-sub">Nhận @DatVeHelpers.Money(s.CashReceived), hoàn @DatVeHelpers.Money(s.CashRefunded)</div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="card card-vt p-3 h-100">
+                <div class="small text-muted">Dòng bất thường</div>
+                <div class="report-value @(s.IssueCount > 0 ? "aging-bad" : "aging-ok")">@s.IssueCount.ToString("N0", vi)</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info py-2 small">
+        Giao dịch ngân hàng không tự khớp được (sai số tiền, đặt vé đã hết hạn hoặc đã thanh toán) hiện chỉ ghi trong log của API,
+        chưa lưu vào CSDL nên chưa hiện ở báo cáo này. Kế toán cần đối chiếu thêm với sao kê ngân hàng.
+    </div>
+
+    <div class="card card-vt">
+        @if (data.Items.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">
+                @(Model.OnlyIssues ? "Không có giao dịch bất thường trong khoảng thời gian đã chọn." : "Không có giao dịch chuyển khoản nào trong khoảng thời gian đã chọn.")
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-vt align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Thời gian</th>
+                            <th>Mã đặt vé</th>
+                            <th class="text-end">Tiền đặt vé</th>
+                            <th class="text-end">Tiền nhận</th>
+                            <th class="text-end">Đã hoàn</th>
+                            <th>Mã giao dịch</th>
+                            <th>Cảnh báo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var i in data.Items)
+                        {
+                            <tr class="@(i.Issues.Count > 0 ? "recon-issue" : "")">
+                                <td>@(i.PaidAt.HasValue ? i.PaidAt.Value.ToString("dd/MM/yyyy HH:mm") : "-")</td>
+                                <td>
+                                    <div class="fw-semibold">@i.BookingCode</div>
+                                    <div class="report-sub">@DatVeHelpers.BookingStatusText(i.BookingStatus)</div>
+                                </td>
+                                <td class="text-end">@DatVeHelpers.Money(i.BookingTotal)</td>
+                                <td class="text-end fw-semibold">@DatVeHelpers.Money(i.Amount)</td>
+                                <td class="text-end">@(i.RefundedAmount == 0 ? "-" : DatVeHelpers.Money(i.RefundedAmount))</td>
+                                <td>
+                                    <div class="small text-break">@(string.IsNullOrWhiteSpace(i.SePayTransactionId) ? "-" : i.SePayTransactionId)</div>
+                                    @if (!string.IsNullOrWhiteSpace(i.BankReference))
+                                    {
+                                        <div class="report-sub text-break">@i.BankReference</div>
+                                    }
+                                </td>
+                                <td>
+                                    @foreach (var issue in i.Issues)
+                                    {
+                                        <div class="recon-issue-text"><i class="bi bi-exclamation-triangle me-1"></i>@issue</div>
+                                    }
+                                    @if (i.Issues.Count == 0)
+                                    {
+                                        <span class="pill pill-ok">Khớp</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <nav class="mt-3" aria-label="Phân trang">
+            <ul class="pagination pagination-vt justify-content-center flex-wrap mb-0">
+                <li class="page-item @(current == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Reconciliation" asp-route-from="@fromText" asp-route-to="@toText" asp-route-onlyIssues="@onlyText" asp-route-page="@(current - 1)">Trước</a>
+                </li>
+                @for (var p = pageFrom; p <= pageTo; p++)
+                {
+                    <li class="page-item @(p == current ? "active" : "")">
+                        <a class="page-link" asp-action="Reconciliation" asp-route-from="@fromText" asp-route-to="@toText" asp-route-onlyIssues="@onlyText" asp-route-page="@p">@p</a>
+                    </li>
+                }
+                <li class="page-item @(current == totalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Reconciliation" asp-route-from="@fromText" asp-route-to="@toText" asp-route-onlyIssues="@onlyText" asp-route-page="@(current + 1)">Sau</a>
+                </li>
+            </ul>
+        </nav>
+    }
+}

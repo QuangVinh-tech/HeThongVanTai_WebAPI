@@ -7,6 +7,10 @@ namespace HeThongVanTai.Models.DTO
         [Required][EmailAddress] public string Username { get; set; } = "";
         [Required][MinLength(6)] public string Password { get; set; } = "";
         public string[] Roles { get; set; } = Array.Empty<string>();
+
+        // Người tự đăng ký phải đồng ý Điều khoản sử dụng và Chính sách bảo mật (Nghị định 13/2023)
+        public bool AcceptTerms { get; set; }
+        public string? TermsVersion { get; set; }
     }
 
     public class LoginRequestDTO
@@ -22,10 +26,35 @@ namespace HeThongVanTai.Models.DTO
 
         [Required(ErrorMessage = "Vui lòng nhập mật khẩu mới.")]
         public string NewPassword { get; set; } = "";
+
+        // Refresh token của phiên đang dùng: được giữ lại, mọi phiên khác bị thu hồi sau khi đổi mật khẩu
+        public string? RefreshToken { get; set; }
+    }
+
+    public class ForgotPasswordDTO
+    {
+        [Required(ErrorMessage = "Vui lòng nhập email.")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
+        public string Email { get; set; } = "";
+    }
+
+    public class ResetPasswordDTO
+    {
+        [Required] public string Email { get; set; } = "";
+        [Required] public string Token { get; set; } = "";
+        [Required(ErrorMessage = "Vui lòng nhập mật khẩu mới.")]
+        public string NewPassword { get; set; } = "";
     }
 
     public class LoginResponseDTO
     {
         public string JwtToken { get; set; } = "";
+        public string RefreshToken { get; set; } = "";
+        public DateTime RefreshExpiresAt { get; set; }
+    }
+
+    public class RefreshRequestDTO
+    {
+        [Required] public string RefreshToken { get; set; } = "";
     }
 }

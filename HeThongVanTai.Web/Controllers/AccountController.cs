@@ -1,3 +1,4 @@
+﻿using System.Globalization;
 using HeThongVanTai.Web.Infrastructure;
 using HeThongVanTai.Web.Models;
 using Microsoft.AspNetCore.Authentication;
@@ -73,8 +74,17 @@ public class AccountController : Controller
         }
 
         // Cookie sống đúng bằng hạn của token; token được cất trong cookie để gắn vào các lời gọi API
-        var properties = new AuthenticationProperties { IsPersistent = false, ExpiresUtc = info.ExpiresAt };
-        properties.StoreTokens(new[] { new AuthenticationToken { Name = "access_token", Value = jwt! } });
+        // Cookie sống bằng hạn của refresh token; access token (ngắn hạn) được làm mới tự động, xem TokenRefresher
+        var sessionEnds = result.Data?.RefreshExpiresAt ?? info.ExpiresAt;
+        var properties = new AuthenticationProperties { IsPersistent = false, ExpiresUtc = sessionEnds };
+        var storedTokens = new List<AuthenticationToken>
+        {
+            new() { Name = TokenRefresher.AccessToken, Value = jwt! },
+            new() { Name = TokenRefresher.AccessExpiresAt, Value = info.ExpiresAt.ToString("o", CultureInfo.InvariantCulture) }
+        };
+        if (!string.IsNullOrEmpty(result.Data?.RefreshToken))
+            storedTokens.Add(new AuthenticationToken { Name = TokenRefresher.RefreshToken, Value = result.Data!.RefreshToken! });
+        properties.StoreTokens(storedTokens);
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, info.Principal, properties);
         _logger.LogInformation("Đăng nhập Web thành công: {Email}", Safe(model.Email));
 
@@ -115,7 +125,13 @@ public class AccountController : Controller
 
         // Không gửi roles: API luôn gán vai trò Customer cho người tự đăng ký
         var result = await _api.PostAsync<RegisterResponse>("api/Auth/Register",
-            new { username = model.Email, password = model.Password });
+            new
+            {
+                username = model.Email,
+                password = model.Password,
+                acceptTerms = model.AcceptTerms,
+                termsVersion = HeThongVanTai.Web.Infrastructure.LegalInfo.TermsVersion
+            });
 
         if (!result.Ok)
         {
@@ -189,8 +205,84 @@ public class AccountController : Controller
     public async Task<IActionResult> Logout()
     {
         _logger.LogInformation("Đăng xuất Web: {Email}", Safe(User.Identity?.Name));
+
+        // Thu hồi phiên ở API (không chặn việc đăng xuất nếu API lỗi)
+        var refreshToken = await HttpContext.GetTokenAsync(TokenRefresher.RefreshToken);
+        if (!string.IsNullOrEmpty(refreshToken))
+            await _api.PostAsync<MessageResponse>("api/Auth/logout", new { refreshToken });
+
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return RedirectToAction("Index", "Home");
+    }
+
+    // ---------- Quên mật khẩu ----------
+
+    [AllowAnonymous]
+    [HttpGet]
+    public IActionResult ForgotPassword() => View(new ForgotPasswordViewModel());
+
+    [AllowAnonymous]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var result = await _api.PostAsync<MessageResponse>("api/Auth/forgot-password", new { email = model.Email.Trim() });
+        if (!result.Ok)
+        {
+            // Ví dụ 429 (yêu cầu quá nhanh). Không có lỗi nào cho biết email có tồn tại hay không.
+            ModelState.AddModelError(string.Empty, result.Error ?? "Không gửi được yêu cầu. Vui lòng thử lại sau.");
+            return View(model);
+        }
+
+        _logger.LogInformation("Yêu cầu quên mật khẩu từ Web: {Email}", Safe(model.Email));
+        // Cùng một thông báo dù email có tài khoản hay không
+        ViewData["Sent"] = result.Data?.Message
+            ?? "Nếu email này có tài khoản, chúng tôi đã gửi liên kết đặt lại mật khẩu.";
+        return View(new ForgotPasswordViewModel { Email = model.Email });
+    }
+
+    [AllowAnonymous]
+    [HttpGet]
+    public IActionResult ResetPassword(string? email, string? token)
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
+        {
+            ViewData["InvalidLink"] = true;
+            return View(new ResetPasswordViewModel());
+        }
+        return View(new ResetPasswordViewModel { Email = email, Token = token });
+    }
+
+    [AllowAnonymous]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+    {
+        if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Token))
+        {
+            ViewData["InvalidLink"] = true;
+            return View(new ResetPasswordViewModel());
+        }
+        if (!ModelState.IsValid) return View(model);
+
+        var result = await _api.PostAsync<MessageResponse>("api/Auth/reset-password",
+            new { email = model.Email, token = model.Token, newPassword = model.NewPassword });
+        if (!result.Ok)
+        {
+            _logger.LogWarning("Đặt lại mật khẩu Web thất bại: {Email} (API trả {Status})", Safe(model.Email), result.Status);
+            ModelState.AddModelError(string.Empty, result.Error ?? "Không đặt lại được mật khẩu. Vui lòng thử lại.");
+            // Liên kết hỏng hoặc hết hạn: gợi ý xin liên kết mới
+            ViewData["ShowRequestNew"] = true;
+            model.NewPassword = "";
+            model.ConfirmPassword = "";
+            return View(model);
+        }
+
+        _logger.LogInformation("Đặt lại mật khẩu Web thành công: {Email}", Safe(model.Email));
+        TempData["Success"] = result.Data?.Message ?? "Đã đặt lại mật khẩu. Bạn có thể đăng nhập.";
+        return RedirectToAction(nameof(Login));
     }
 
     // Hồ sơ cá nhân: mọi tài khoản đã đăng nhập
@@ -208,7 +300,12 @@ public class AccountController : Controller
 
         // Chỉ ghi email, không ghi mật khẩu
         var result = await _api.PostAsync<MessageResponse>("api/Auth/change-password",
-            new { currentPassword = model.CurrentPassword, newPassword = model.NewPassword });
+            new
+            {
+                currentPassword = model.CurrentPassword,
+                newPassword = model.NewPassword,
+                refreshToken = await HttpContext.GetTokenAsync(TokenRefresher.RefreshToken)   // giữ phiên này, thu hồi phiên khác
+            });
 
         if (!result.Ok)
         {

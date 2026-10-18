@@ -1,0 +1,48 @@
+﻿@using HeThongVanTai.Web.Infrastructure
+@model HeThongVanTai.Web.Models.ViewModels.CaiDat.PublicSettings
+@{
+    ViewData["Title"] = "Điều khoản sử dụng";
+}
+
+<div class="container py-4" style="max-width: 820px;">
+    <h1 class="h3 fw-bold mb-1">Điều khoản sử dụng</h1>
+    <p class="text-muted small mb-4">Phiên bản @LegalInfo.TermsVersion · Có hiệu lực từ ngày @LegalInfo.EffectiveDate.ToString("dd/MM/yyyy")</p>
+
+    <h2 class="h5 mt-4">1. Giới thiệu và chấp thuận</h2>
+    <p>Điều khoản này áp dụng khi bạn truy cập và sử dụng website đặt vé xe khách của @Model.CompanyName ("Chúng tôi"). Khi tạo tài khoản, đặt vé hoặc sử dụng dịch vụ, bạn xác nhận đã đọc, hiểu và đồng ý với Điều khoản này cùng <a asp-action="Privacy">Chính sách bảo mật</a> và <a asp-action="Policy">Chính sách đặt vé, hoàn tiền</a>. Nếu không đồng ý, vui lòng không sử dụng dịch vụ.</p>
+
+    <h2 class="h5 mt-4">2. Tài khoản</h2>
+    <p>Bạn cung cấp email chính xác và xác thực bằng mã OTP gửi qua email. Bạn tự bảo mật mật khẩu và chịu trách nhiệm về mọi hoạt động thực hiện bằng tài khoản của mình; hãy báo ngay cho chúng tôi nếu nghi ngờ tài khoản bị sử dụng trái phép. Tài khoản có thể bị tạm khóa khi nhập sai mật khẩu nhiều lần, hoặc bị khóa khi có dấu hiệu vi phạm Điều khoản này.</p>
+
+    <h2 class="h5 mt-4">3. Đặt vé và thanh toán</h2>
+    <p>Giá vé, giờ khởi hành và ghế trống được hiển thị tại thời điểm đặt. Sau khi chọn ghế, hệ thống giữ chỗ cho bạn trong <strong>@Model.HoldMinutes phút</strong>; hết thời gian này mà chưa thanh toán thì ghế được mở bán lại. Bạn có thể thanh toán bằng tiền mặt tại quầy hoặc chuyển khoản. Vé chỉ có hiệu lực khi đã được thanh toán và có mã vé; vui lòng xuất trình mã vé hoặc mã QR khi lên xe.</p>
+
+    <h2 class="h5 mt-4">4. Hủy vé, đổi vé và hoàn tiền</h2>
+    <p>Việc hủy, đổi vé và mức hoàn tiền thực hiện theo <a asp-action="Policy">Chính sách đặt vé và hoàn tiền</a> đang áp dụng tại thời điểm bạn yêu cầu.</p>
+
+    <h2 class="h5 mt-4">5. Dịch vụ vận chuyển hàng hóa</h2>
+    <p>Khi gửi hàng, bạn khai báo đúng thông tin người gửi, người nhận và hàng hóa. Không gửi hàng cấm, hàng nguy hiểm, hàng hóa vi phạm pháp luật. Chúng tôi có quyền từ chối hoặc dừng vận chuyển nếu thông tin khai báo không đúng.</p>
+
+    <h2 class="h5 mt-4">6. Hành vi không được phép</h2>
+    <p>Bạn không được: cung cấp thông tin giả mạo; đặt giữ chỗ không có nhu cầu thật; lạm dụng mã khuyến mãi; can thiệp, dò quét hoặc phá hoại hệ thống; sử dụng tài khoản của người khác; dùng dịch vụ vào mục đích trái pháp luật.</p>
+
+    <h2 class="h5 mt-4">7. Quyền sở hữu trí tuệ</h2>
+    <p>Nội dung, giao diện, nhãn hiệu và phần mềm của website thuộc về @Model.CompanyName hoặc bên cấp phép. Bạn không được sao chép, phân phối hoặc khai thác cho mục đích thương mại khi chưa có sự đồng ý bằng văn bản.</p>
+
+    <h2 class="h5 mt-4">8. Giới hạn trách nhiệm</h2>
+    <p>Chúng tôi nỗ lực duy trì dịch vụ ổn định nhưng không đảm bảo website hoạt động liên tục, không lỗi. Chuyến xe có thể thay đổi, hoãn hoặc hủy vì lý do an toàn, thời tiết, sự cố kỹ thuật hoặc bất khả kháng; khi đó chúng tôi sẽ thông báo và hỗ trợ đổi vé hoặc hoàn tiền theo chính sách. Trách nhiệm của chúng tôi không vượt quá giá trị vé bạn đã thanh toán, trừ trường hợp pháp luật có quy định khác.</p>
+
+    <h2 class="h5 mt-4">9. Thay đổi Điều khoản</h2>
+    <p>Chúng tôi có thể cập nhật Điều khoản này. Phiên bản mới được đăng trên website kèm ngày hiệu lực. Việc tiếp tục sử dụng dịch vụ sau ngày hiệu lực được hiểu là bạn chấp nhận nội dung đã cập nhật.</p>
+
+    <h2 class="h5 mt-4">10. Luật áp dụng và giải quyết tranh chấp</h2>
+    <p>Điều khoản này tuân theo pháp luật Việt Nam. Tranh chấp được ưu tiên giải quyết bằng thương lượng; nếu không thành, các bên có quyền đưa ra Tòa án có thẩm quyền.</p>
+
+    <h2 class="h5 mt-4">11. Liên hệ</h2>
+    <p>
+        @Model.CompanyName
+        @if (!string.IsNullOrWhiteSpace(Model.Hotline)) { <text> · Hotline: @Model.Hotline</text> }
+        @if (!string.IsNullOrWhiteSpace(Model.Email)) { <text> · Email: @Model.Email</text> }
+        · <a asp-action="Contact">Trang liên hệ</a>
+    </p>
+</div>
