@@ -224,7 +224,15 @@
     border-radius: 20px; overflow: hidden;
     box-shadow: 0 12px 30px rgba(176, 48, 96, .28);
 }
-.banner-img { width: 100%; height: clamp(180px, 30vw, 340px); object-fit: cover; }
+.banner-img { width: 100%; height: clamp(180px, 30vw, 340px); object-fit: cover; background: #6F1D40; }
+/* Nút tạm dừng / chạy banner (người dùng cần dừng được nội dung tự chuyển) */
+.banner-toggle {
+    position: absolute; right: .75rem; bottom: .6rem; z-index: 5;
+    width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0, 0, 0, .35); color: #FFFFFF; font-size: 1.15rem; line-height: 1;
+}
+.banner-toggle:hover, .banner-toggle:focus-visible { background: rgba(0, 0, 0, .6); }
 .banner-slide {
     position: relative; overflow: hidden; color: #FFFFFF;
     min-height: clamp(210px, 30vw, 340px);

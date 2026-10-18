@@ -8,3 +8,7 @@ Thả ảnh banner của trang chủ vào thư mục này.
 - Chỉ dùng ảnh bạn có bản quyền; không lấy ảnh banner của trang khác
 
 Ảnh thêm vào có hiệu lực ngay sau khi tải lại trang (không cần chạy lại ứng dụng).
+
+Ảnh mẫu có sẵn (01-dat-ve-truc-tuyen, 02-thanh-toan-qr, 03-lich-trinh-gia-ve) do nhóm vẽ, dùng tự do.
+Muốn dùng ảnh của bạn: xóa hoặc đổi tên ba ảnh mẫu rồi thả ảnh mới vào (nhớ đặt tên 01-, 02-...).
+Banner tự chuyển ảnh mỗi 4,5 giây; khách bấm nút ở góc phải dưới để tạm dừng. Chỉ có 1 ảnh thì không chuyển.
