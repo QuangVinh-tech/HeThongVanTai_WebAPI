@@ -72,6 +72,15 @@ public class TripsController : Controller
         return View(new SeatsViewModel { Map = r.Data, Tickets = Math.Clamp(tickets, 1, 10) });
     }
 
+    // Sơ đồ ghế xem nhanh (hiện trong cửa sổ ở trang kết quả tìm chuyến)
+    [HttpGet("Trips/{id:int}/SeatPreview")]
+    public async Task<IActionResult> SeatPreview(int id)
+    {
+        var r = await _api.GetAsync<SeatMapDto>($"api/trips/{id}/seats");
+        if (!r.Ok || r.Data == null) return StatusCode(404);
+        return PartialView("_SeatPreview", r.Data);
+    }
+
     // Ghép địa chỉ gọi API (không có dấu "/" ở đầu vì ApiClient đã có địa chỉ gốc)
     private static string BuildSearchUrl(TripSearchFilter f)
     {

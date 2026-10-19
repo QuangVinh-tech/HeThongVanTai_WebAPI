@@ -114,7 +114,13 @@ public class PermissionMatrixTests
         ["TicketsController.Lookup"] = "*",
         ["TicketsController.Qr"] = "*",
         ["TicketsController.CheckIn"] = "Admin,Operator,Seller,Driver",
-        ["TicketsController.Change"] = "Admin,Seller,Customer",
+        ["TicketsController.Change"] = "Admin,Seller",   // đổi ngay: chỉ nhân viên; khách gửi yêu cầu bên dưới
+        ["SeatChangeRequestsController.Create"] = "Customer",
+        ["SeatChangeRequestsController.Mine"] = "Customer",
+        ["SeatChangeRequestsController.Cancel"] = "Customer",
+        ["SeatChangeRequestsController.List"] = "Admin",
+        ["SeatChangeRequestsController.Approve"] = "Admin",
+        ["SeatChangeRequestsController.Reject"] = "Admin",
         ["ReviewsController.ByTrip"] = "*",
         ["ReviewsController.Create"] = "Customer",
         ["ReviewsController.Mine"] = "Customer",
@@ -344,8 +350,8 @@ public class PermissionMatrixTests
             "PaymentsController.ByBooking", "PaymentsController.Create",
             "PromotionsController.ValidateCode",
             "ReviewsController.Create", "ReviewsController.Mine",
-            "ShipmentsController.Cancel", "ShipmentsController.Create", "ShipmentsController.Mine",
-            "TicketsController.Change"
+            "SeatChangeRequestsController.Cancel", "SeatChangeRequestsController.Create", "SeatChangeRequestsController.Mine",
+            "ShipmentsController.Cancel", "ShipmentsController.Create", "ShipmentsController.Mine"
         }.OrderBy(k => k).ToList();
         Assert.Equal(expected, allowed);
     }

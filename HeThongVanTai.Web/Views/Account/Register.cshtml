@@ -42,4 +42,9 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Quy tắc kiểm tra cho ô "đồng ý điều khoản": phải được tích
+        $.validator.addMethod('mustbetrue', function (value, element) { return element.checked; });
+        $.validator.unobtrusive.adapters.addBool('mustbetrue');
+    </script>
 }

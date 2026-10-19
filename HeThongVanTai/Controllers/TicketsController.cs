@@ -37,15 +37,9 @@ public class TicketsController : ControllerBase
     [HttpPost("{code}/checkin")]
     public async Task<IActionResult> CheckIn(string code) => Ok(await _svc.CheckInAsync(code));
 
-    // Đổi ghế hoặc đổi chuyến: chủ vé hoặc Admin/Seller
-    [Authorize(Roles = AppRoles.AdminSellerCustomer)]
+    // Đổi ghế hoặc đổi chuyến ngay: chỉ nhân viên (Admin, Seller).
+    // Khách hàng gửi yêu cầu đổi ghế (POST /api/seat-change-requests) để Admin xác nhận.
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Seller)]
     [HttpPut("{id:int}/change")]
-    public async Task<IActionResult> Change(int id, ChangeTicketDto dto)
-    {
-        var staff = User.IsInRole("Admin") || User.IsInRole("Seller");
-        var uid = UserClaims.UserId(User);
-        if (!staff && (uid == null || !await _svc.IsTicketOwnerAsync(id, uid)))
-            return StatusCode(403, new { message = "Bạn không có quyền với vé này." });
-        return Ok(await _svc.ChangeTicketAsync(id, dto));
-    }
+    public async Task<IActionResult> Change(int id, ChangeTicketDto dto) => Ok(await _svc.ChangeTicketAsync(id, dto));
 }

@@ -1,0 +1,97 @@
+﻿@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@model BusSeatMapModel
+@{
+    var floors = Model.Seats.GroupBy(s => s.Floor).OrderBy(g => g.Key).ToList();
+    var many = floors.Count > 1;
+
+    void Seat(SeatInfo s)
+    {
+        if (!Model.Interactive)
+        {
+            <span class="seat seat-static @(s.IsAvailable ? "" : "sold")" title="@(s.IsAvailable ? "Ghế trống" : "Ghế đã bán")">@s.SeatCode</span>
+        }
+        else if (!string.IsNullOrEmpty(Model.CurrentSeat) && s.SeatCode.Equals(Model.CurrentSeat, StringComparison.OrdinalIgnoreCase))
+        {
+            <button type="button" class="seat current" disabled title="Ghế hiện tại">@s.SeatCode</button>
+        }
+        else if (s.IsAvailable)
+        {
+            <button type="button" class="seat" data-code="@s.SeatCode" aria-pressed="false">@s.SeatCode</button>
+        }
+        else
+        {
+            <button type="button" class="seat sold" disabled title="Ghế đã bán" aria-label="Ghế @s.SeatCode đã bán">@s.SeatCode</button>
+        }
+    }
+}
+
+<div class="bus-floors">
+    @foreach (var floor in floors)
+    {
+        var plan = SeatLayout.Plan(floors.Count, floor.Count(), Model.VehicleType);
+        var rows = SeatLayout.Rows(floor, plan);
+        var label = many ? $"Tầng {floor.Key}" : "Sơ đồ ghế";
+
+        <div class="bus" role="group" aria-label="@label">
+            @if (many)
+            {
+                <div class="bus-title">Tầng @floor.Key</div>
+            }
+            <div class="bus-front">
+                @if (floor.Key == floors[0].Key)
+                {
+                    <span class="bus-driver" title="Ghế tài xế" aria-label="Ghế tài xế">
+                        <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" />
+                            <circle cx="12" cy="12" r="2.2" fill="currentColor" />
+                            <path d="M12 14.2V21M3.2 11l6.6.9M20.8 11l-6.6.9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" />
+                        </svg>
+                    </span>
+                }
+                else
+                {
+                    <span></span>
+                }
+                <span>Đầu xe</span>
+            </div>
+
+            @foreach (var row in rows)
+            {
+                if (row.FullWidth)
+                {
+                    <div class="bus-row full">
+                        @foreach (var cell in row.Cells)
+                        {
+                            if (cell != null)
+                            {
+                                Seat(cell);
+                            }
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="bus-row">
+                        @for (var c = 0; c < plan.Columns; c++)
+                        {
+                            var s = row.Cells[c];
+                            if (s == null)
+                            {
+                                <span class="seat-gap" aria-hidden="true"></span>
+                            }
+                            else
+                            {
+                                Seat(s);
+                            }
+
+                            if (plan.AisleAfter.Contains(c + 1) && c + 1 < plan.Columns)
+                            {
+                                <span class="aisle" aria-hidden="true"></span>
+                            }
+                        }
+                    </div>
+                }
+            }
+        </div>
+    }
+</div>

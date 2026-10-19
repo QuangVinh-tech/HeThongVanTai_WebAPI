@@ -49,6 +49,10 @@
                 {
                     var canChangeTicket = canChange && t.Status == "Active" && t.DepartAt.HasValue
                     && t.DepartAt.Value - DateTime.Now >= TimeSpan.FromHours(2);
+                    var pend = Model.SeatChanges.FirstOrDefault(x => x.TicketId == t.Id && x.Status == "Pending");
+                    var rej = pend != null ? null : Model.SeatChanges
+                        .Where(x => x.TicketId == t.Id && x.Status == "Rejected" && x.ReviewedAt.HasValue && x.ReviewedAt.Value > DateTime.Now.AddDays(-7))
+                        .OrderByDescending(x => x.ReviewedAt).FirstOrDefault();
                     <div class="border-top py-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <div>
                             <div>@t.Route @(t.DepartAt.HasValue ? "- " + t.DepartAt.Value.ToString("HH:mm dd/MM/yyyy") : "")</div>
@@ -56,16 +60,35 @@
                                 Ghế <strong>@t.SeatCode</strong>, @t.PassengerName, @DatVeHelpers.Money(t.Price)
                                 - @DatVeHelpers.TicketStatusText(t.Status)
                             </div>
+                            @if (pend != null)
+                            {
+                                <div class="small mt-1">
+                                    <span class="badge @SeatChangeText.BadgeClass(pend.Status)">@SeatChangeText.Status(pend.Status)</span>
+                                    Yêu cầu đổi từ ghế @pend.FromSeat sang ghế <strong>@pend.ToSeat</strong>, đang chờ quản trị viên xác nhận.
+                                </div>
+                            }
+                            else if (rej != null)
+                            {
+                                <div class="small mt-1 text-danger">
+                                    Yêu cầu đổi sang ghế @rej.ToSeat bị từ chối@(string.IsNullOrWhiteSpace(rej.ReviewNote) ? "" : ": " + rej.ReviewNote).
+                                </div>
+                            }
                         </div>
                         <div class="d-flex gap-2">
                             @if (b.Status == "Paid" && t.Status == "Active")
                             {
                                 <a class="btn btn-sm btn-outline-primary" asp-controller="Tickets" asp-action="Detail" asp-route-code="@t.TicketCode">Xem vé QR</a>
                             }
-                            @if (canChangeTicket)
+                            @if (canChangeTicket && pend == null)
                             {
                                 <a class="btn btn-sm btn-outline-primary" asp-controller="MyBookings" asp-action="Change"
                                    asp-route-ticketId="@t.Id" asp-route-tripId="@t.TripId" asp-route-seat="@t.SeatCode">Đổi ghế</a>
+                            }
+                            @if (pend != null)
+                            {
+                                <form method="post" asp-controller="MyBookings" asp-action="CancelSeatChange" asp-route-id="@pend.Id" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Hủy yêu cầu đổi ghế</button>
+                                </form>
                             }
                         </div>
                     </div>

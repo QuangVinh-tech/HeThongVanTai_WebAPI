@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Đổi ghế";
     var m = Model.Map;
+    var requestMode = ViewData["RequestMode"] as bool? ?? false;
     var manyFloors = m.Seats.Select(s => s.Floor).Distinct().Count() > 1;
 }
 @section Styles {
@@ -15,6 +16,13 @@
         @m.RouteName, khởi hành @m.DepartAt.ToString("HH:mm dd/MM/yyyy"). Ghế hiện tại:
         <strong>@Model.CurrentSeat</strong>. Chỉ đổi được trước giờ khởi hành ít nhất 2 giờ.
     </p>
+    @if (requestMode)
+    {
+        <div class="alert alert-info small">
+            Yêu cầu đổi ghế cần quản trị viên xác nhận. Ghế mới chỉ được giữ cho bạn sau khi được xác nhận,
+            nên hãy chọn ghế còn trống và xem kết quả ở mục Vé của tôi.
+        </div>
+    }
 
     <form method="post" asp-controller="MyBookings" asp-action="ChangeConfirmed" asp-route-ticketId="@Model.TicketId">
         <input type="hidden" name="tripId" value="@Model.TripId" />
@@ -28,39 +36,22 @@
                 <span><span class="swatch swatch-sold"></span>Đã bán</span>
             </div>
 
-            @foreach (var floor in m.Seats.GroupBy(s => s.Floor).OrderBy(g => g.Key))
-            {
-                <div class="mb-3">
-                    @if (manyFloors)
-                    {
-                        <div class="fw-semibold mb-2">Tầng @floor.Key</div>
-                    }
-                    <div class="seat-map">
-                        @foreach (var s in floor)
-                        {
-                            if (s.SeatCode.Equals(Model.CurrentSeat, StringComparison.OrdinalIgnoreCase))
-                            {
-                                <button type="button" class="seat current" disabled title="Ghế hiện tại">@s.SeatCode</button>
-                            }
-                            else if (s.IsAvailable)
-                            {
-                                <button type="button" class="seat" data-code="@s.SeatCode" aria-pressed="false">@s.SeatCode</button>
-                            }
-                            else
-                            {
-                                <button type="button" class="seat sold" disabled title="Ghế đã bán">@s.SeatCode</button>
-                            }
-                        }
-                    </div>
-                </div>
-            }
+            <partial name="_BusSeatMap" model="new BusSeatMapModel { Seats = m.Seats, VehicleType = m.VehicleType, CurrentSeat = Model.CurrentSeat }" />
         </div>
+
+        @if (requestMode)
+        {
+            <div class="mb-3">
+                <label for="reason" class="form-label small">Lý do đổi ghế (không bắt buộc)</label>
+                <textarea name="reason" id="reason" class="form-control" maxlength="300" rows="2"></textarea>
+            </div>
+        }
 
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
             <div id="picked" class="fw-semibold" aria-live="polite">Chưa chọn ghế mới</div>
             <div>
                 <a class="btn btn-outline-primary me-2" asp-action="Index">Quay lại</a>
-                <button type="submit" id="btnChange" class="btn btn-primary px-4" disabled>Xác nhận đổi ghế</button>
+                <button type="submit" id="btnChange" class="btn btn-primary px-4" disabled>@(requestMode ? "Gửi yêu cầu đổi ghế" : "Xác nhận đổi ghế")</button>
             </div>
         </div>
     </form>

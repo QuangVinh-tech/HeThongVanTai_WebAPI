@@ -1,4 +1,4 @@
-# Tài liệu API
+﻿# Tài liệu API
 
 Địa chỉ gốc: `https://localhost:7200`. Có Swagger tại `/swagger` (chỉ môi trường Development), dùng nút **Authorize** để dán token.
 
@@ -128,7 +128,13 @@ Giới hạn: giao dịch SePay không tự khớp được (sai số tiền, đ
 | GET | `/api/payments/booking/{bookingId}` | Đăng nhập | Các giao dịch của một booking. |
 | GET | `/api/tickets/lookup/{code}` | Mọi người | Tra cứu vé theo mã. |
 | GET | `/api/tickets/{code}/qr` | Mọi người | Ảnh QR của vé. |
-| PUT | `/api/tickets/{id}/change` | Đăng nhập | Đổi ghế hoặc đổi sang chuyến cùng tuyến (trước giờ đi ít nhất 2 giờ). |
+| PUT | `/api/tickets/{id}/change` | Admin, Seller | Đổi ghế hoặc đổi sang chuyến cùng tuyến ngay (trước giờ đi ít nhất 2 giờ). Khách hàng không gọi API này mà gửi yêu cầu đổi ghế bên dưới. |
+| POST | `/api/seat-change-requests` | Customer | Khách gửi yêu cầu đổi ghế cho vé của mình (cùng chuyến). Body `{ ticketId, newSeatCode, reason? }`. Mỗi vé chỉ có một yêu cầu chờ; ghế mới phải còn trống và còn ít nhất 2 giờ trước giờ đi. Chưa đổi ghế cho tới khi Admin xác nhận. |
+| GET | `/api/seat-change-requests/mine` | Customer | Các yêu cầu đổi ghế của chính khách (mới nhất trước, tối đa 100). |
+| PUT | `/api/seat-change-requests/{id}/cancel` | Customer | Khách hủy yêu cầu đang chờ xác nhận. |
+| GET | `/api/seat-change-requests?status=&page=&pageSize=` | Admin | Danh sách yêu cầu (`status` = Pending, Approved, Rejected, Cancelled; bỏ trống là tất cả). Yêu cầu đang chờ có `toSeatAvailable` cho biết ghế mới còn trống không. Trả thêm `pendingCount`. |
+| PUT | `/api/seat-change-requests/{id}/approve` | Admin | Xác nhận: đổi ghế thật cho vé. Ghế mới đã có người đặt thì trả 409 và yêu cầu vẫn chờ. Body tùy chọn `{ note? }`. |
+| PUT | `/api/seat-change-requests/{id}/reject` | Admin | Từ chối, bắt buộc body `{ note }` (lý do hiển thị cho khách). |
 
 ## Khách hàng, khuyến mãi, đánh giá
 

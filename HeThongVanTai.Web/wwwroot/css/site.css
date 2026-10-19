@@ -1,4 +1,4 @@
-/* ===== Theme chung của nhóm (bảng màu hồng, KHÔNG dùng màu đen) =====
+﻿/* ===== Theme chung của nhóm (bảng màu hồng, KHÔNG dùng màu đen) =====
    Chỉ Vinh sửa file này. Mỗi người thêm CSS riêng vào wwwroot/css/<module>.css */
 :root {
     --vt-primary: #B03060;
@@ -188,6 +188,34 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
 }
 .seat.selected { background: var(--vt-primary); border-color: var(--vt-primary); color: #FFFFFF; }
 .seat.sold { background: var(--vt-sold); border-color: var(--vt-sold); color: transparent; cursor: not-allowed; }
+
+/* Sơ đồ ghế dạng thân xe: mỗi tầng một khung, ghế xếp thành hàng, có lối đi và ghế tài xế (xem _BusSeatMap.cshtml) */
+.bus-floors { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.25rem; }
+.bus {
+    border: 2px solid #FFB5C5; border-radius: 28px 28px 12px 12px;
+    background: #FFF8FA; padding: .6rem .9rem 1rem; max-width: 100%;
+}
+.bus-title { text-align: center; font-weight: 700; color: var(--vt-primary); margin-bottom: .35rem; }
+.bus-front {
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 2px dashed #FFB5C5; padding-bottom: .45rem; margin-bottom: .65rem;
+    font-size: .75rem; color: var(--vt-muted);
+}
+.bus-driver { display: inline-flex; color: var(--vt-muted); }
+.bus-row { display: flex; justify-content: center; gap: .4rem; margin-bottom: .4rem; }
+.bus-row .aisle { flex: none; width: 24px; }
+.bus-row .seat, .bus-row .seat-gap { flex: none; }
+/* Hàng cuối nằm ngang (xe giường nằm 5 giường): ghế nhỏ lại một chút để khung xe không bị rộng ra */
+.bus-row.full { gap: .3rem; }
+.bus-row.full .seat { width: 36px; height: 36px; }
+.seat-gap { display: inline-block; width: 42px; height: 40px; }
+.seat-static { cursor: default; }
+@media (max-width: 400px) {
+    .bus { padding: .5rem .5rem .8rem; }
+    .bus-row { gap: .25rem; }
+    .bus-row .aisle { width: 16px; }
+    .bus-row .seat, .seat-gap { width: 36px; height: 36px; }
+}
 
 /* Ô nhập mã OTP ở trang xác thực email */
 .otp-input { letter-spacing: .5rem; font-weight: 700; }

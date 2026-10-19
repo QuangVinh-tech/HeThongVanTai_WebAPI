@@ -394,6 +394,66 @@ namespace HeThongVanTai.Migrations
                     b.ToTable("Reviews");
                 });
 
+            modelBuilder.Entity("HeThongVanTai.Models.Domain.SeatChangeRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FromSeat")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RequestedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ReviewNote")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("TicketId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ToSeat")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("TripId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status", "RequestedAt");
+
+                    b.HasIndex("TicketId", "Status");
+
+                    b.ToTable("SeatChangeRequests");
+                });
+
             modelBuilder.Entity("HeThongVanTai.Models.Domain.SeatTemplate", b =>
                 {
                     b.Property<int>("Id")
@@ -865,6 +925,17 @@ namespace HeThongVanTai.Migrations
                 });
 
             modelBuilder.Entity("HeThongVanTai.Models.Domain.Review", b =>
+                {
+                    b.HasOne("HeThongVanTai.Models.Domain.Ticket", "Ticket")
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ticket");
+                });
+
+            modelBuilder.Entity("HeThongVanTai.Models.Domain.SeatChangeRequest", b =>
                 {
                     b.HasOne("HeThongVanTai.Models.Domain.Ticket", "Ticket")
                         .WithMany()
