@@ -82,6 +82,7 @@ if (!string.IsNullOrWhiteSpace(keysPath))
 builder.Services.AddScoped<ReportService>();   // báo cáo mở rộng (việc 34)
 builder.Services.AddScoped<SettingsService>();   // cài đặt hệ thống (việc 33)
 builder.Services.AddScoped<BookingService>();
+builder.Services.AddScoped<SeatChangeService>();
 builder.Services.AddScoped<PaymentService>();
 builder.Services.Configure<ShippingOptions>(builder.Configuration.GetSection("Shipping"));
 builder.Services.AddScoped<ShipmentService>();

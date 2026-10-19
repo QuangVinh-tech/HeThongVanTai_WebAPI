@@ -28,28 +28,7 @@
                 <span><span class="swatch swatch-sold"></span>Đã bán</span>
             </div>
 
-            @foreach (var floor in m.Seats.GroupBy(s => s.Floor).OrderBy(g => g.Key))
-            {
-                <div class="mb-3">
-                    @if (manyFloors)
-                    {
-                        <div class="fw-semibold mb-2">Tầng @floor.Key</div>
-                    }
-                    <div class="seat-map">
-                        @foreach (var s in floor)
-                        {
-                            if (s.IsAvailable)
-                            {
-                                <button type="button" class="seat" data-code="@s.SeatCode" aria-pressed="false">@s.SeatCode</button>
-                            }
-                            else
-                            {
-                                <button type="button" class="seat sold" disabled title="Ghế đã bán" aria-label="Ghế @s.SeatCode đã bán">@s.SeatCode</button>
-                            }
-                        }
-                    </div>
-                </div>
-            }
+            <partial name="_BusSeatMap" model="new BusSeatMapModel { Seats = m.Seats, VehicleType = m.VehicleType }" />
         </div>
 
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">

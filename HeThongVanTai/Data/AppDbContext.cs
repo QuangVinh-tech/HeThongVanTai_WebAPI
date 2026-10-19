@@ -93,5 +93,7 @@ namespace HeThongVanTai.Data
         public DbSet<Review> Reviews { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<SystemSetting> SystemSettings { get; set; }
+        public DbSet<SeatChangeRequest> SeatChangeRequests { get; set; }
+
     }
 }

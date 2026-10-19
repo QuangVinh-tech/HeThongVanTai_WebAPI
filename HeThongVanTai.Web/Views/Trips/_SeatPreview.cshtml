@@ -1,0 +1,11 @@
+﻿@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@model SeatMapDto
+
+<p class="text-muted small mb-2">
+    @Model.RouteName, @Model.VehicleType (@Model.VehiclePlate) · còn @Model.AvailableSeats / @Model.TotalSeats chỗ
+</p>
+<div class="seat-legend mb-3">
+    <span><span class="swatch"></span>Trống</span>
+    <span><span class="swatch swatch-sold"></span>Đã bán</span>
+</div>
+<partial name="_BusSeatMap" model="new BusSeatMapModel { Seats = Model.Seats, VehicleType = Model.VehicleType, Interactive = false }" />

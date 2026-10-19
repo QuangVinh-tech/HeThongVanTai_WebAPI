@@ -30,7 +30,13 @@ public class MyBookingsController : Controller
             TempData["Error"] = r.Error ?? "Không tải được danh sách vé.";
             return RedirectToAction("Index", "Home");
         }
-        return View(new MyBookingsViewModel { Result = r.Data ?? new BookingListResult() });
+        var vm = new MyBookingsViewModel { Result = r.Data ?? new BookingListResult() };
+        if (IsRequestMode())
+        {
+            var sc = await _api.GetAsync<List<SeatChangeItem>>("api/seat-change-requests/mine");
+            if (sc.Ok && sc.Data != null) vm.SeatChanges = sc.Data;
+        }
+        return View(vm);
     }
 
     // ---------- Hủy đặt vé ----------
@@ -80,6 +86,7 @@ public class MyBookingsController : Controller
             TempData["Error"] = r.Error ?? "Không tải được sơ đồ ghế.";
             return RedirectToAction(nameof(Index));
         }
+        ViewData["RequestMode"] = IsRequestMode();
         return View(new ChangeSeatViewModel
         {
             TicketId = ticketId,
@@ -91,12 +98,27 @@ public class MyBookingsController : Controller
 
     [HttpPost("Change/{ticketId:int}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ChangeConfirmed(int ticketId, int tripId, string? newSeatCode, string? currentSeat)
+    public async Task<IActionResult> ChangeConfirmed(int ticketId, int tripId, string? newSeatCode, string? currentSeat, string? reason = null)
     {
         if (string.IsNullOrWhiteSpace(newSeatCode))
         {
             TempData["Error"] = "Vui lòng chọn ghế mới.";
             return RedirectToAction(nameof(Change), new { ticketId, tripId, seat = currentSeat });
+        }
+
+        // Khách hàng chỉ gửi yêu cầu để Admin xác nhận; nhân viên (Admin, Seller) đổi ngay như trước
+        if (IsRequestMode())
+        {
+            var req = await _api.PostAsync<SeatChangeItem>("api/seat-change-requests",
+                new { ticketId, newSeatCode = newSeatCode.Trim(), reason = reason?.Trim() });
+            if (!req.Ok || req.Data == null)
+            {
+                TempData["Error"] = req.Error ?? "Không gửi được yêu cầu đổi ghế.";
+                return RedirectToAction(nameof(Change), new { ticketId, tripId, seat = currentSeat });
+            }
+
+            TempData["Success"] = $"Đã gửi yêu cầu đổi sang ghế {req.Data.ToSeat}. Quản trị viên sẽ xác nhận, bạn xem kết quả ở mục Vé của tôi.";
+            return RedirectToAction(nameof(Index));
         }
 
         var r = await _api.PutAsync<ChangeResultDto>($"api/tickets/{ticketId}/change", new { newSeatCode = newSeatCode.Trim() });
@@ -109,4 +131,20 @@ public class MyBookingsController : Controller
         TempData["Success"] = $"Đã đổi sang ghế {r.Data.SeatCode}.";
         return RedirectToAction(nameof(Index));
     }
+
+    // ---------- Hủy yêu cầu đổi ghế đang chờ ----------
+    [HttpPost("SeatChange/{id:int}/Cancel")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CancelSeatChange(int id)
+    {
+        var r = await _api.PutAsync<SeatChangeItem>($"api/seat-change-requests/{id}/cancel");
+        if (!r.Ok)
+            TempData["Error"] = r.Error ?? "Không hủy được yêu cầu đổi ghế.";
+        else
+            TempData["Success"] = "Đã hủy yêu cầu đổi ghế.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    // Khách hàng gửi yêu cầu chờ xác nhận; Admin, Seller đổi ngay
+    private bool IsRequestMode() => !(User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Seller));
 }

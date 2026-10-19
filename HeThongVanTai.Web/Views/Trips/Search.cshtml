@@ -193,6 +193,8 @@
                                 {
                                     <button class="btn btn-outline-primary" disabled>Không đủ chỗ</button>
                                 }
+                                <button type="button" class="btn btn-outline-primary ms-md-2 mt-2 mt-md-0" data-bs-toggle="modal" data-bs-target="#seatPreviewModal"
+                                        data-url="@Url.Action("SeatPreview", "Trips", new { id = t.TripId })">Xem sơ đồ ghế</button>
                             </div>
                         </div>
                     </div>
@@ -222,6 +224,22 @@
     }
 </div>
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/dat-ve.css" asp-append-version="true" />
+}
+
+<div class="modal fade" id="seatPreviewModal" tabindex="-1" aria-labelledby="seatPreviewTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="seatPreviewTitle">Sơ đồ ghế</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body" id="seatPreviewBody"></div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         document.querySelectorAll('.quick-time').forEach(function (b) {
@@ -231,5 +249,21 @@
                 b.closest('form').submit();
             });
         });
+
+        // Xem sơ đồ ghế của chuyến trong cửa sổ, không cần rời trang kết quả
+        (function () {
+            var modalEl = document.getElementById('seatPreviewModal');
+            if (!modalEl) return;
+            var body = document.getElementById('seatPreviewBody');
+            modalEl.addEventListener('show.bs.modal', function (e) {
+                var url = e.relatedTarget && e.relatedTarget.dataset.url;
+                if (!url) return;
+                body.innerHTML = '<p class="text-muted mb-0">Đang tải sơ đồ ghế...</p>';
+                fetch(url)
+                    .then(function (r) { if (!r.ok) throw new Error('http'); return r.text(); })
+                    .then(function (html) { body.innerHTML = html; })
+                    .catch(function () { body.innerHTML = '<p class="text-danger mb-0">Không tải được sơ đồ ghế. Vui lòng thử lại.</p>'; });
+            });
+        })();
     </script>
 }

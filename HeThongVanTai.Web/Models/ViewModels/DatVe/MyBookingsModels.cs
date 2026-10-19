@@ -37,6 +37,8 @@ public class ChangeResultDto
 public class MyBookingsViewModel
 {
     public BookingListResult Result { get; set; } = new();
+    /// <summary>Các yêu cầu đổi ghế của khách (để hiện trạng thái cạnh từng vé).</summary>
+    public List<SeatChangeItem> SeatChanges { get; set; } = new();
 }
 
 public class CancelViewModel

@@ -1,0 +1,138 @@
+﻿@using HeThongVanTai.Web.Models.ViewModels.DatVe
+@model AdminSeatChangesViewModel
+@{
+    ViewData["Title"] = "Yêu cầu đổi ghế";
+    Layout = "_AdminLayout";
+    var r = Model.Result;
+    var totalPages = r.PageSize <= 0 ? 0 : (int)Math.Ceiling(r.Total / (double)r.PageSize);
+    var tabs = new[]
+    {
+        ("Pending", "Chờ xác nhận"), ("Approved", "Đã xác nhận"), ("Rejected", "Đã từ chối"), ("Cancelled", "Khách đã hủy"), ("All", "Tất cả")
+    };
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h4 mb-0">@ViewData["Title"]</h1>
+</div>
+
+@if (TempData["Success"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<ul class="nav nav-pills mb-3">
+    @foreach (var (key, text) in tabs)
+    {
+        <li class="nav-item">
+            <a class="nav-link @(Model.Status == key ? "active" : "")" asp-action="Index" asp-route-status="@key">
+                @text
+                @if (key == "Pending" && r.PendingCount > 0)
+                {
+                    <span class="badge text-bg-warning ms-1">@r.PendingCount</span>
+                }
+            </a>
+        </li>
+    }
+</ul>
+
+@if (r.Items.Count == 0)
+{
+    <div class="alert alert-info">Không có yêu cầu nào.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>Gửi lúc</th>
+                    <th>Vé, khách</th>
+                    <th>Chuyến</th>
+                    <th>Đổi ghế</th>
+                    <th>Lý do</th>
+                    <th>Trạng thái</th>
+                    <th style="min-width: 260px;">Xử lý</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var i in r.Items)
+                {
+                    <tr>
+                        <td class="small">@i.RequestedAt.ToString("HH:mm dd/MM/yyyy")</td>
+                        <td>
+                            <div class="fw-semibold">@i.TicketCode</div>
+                            <div class="small text-muted">@i.PassengerName · @i.CustomerName @(string.IsNullOrWhiteSpace(i.ContactPhone) ? "" : "· " + i.ContactPhone)</div>
+                        </td>
+                        <td class="small">
+                            @i.Route
+                            @if (i.DepartAt.HasValue)
+                            {
+                                <div class="text-muted">@i.DepartAt.Value.ToString("HH:mm dd/MM/yyyy")</div>
+                            }
+                        </td>
+                        <td>
+                            <strong>@i.FromSeat</strong> → <strong>@i.ToSeat</strong>
+                            @if (i.Status == "Pending" && i.ToSeatAvailable.HasValue)
+                            {
+                                if (i.ToSeatAvailable.Value)
+                                {
+                                    <div><span class="badge text-bg-success">Ghế @i.ToSeat còn trống</span></div>
+                                }
+                                else
+                                {
+                                    <div><span class="badge text-bg-danger">Ghế @i.ToSeat đã có người đặt</span></div>
+                                }
+                            }
+                        </td>
+                        <td class="small">@(string.IsNullOrWhiteSpace(i.Reason) ? "—" : i.Reason)</td>
+                        <td>
+                            <span class="badge @SeatChangeText.BadgeClass(i.Status)">@SeatChangeText.Status(i.Status)</span>
+                            @if (i.ReviewedAt.HasValue)
+                            {
+                                <div class="small text-muted">@i.ReviewedBy, @i.ReviewedAt.Value.ToString("HH:mm dd/MM")</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(i.ReviewNote))
+                            {
+                                <div class="small">@i.ReviewNote</div>
+                            }
+                        </td>
+                        <td>
+                            @if (i.Status == "Pending")
+                            {
+                                <div class="d-flex flex-wrap gap-2">
+                                    <form method="post" asp-action="Approve" asp-route-id="@i.Id" asp-route-status="@Model.Status">
+                                        <button type="submit" class="btn btn-sm btn-primary" disabled="@(i.ToSeatAvailable == false)">Xác nhận đổi</button>
+                                    </form>
+                                    <form method="post" asp-action="Reject" asp-route-id="@i.Id" asp-route-status="@Model.Status" class="d-flex gap-1">
+                                        <input type="text" name="note" class="form-control form-control-sm" maxlength="300" required
+                                               placeholder="Lý do từ chối" aria-label="Lý do từ chối" style="width: 150px;" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Từ chối</button>
+                                    </form>
+                                </div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <nav aria-label="Phân trang">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(r.Page <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-status="@Model.Status" asp-route-page="@(r.Page - 1)">Trước</a>
+                </li>
+                <li class="page-item disabled"><span class="page-link">@r.Page / @totalPages</span></li>
+                <li class="page-item @(r.Page >= totalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-status="@Model.Status" asp-route-page="@(r.Page + 1)">Sau</a>
+                </li>
+            </ul>
+        </nav>
+    }
+}

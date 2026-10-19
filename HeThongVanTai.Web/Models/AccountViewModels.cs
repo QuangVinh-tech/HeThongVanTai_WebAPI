@@ -34,7 +34,7 @@ public class RegisterViewModel
     [Display(Name = "Nhập lại mật khẩu")]
     public string ConfirmPassword { get; set; } = "";
 
-    [Range(typeof(bool), "true", "true", ErrorMessage = "Bạn cần đồng ý Điều khoản sử dụng và Chính sách bảo mật để đăng ký")]
+    [MustBeTrue(ErrorMessage = "Bạn cần đồng ý Điều khoản sử dụng và Chính sách bảo mật để đăng ký")]
     [Display(Name = "Đồng ý điều khoản")]
     public bool AcceptTerms { get; set; }
 }

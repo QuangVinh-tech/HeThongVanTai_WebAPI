@@ -99,6 +99,10 @@
                        asp-controller="AdminSettings" asp-action="Index">
                         <i class="bi bi-gear me-2"></i>Cài đặt hệ thống
                     </a>
+                    <a class="nav-link @(currentController == "AdminSeatChanges" ? "active" : "")"
+                       asp-controller="AdminSeatChanges" asp-action="Index">
+                        <i class="bi bi-arrow-left-right me-2"></i>Yêu cầu đổi ghế
+                    </a>
                 }
             </nav>
         </aside>
