@@ -78,13 +78,13 @@ public class MyBookingsController : Controller
 
     // ---------- Đổi ghế ----------
     [HttpGet("Change/{ticketId:int}")]
-    public async Task<IActionResult> Change(int ticketId, int tripId, string? seat)
+    public async Task<IActionResult> Change(int ticketId, int tripId, string? seat, string? returnUrl = null)
     {
         var r = await _api.GetAsync<SeatMapDto>($"api/trips/{tripId}/seats");
         if (!r.Ok || r.Data == null)
         {
             TempData["Error"] = r.Error ?? "Không tải được sơ đồ ghế.";
-            return RedirectToAction(nameof(Index));
+            return Back(returnUrl);
         }
         ViewData["RequestMode"] = IsRequestMode();
         return View(new ChangeSeatViewModel
@@ -92,18 +92,19 @@ public class MyBookingsController : Controller
             TicketId = ticketId,
             TripId = tripId,
             CurrentSeat = (seat ?? "").Trim().ToUpperInvariant(),
+            ReturnUrl = Url.IsLocalUrl(returnUrl) ? returnUrl : null,
             Map = r.Data
         });
     }
 
     [HttpPost("Change/{ticketId:int}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ChangeConfirmed(int ticketId, int tripId, string? newSeatCode, string? currentSeat, string? reason = null)
+    public async Task<IActionResult> ChangeConfirmed(int ticketId, int tripId, string? newSeatCode, string? currentSeat, string? reason = null, string? returnUrl = null)
     {
         if (string.IsNullOrWhiteSpace(newSeatCode))
         {
             TempData["Error"] = "Vui lòng chọn ghế mới.";
-            return RedirectToAction(nameof(Change), new { ticketId, tripId, seat = currentSeat });
+            return RedirectToAction(nameof(Change), new { ticketId, tripId, seat = currentSeat, returnUrl });
         }
 
         // Khách hàng chỉ gửi yêu cầu để Admin xác nhận; nhân viên (Admin, Seller) đổi ngay như trước
@@ -114,36 +115,40 @@ public class MyBookingsController : Controller
             if (!req.Ok || req.Data == null)
             {
                 TempData["Error"] = req.Error ?? "Không gửi được yêu cầu đổi ghế.";
-                return RedirectToAction(nameof(Change), new { ticketId, tripId, seat = currentSeat });
+                return RedirectToAction(nameof(Change), new { ticketId, tripId, seat = currentSeat, returnUrl });
             }
 
             TempData["Success"] = $"Đã gửi yêu cầu đổi sang ghế {req.Data.ToSeat}. Quản trị viên sẽ xác nhận, bạn xem kết quả ở mục Vé của tôi.";
-            return RedirectToAction(nameof(Index));
+            return Back(returnUrl);
         }
 
         var r = await _api.PutAsync<ChangeResultDto>($"api/tickets/{ticketId}/change", new { newSeatCode = newSeatCode.Trim() });
         if (!r.Ok || r.Data == null)
         {
             TempData["Error"] = r.Error ?? "Không đổi được ghế.";
-            return RedirectToAction(nameof(Change), new { ticketId, tripId, seat = currentSeat });
+            return RedirectToAction(nameof(Change), new { ticketId, tripId, seat = currentSeat, returnUrl });
         }
 
         TempData["Success"] = $"Đã đổi sang ghế {r.Data.SeatCode}.";
-        return RedirectToAction(nameof(Index));
+        return Back(returnUrl);
     }
 
     // ---------- Hủy yêu cầu đổi ghế đang chờ ----------
     [HttpPost("SeatChange/{id:int}/Cancel")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CancelSeatChange(int id)
+    public async Task<IActionResult> CancelSeatChange(int id, string? returnUrl = null)
     {
         var r = await _api.PutAsync<SeatChangeItem>($"api/seat-change-requests/{id}/cancel");
         if (!r.Ok)
             TempData["Error"] = r.Error ?? "Không hủy được yêu cầu đổi ghế.";
         else
             TempData["Success"] = "Đã hủy yêu cầu đổi ghế.";
-        return RedirectToAction(nameof(Index));
+        return Back(returnUrl);
     }
+
+    // Quay về trang đã mở chức năng đổi ghế (chỉ nhận đường dẫn nội bộ để tránh chuyển hướng ra ngoài)
+    private IActionResult Back(string? returnUrl) =>
+        Url.IsLocalUrl(returnUrl) ? LocalRedirect(returnUrl!) : RedirectToAction(nameof(Index));
 
     // Khách hàng gửi yêu cầu chờ xác nhận; Admin, Seller đổi ngay
     private bool IsRequestMode() => !(User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Seller));

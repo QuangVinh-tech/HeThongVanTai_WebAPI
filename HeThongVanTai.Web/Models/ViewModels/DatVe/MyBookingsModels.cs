@@ -52,5 +52,6 @@ public class ChangeSeatViewModel
     public int TicketId { get; set; }
     public int TripId { get; set; }
     public string CurrentSeat { get; set; } = "";
+    public string? ReturnUrl { get; set; }   // trang quay lại sau khi đổi ghế (Vé của tôi hoặc chi tiết đặt vé của admin)
     public SeatMapDto Map { get; set; } = new();
 }

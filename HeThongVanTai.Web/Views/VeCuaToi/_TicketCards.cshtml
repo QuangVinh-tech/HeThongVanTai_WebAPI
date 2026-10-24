@@ -104,6 +104,45 @@
                         <div>Không đăng ký trung chuyển, hành khách tự ra bến.</div>
                     </div>
                 }
+
+                @{
+                    // Đổi ghế: chỉ khi đã đăng nhập, vé còn hiệu lực, đặt vé đang giữ chỗ hoặc đã thanh toán, còn ít nhất 2 giờ trước giờ đi
+                    var canChange = (ViewData["AllowSeatChange"] as bool?) == true && User.Identity?.IsAuthenticated == true && active
+                        && (Model.Status == "Holding" || Model.Status == "Paid")
+                        && t.DepartAt - DateTime.Now >= TimeSpan.FromHours(2);
+                    var seatChanges = ViewData["SeatChanges"] as List<HeThongVanTai.Web.Models.ViewModels.DatVe.SeatChangeItem>;
+                    var pending = seatChanges?.FirstOrDefault(x => x.TicketId == t.Id && x.Status == "Pending");
+                    var rejected = pending != null ? null
+                        : seatChanges?.Where(x => x.TicketId == t.Id && x.Status == "Rejected").OrderByDescending(x => x.RequestedAt).FirstOrDefault();
+                    var backUrl = Context.Request.Path.Value + Context.Request.QueryString.Value;
+                }
+                @if (pending != null)
+                {
+                    <div class="vt-foot">
+                        <i class="bi bi-hourglass-split"></i>
+                        <div>
+                            Đang chờ quản trị viên xác nhận đổi từ ghế <strong>@pending.FromSeat</strong> sang ghế <strong>@pending.ToSeat</strong>.
+                            <form method="post" asp-controller="MyBookings" asp-action="CancelSeatChange" asp-route-id="@pending.Id" class="d-inline">
+                                <input type="hidden" name="returnUrl" value="@backUrl" />
+                                <button type="submit" class="btn btn-link btn-sm p-0 align-baseline">Hủy yêu cầu</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+                else if (canChange)
+                {
+                    <div class="vt-foot">
+                        <i class="bi bi-arrow-left-right"></i>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <a class="btn btn-sm btn-outline-primary"
+                               href="@Url.Action("Change", "MyBookings", new { ticketId = t.Id, tripId = t.TripId, seat = t.SeatCode, returnUrl = backUrl })">Đổi ghế</a>
+                            @if (rejected != null)
+                            {
+                                <span class="small text-danger">Yêu cầu đổi sang ghế @rejected.ToSeat bị từ chối@(string.IsNullOrWhiteSpace(rejected.ReviewNote) ? "" : ": " + rejected.ReviewNote)</span>
+                            }
+                        </div>
+                    </div>
+                }
             </div>
         </div>
     }

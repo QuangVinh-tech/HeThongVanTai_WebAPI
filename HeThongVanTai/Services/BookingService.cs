@@ -709,6 +709,7 @@ public class BookingService
             Tickets = b.Tickets.Select(t => new TicketDetailDto
             {
                 Id = t.Id,
+                TripId = t.TripId,
                 TicketCode = t.TicketCode,
                 SeatCode = t.SeatCode,
                 PassengerName = t.PassengerName,

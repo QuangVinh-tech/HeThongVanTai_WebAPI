@@ -62,6 +62,7 @@ public class BookingDetail
 public class TicketDetail
 {
     public int Id { get; set; }
+    public int TripId { get; set; }
     public string TicketCode { get; set; } = "";
     public string SeatCode { get; set; } = "";
     public string? PassengerName { get; set; }
@@ -112,6 +113,8 @@ public class MyBookingDetailViewModel
 {
     public BookingDetail Booking { get; set; } = new();
     public RefundPreview? Refund { get; set; }
+    // Yêu cầu đổi ghế của khách (chỉ có với vai trò Customer), dùng để hiện trạng thái chờ xác nhận trên từng vé
+    public List<HeThongVanTai.Web.Models.ViewModels.DatVe.SeatChangeItem> SeatChanges { get; set; } = new();
 }
 
 // ----- Tra cứu không cần đăng nhập -----

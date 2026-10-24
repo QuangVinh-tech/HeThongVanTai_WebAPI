@@ -48,6 +48,7 @@ public class BookingDetailDto
 public class TicketDetailDto
 {
     public int Id { get; set; }
+    public int TripId { get; set; }   // cần cho chức năng đổi ghế (tải sơ đồ ghế của chuyến)
     public string TicketCode { get; set; } = "";
     public string SeatCode { get; set; } = "";
     public string? PassengerName { get; set; }
