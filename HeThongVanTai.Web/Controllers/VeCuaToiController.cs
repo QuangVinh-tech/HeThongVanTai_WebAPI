@@ -54,6 +54,14 @@ public class VeCuaToiController : Controller
             var preview = await _svc.GetRefundPreviewAsync(result.Data.Id);
             if (preview.Ok) model.Refund = preview.Data;
         }
+
+        // Khách hàng: lấy các yêu cầu đổi ghế của đặt vé này để hiện trạng thái trên từng vé
+        if (User.IsInRole(AppRoles.Customer))
+        {
+            var changes = await _svc.GetMySeatChangesAsync();
+            if (changes.Ok && changes.Data != null)
+                model.SeatChanges = changes.Data.Where(x => x.BookingCode == result.Data.Code).ToList();
+        }
         return View(model);
     }
 

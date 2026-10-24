@@ -6,6 +6,9 @@
     ViewData["Title"] = "Đặt vé " + b.Code;
     var refund = Model.Refund;
     var hasTransfer = b.Payments.Any(p => p.Status == "Pending" || p.Status == "Paid");
+    // Trang này là của chính chủ vé nên cho phép đổi ghế; trang tra cứu công khai thì không
+    ViewData["AllowSeatChange"] = true;
+    ViewData["SeatChanges"] = Model.SeatChanges;
 }
 
 @section Styles {

@@ -23,6 +23,10 @@ public class VeKhachApiService
     public Task<ApiResult<BookingDetail>> GetDetailAsync(string code) =>
         _api.GetAsync<BookingDetail>($"api/bookings/mine/{Uri.EscapeDataString(code)}");
 
+    // Yêu cầu đổi ghế của chính khách (API chỉ cho vai trò Customer)
+    public Task<ApiResult<List<HeThongVanTai.Web.Models.ViewModels.DatVe.SeatChangeItem>>> GetMySeatChangesAsync() =>
+        _api.GetAsync<List<HeThongVanTai.Web.Models.ViewModels.DatVe.SeatChangeItem>>("api/seat-change-requests/mine");
+
     public Task<ApiResult<RefundPreview>> GetRefundPreviewAsync(int bookingId) =>
         _api.GetAsync<RefundPreview>($"api/bookings/{bookingId}/refund-preview");
 

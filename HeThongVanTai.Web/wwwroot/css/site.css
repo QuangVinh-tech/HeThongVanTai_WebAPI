@@ -219,3 +219,11 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
 
 /* Ô nhập mã OTP ở trang xác thực email */
 .otp-input { letter-spacing: .5rem; font-weight: 700; }
+
+/* Tab dạng pill (trang Yêu cầu đổi ghế...): dùng màu chủ đạo thay cho màu xanh mặc định của Bootstrap */
+.nav-pills {
+    --bs-nav-pills-link-active-bg: var(--vt-primary);
+    --bs-nav-pills-link-active-color: #FFFFFF;
+}
+.nav-pills .nav-link:not(.active) { color: var(--vt-primary); }
+.nav-pills .nav-link:not(.active):hover { background: var(--vt-tint); }

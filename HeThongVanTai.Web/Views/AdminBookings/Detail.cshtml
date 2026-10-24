@@ -61,7 +61,15 @@
                             }
                         </div>
                     </div>
-                    <div class="text-end">@DatVeHelpers.Money(t.Price)</div>
+                    <div class="text-end">
+                        <div>@DatVeHelpers.Money(t.Price)</div>
+                        @if (t.Status == "Active" && (b.Status == "Holding" || b.Status == "Paid")
+                             && t.DepartAt.HasValue && t.DepartAt.Value - DateTime.Now >= TimeSpan.FromHours(2))
+                        {
+                            <a class="btn btn-sm btn-outline-primary mt-1"
+                               href="@Url.Action("Change", "MyBookings", new { ticketId = t.Id, tripId = t.TripId, seat = t.SeatCode, returnUrl = Context.Request.Path.Value })">Đổi ghế</a>
+                        }
+                    </div>
                 </div>
             }
             @if (b.DiscountAmount > 0)

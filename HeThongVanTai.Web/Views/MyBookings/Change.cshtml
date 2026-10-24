@@ -27,6 +27,7 @@
     <form method="post" asp-controller="MyBookings" asp-action="ChangeConfirmed" asp-route-ticketId="@Model.TicketId">
         <input type="hidden" name="tripId" value="@Model.TripId" />
         <input type="hidden" name="currentSeat" value="@Model.CurrentSeat" />
+        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
         <input type="hidden" name="newSeatCode" id="newSeatCode" value="" />
 
         <div class="card card-vt p-4 mb-3">
@@ -50,7 +51,7 @@
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
             <div id="picked" class="fw-semibold" aria-live="polite">Chưa chọn ghế mới</div>
             <div>
-                <a class="btn btn-outline-primary me-2" asp-action="Index">Quay lại</a>
+                <a class="btn btn-outline-primary me-2" href="@(string.IsNullOrEmpty(Model.ReturnUrl) ? Url.Action("Index", "MyBookings") : Model.ReturnUrl)">Quay lại</a>
                 <button type="submit" id="btnChange" class="btn btn-primary px-4" disabled>@(requestMode ? "Gửi yêu cầu đổi ghế" : "Xác nhận đổi ghế")</button>
             </div>
         </div>
